@@ -1,0 +1,174 @@
+/**
+ * GLL Info Block - Editor Styles
+ *
+ * @package GllInfo
+ */
+
+.gll-info-block {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 16px;
+	background: #fff;
+
+	.gll-info-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid #eee;
+		margin-bottom: 16px;
+
+		svg {
+			flex-shrink: 0;
+			color: #667eea;
+		}
+
+		h3 {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 600;
+		}
+
+		p {
+			margin: 4px 0 0;
+			color: #666;
+			font-size: 13px;
+		}
+	}
+
+	.gll-info-loading {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 16px;
+		color: #666;
+	}
+
+	.gll-info-error {
+		background: #fef2f2;
+		border: 1px solid #fee2e2;
+		border-radius: 4px;
+		padding: 12px;
+		color: #dc2626;
+
+		p {
+			margin: 0 0 8px;
+			font-weight: 500;
+		}
+
+		code {
+			display: block;
+			font-size: 12px;
+			background: transparent;
+			color: #991b1b;
+		}
+	}
+
+	.gll-info-content {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+}
+
+.gll-overview {
+	.gll-section {
+		margin-bottom: 16px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		h4 {
+			margin: 0 0 8px;
+			font-size: 14px;
+			font-weight: 600;
+			color: #333;
+		}
+
+		p {
+			margin: 0;
+			color: #666;
+			font-size: 13px;
+			line-height: 1.5;
+		}
+	}
+
+	.gll-section-muted {
+		padding-top: 12px;
+		border-top: 1px solid #eee;
+		color: #999;
+
+		small {
+			font-size: 11px;
+		}
+	}
+}
+
+.gll-info-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+
+	th,
+	td {
+		padding: 6px 8px;
+		text-align: left;
+		border-bottom: 1px solid #f0f0f0;
+	}
+
+	th {
+		width: 120px;
+		font-weight: 500;
+		color: #666;
+	}
+
+	td {
+		color: #333;
+	}
+
+	tr:last-child th,
+	tr:last-child td {
+		border-bottom: none;
+	}
+}
+
+.gll-sources {
+	h4 {
+		margin: 0 0 8px;
+		font-size: 14px;
+		font-weight: 600;
+		color: #333;
+	}
+}
+
+.gll-sources-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+
+	.gll-source-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 8px 0;
+		border-bottom: 1px solid #f0f0f0;
+		font-size: 13px;
+
+		&:last-child {
+			border-bottom: none;
+		}
+
+		strong {
+			color: #333;
+		}
+
+		.gll-source-bandwidth {
+			color: #666;
+			font-size: 12px;
+			background: #f5f5f5;
+			padding: 2px 8px;
+			border-radius: 3px;
+		}
+	}
+}
