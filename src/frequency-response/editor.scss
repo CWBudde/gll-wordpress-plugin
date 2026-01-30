@@ -1,0 +1,108 @@
+/**
+ * Frequency Response Block - Editor Styles
+ *
+ * Styles for the block editor (Gutenberg).
+ *
+ * @package GllInfo
+ */
+
+.gll-frequency-response-block {
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+
+	.gll-frequency-response-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 1px solid #e0e0e0;
+
+		svg {
+			width: 32px;
+			height: 32px;
+			color: #0073aa;
+			flex-shrink: 0;
+		}
+
+		h3 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 600;
+			color: #1e1e1e;
+		}
+
+		.gll-source-label {
+			margin: 4px 0 0;
+			font-size: 14px;
+			color: #666;
+		}
+	}
+
+	.gll-frequency-response-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		padding: 40px;
+		background: #f9f9f9;
+		border-radius: 4px;
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+
+	.gll-frequency-response-error {
+		padding: 20px;
+		background: #fff8f8;
+		border: 1px solid #d63638;
+		border-radius: 4px;
+		color: #d63638;
+
+		p {
+			margin: 0;
+		}
+	}
+
+	.gll-frequency-response-chart {
+		margin-top: 20px;
+
+		.gll-chart {
+			background: #fff;
+			border-radius: 4px;
+		}
+	}
+
+	.gll-frequency-response-empty {
+		padding: 40px;
+		text-align: center;
+		background: #f9f9f9;
+		border-radius: 4px;
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+}
+
+// Inspector Controls styling
+.components-panel__body {
+	.gll-file-info {
+		padding: 12px;
+		background: #f0f0f0;
+		border-radius: 4px;
+		margin-bottom: 12px;
+		font-size: 13px;
+		line-height: 1.6;
+
+		strong {
+			display: block;
+			margin-bottom: 4px;
+		}
+	}
+}
