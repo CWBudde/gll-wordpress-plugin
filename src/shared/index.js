@@ -22,3 +22,6 @@ export {
 	useGLL,
 	useGLLLoader,
 } from './gll-context';
+
+// Chart.js wrapper
+export { default as ChartWrapper } from './chart-wrapper';

@@ -28,3 +28,9 @@ node_modules/
 
 # dotenv environment variables file
 .env
+
+# AI Agents
+.claude
+
+# Trunk
+.trunk/

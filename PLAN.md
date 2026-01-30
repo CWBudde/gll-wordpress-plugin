@@ -137,9 +137,9 @@ Based on the web demo, these Gutenberg blocks will be created:
 ## Phase 4: Frequency Response Block
 
 ### Task 4.1: Chart.js Integration
-- [ ] Add Chart.js as dependency
-- [ ] Create React wrapper for Chart.js
-- [ ] Implement responsive chart sizing
+- [x] Add Chart.js as dependency
+- [x] Create React wrapper for Chart.js
+- [x] Implement responsive chart sizing
 
 ### Task 4.2: Frequency Response Block Structure
 - [ ] Create block registration (`gll-info/frequency-response`)
