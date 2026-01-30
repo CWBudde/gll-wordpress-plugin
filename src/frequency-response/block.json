@@ -1,0 +1,78 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "gll-info/frequency-response",
+	"version": "0.1.0",
+	"title": "GLL Frequency Response",
+	"category": "media",
+	"icon": "chart-line",
+	"description": "Display frequency response chart from GLL file acoustic data with interactive controls.",
+	"keywords": [ "gll", "frequency", "response", "chart", "acoustic" ],
+	"parent": [ "gll-info/gll-info" ],
+	"attributes": {
+		"fileId": {
+			"type": "number",
+			"default": 0
+		},
+		"fileUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"fileName": {
+			"type": "string",
+			"default": ""
+		},
+		"sourceIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"responseIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"phaseMode": {
+			"type": "string",
+			"default": "unwrapped",
+			"enum": [ "unwrapped", "wrapped", "group-delay" ]
+		},
+		"normalized": {
+			"type": "boolean",
+			"default": false
+		},
+		"azimuth": {
+			"type": "number",
+			"default": 0
+		},
+		"elevation": {
+			"type": "number",
+			"default": 0
+		},
+		"showPhase": {
+			"type": "boolean",
+			"default": true
+		},
+		"showMagnitude": {
+			"type": "boolean",
+			"default": true
+		},
+		"chartHeight": {
+			"type": "number",
+			"default": 400
+		}
+	},
+	"example": {
+		"attributes": {
+			"fileName": "example-speaker.gll",
+			"phaseMode": "unwrapped"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "gll-info",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}

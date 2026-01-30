@@ -71,6 +71,7 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Create WASM loader module (`src/shared/wasm-loader.js`)
 - [x] Create singleton pattern for WASM instance
 - [x] Add error handling for browsers without WASM support
+- [x] Updated WASM files to latest version (Jan 30, 2026 - 4.2MB)
 
 ### Task 1.4: Shared React Context [COMPLETED]
 - [x] Create `GLLContext` for sharing parsed data between blocks
@@ -136,15 +137,20 @@ Based on the web demo, these Gutenberg blocks will be created:
 
 ## Phase 4: Frequency Response Block
 
-### Task 4.1: Chart.js Integration
-- [x] Add Chart.js as dependency
-- [x] Create React wrapper for Chart.js
-- [x] Implement responsive chart sizing
+### Task 4.1: Chart.js Integration [COMPLETED]
+- [x] Add Chart.js as dependency (^4.4.1)
+- [x] Create React wrapper for Chart.js (`src/shared/chart-wrapper.js`)
+- [x] Implement responsive chart sizing (ResizeObserver)
+- [x] Export ChartWrapper from shared module
 
-### Task 4.2: Frequency Response Block Structure
-- [ ] Create block registration (`gll-info/frequency-response`)
-- [ ] Define attributes (sourceIndex, responseIndex, phaseMode, etc.)
-- [ ] Add InspectorControls for configuration
+### Task 4.2: Frequency Response Block Structure [COMPLETED]
+- [x] Create block registration (`gll-info/frequency-response`)
+- [x] Define attributes (sourceIndex, responseIndex, phaseMode, etc.)
+- [x] Add InspectorControls for configuration
+- [x] Create edit.js with file selection and chart preview
+- [x] Create save.js with data attributes for frontend
+- [x] Create view.js for frontend hydration
+- [x] Create editor.scss and style.scss
 
 ### Task 4.3: Response Chart Component
 - [ ] Port chart configuration from web demo
@@ -359,8 +365,17 @@ gll-info/
 │   ├── shared/                 # Shared modules [DONE]
 │   │   ├── index.js            # [DONE]
 │   │   ├── wasm-loader.js      # [DONE]
-│   │   └── gll-context.js      # [DONE]
-│   ├── frequency-response/     # TODO
+│   │   ├── gll-context.js      # [DONE]
+│   │   ├── chart-wrapper.js    # [DONE]
+│   │   └── chart.scss          # [DONE]
+│   ├── frequency-response/     # PARTIAL (structure done, chart impl pending)
+│   │   ├── block.json          # [DONE]
+│   │   ├── index.js            # [DONE]
+│   │   ├── edit.js             # [DONE]
+│   │   ├── save.js             # [DONE]
+│   │   ├── view.js             # [DONE - placeholder chart]
+│   │   ├── editor.scss         # [DONE]
+│   │   └── style.scss          # [DONE]
 │   ├── polar-plot/             # TODO
 │   ├── balloon-3d/             # TODO
 │   ├── resources/              # TODO
@@ -413,7 +428,7 @@ gll-info/
 | 1. Foundation | 4 | Medium | DONE |
 | 2. Core File Block | 3 | Medium | DONE |
 | 3. Overview Block | 5 | Low | DONE (integrated) |
-| 4. Frequency Response | 5 | High | TODO |
+| 4. Frequency Response | 5 | High | PARTIAL (structure done, chart impl pending) |
 | 5. Polar Plot | 4 | Medium | TODO |
 | 6. 3D Balloon | 5 | High | TODO |
 | 7. Sources List | 3 | Low | PARTIAL (integrated) |
@@ -423,7 +438,7 @@ gll-info/
 | 11. Testing | 5 | Medium | TODO |
 
 **Total: 47 tasks across 11 phases**
-**Completed: ~20 tasks (Phases 1-3, partial 7)**
+**Completed: ~25 tasks (Phases 1-3, 4.1-4.2, partial 7)**
 
 ---
 
