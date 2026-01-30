@@ -9,6 +9,13 @@
 /* global Chart */
 
 import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import {
+	buildFrequencyPoints,
+	buildLogFrequencyScale,
+	getPhaseSeries,
+	unwrapPhase,
+	formatFrequency,
+} from '../shared/charting-utils';
 
 /**
  * Initialize all frequency response blocks on the page.
@@ -103,6 +110,109 @@ async function initializeBlock( block ) {
 }
 
 /**
+ * Extract frequency response data from GLL source.
+ *
+ * @param {Object} source        Source definition from GLL.
+ * @param {number} responseIndex Response index to use.
+ * @param {number} azimuth       Azimuth angle (degrees).
+ * @param {number} elevation     Elevation angle (degrees).
+ * @param {boolean} normalized    Whether to normalize to on-axis.
+ * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
+ */
+function extractResponseData( source, responseIndex, azimuth, elevation, normalized ) {
+	if ( ! source || ! source.Responses || source.Responses.length === 0 ) {
+		return null;
+	}
+
+	// Get the response at the specified index
+	const response = source.Responses[ responseIndex ];
+	if ( ! response ) {
+		return null;
+	}
+
+	const frequencies = response.Frequencies || [];
+	if ( frequencies.length === 0 ) {
+		return null;
+	}
+
+	// For now, use the first available transfer function
+	// TODO: Implement proper azimuth/elevation lookup when GLL structure is finalized
+	const transferFunctions = response.TransferFunctions || [];
+	if ( transferFunctions.length === 0 ) {
+		return null;
+	}
+
+	const tf = transferFunctions[ 0 ];
+	const magnitudes = tf.Magnitude || [];
+	const phases = tf.Phase || [];
+
+	if ( magnitudes.length === 0 ) {
+		return null;
+	}
+
+	// Normalize if requested (subtract first value - on-axis)
+	let normalizedMagnitudes = magnitudes;
+	if ( normalized && magnitudes.length > 0 ) {
+		const onAxisValue = magnitudes[ 0 ];
+		normalizedMagnitudes = magnitudes.map( ( val ) => val - onAxisValue );
+	}
+
+	return {
+		frequencies,
+		magnitudes: normalizedMagnitudes,
+		phases: phases.length === magnitudes.length ? phases : [],
+	};
+}
+
+/**
+ * Build metadata HTML for display above chart.
+ *
+ * @param {Object} params             Parameters object.
+ * @param {Object} params.source      Source definition.
+ * @param {Object} params.frequencyData Frequency data with min/max.
+ * @param {Object} params.options     Chart options.
+ * @param {Object} params.phaseSeries Phase series data.
+ * @return {string} HTML string for metadata display.
+ */
+function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
+	const minFreq = formatFrequency( frequencyData.minFrequency );
+	const maxFreq = formatFrequency( frequencyData.maxFrequency );
+
+	const badges = [];
+
+	// Frequency range badge
+	badges.push( `<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>` );
+
+	// Angular position badge
+	if ( options.azimuth !== 0 || options.elevation !== 0 ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Position:</strong> Az ${ options.azimuth }° / El ${ options.elevation }°</span>`
+		);
+	} else {
+		badges.push( `<span class="gll-meta-badge"><strong>Position:</strong> On-axis (0° / 0°)</span>` );
+	}
+
+	// Phase mode badge
+	if ( phaseSeries ) {
+		const phaseLabel = options.phaseMode === 'group-delay' ? 'Group Delay' :
+			options.phaseMode === 'wrapped' ? 'Wrapped Phase' : 'Unwrapped Phase';
+		badges.push( `<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>` );
+	}
+
+	// Normalization badge
+	if ( options.normalized ) {
+		badges.push( `<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>` );
+	}
+
+	// Source info badge
+	if ( source.Label ) {
+		badges.push( `<span class="gll-meta-badge"><strong>Source:</strong> ${ source.Label }</span>` );
+	}
+
+	return `<div class="gll-frequency-response-metadata">${ badges.join( '' ) }</div>`;
+}
+
+/**
  * Render frequency response chart.
  *
  * @param {HTMLElement} block   Block element.
@@ -122,33 +232,161 @@ function renderChart( block, data, options ) {
 		return;
 	}
 
-	// TODO: Extract actual frequency response data from source
-	// This is a placeholder - actual implementation will extract transfer functions
-	const frequencies = [];
-	const magnitudes = [];
-	const phases = [];
+	// Extract frequency response data
+	const responseData = extractResponseData(
+		source,
+		options.responseIndex,
+		options.azimuth,
+		options.elevation,
+		options.normalized
+	);
 
-	// For now, show a placeholder message
-	chartContainer.innerHTML = `
-		<div style="padding: 20px; text-align: center; color: #666;">
-			<p>Frequency response chart will be displayed here.</p>
-			<p><strong>Source:</strong> ${ source.Label || 'Unknown' }</p>
-			<p><strong>Configuration:</strong></p>
-			<ul style="list-style: none; padding: 0;">
-				<li>Phase Mode: ${ options.phaseMode }</li>
-				<li>Normalized: ${ options.normalized ? 'Yes' : 'No' }</li>
-				<li>Azimuth: ${ options.azimuth }°</li>
-				<li>Elevation: ${ options.elevation }°</li>
-			</ul>
-			<p style="font-size: 0.9em; margin-top: 20px;">
-				<em>Chart rendering will be implemented in Task 4.3</em>
-			</p>
-		</div>
-	`;
+	if ( ! responseData ) {
+		showError( block, 'No frequency response data available for this source' );
+		return;
+	}
+
+	const { frequencies, magnitudes, phases } = responseData;
+
+	// Build frequency data points for magnitude
+	const frequencyData = buildFrequencyPoints( frequencies, magnitudes );
+	if ( ! frequencyData ) {
+		showError( block, 'Invalid frequency response data' );
+		return;
+	}
+
+	// Build phase series if phase data is available and requested
+	let phaseSeries = null;
+	if ( options.showPhase && phases.length > 0 ) {
+		const unwrappedPhase = unwrapPhase( phases );
+		phaseSeries = getPhaseSeries(
+			options.phaseMode,
+			frequencies,
+			phases,
+			unwrappedPhase
+		);
+	}
+
+	// Create metadata display
+	const metadataHtml = buildMetadataHtml( {
+		source,
+		frequencyData,
+		options,
+		phaseSeries,
+	} );
+
+	// Create canvas element for chart
+	const canvas = document.createElement( 'canvas' );
+	chartContainer.innerHTML = metadataHtml;
+
+	const chartWrapper = document.createElement( 'div' );
+	chartWrapper.className = 'gll-chart-container';
+	chartWrapper.appendChild( canvas );
+	chartContainer.appendChild( chartWrapper );
 	chartContainer.style.display = 'block';
 
-	// The actual Chart.js rendering will be implemented in Task 4.3
-	// when we port the chart configuration from the web demo
+	const ctx = canvas.getContext( '2d' );
+
+	// Build datasets array
+	const datasets = [];
+
+	if ( options.showMagnitude ) {
+		datasets.push( {
+			label: 'Level (dB)',
+			data: frequencyData.points,
+			borderColor: '#2563eb',
+			backgroundColor: 'rgba(37, 99, 235, 0.1)',
+			fill: true,
+			tension: 0.3,
+			pointRadius: 0,
+			yAxisID: 'y',
+		} );
+	}
+
+	if ( phaseSeries ) {
+		const phasePoints = buildFrequencyPoints( frequencies, phaseSeries.values );
+		if ( phasePoints ) {
+			datasets.push( {
+				label: phaseSeries.label,
+				data: phasePoints.points,
+				borderColor: '#dc2626',
+				backgroundColor: 'transparent',
+				tension: 0.3,
+				pointRadius: 0,
+				yAxisID: 'y1',
+			} );
+		}
+	}
+
+	// Build scales configuration
+	const scales = {
+		x: buildLogFrequencyScale(
+			frequencyData.minFrequency,
+			frequencyData.maxFrequency,
+			'Frequency'
+		),
+	};
+
+	if ( options.showMagnitude ) {
+		scales.y = {
+			type: 'linear',
+			display: true,
+			position: 'left',
+			title: {
+				display: true,
+				text: 'Level (dB)',
+			},
+		};
+	}
+
+	if ( phaseSeries ) {
+		scales.y1 = {
+			type: 'linear',
+			display: true,
+			position: 'right',
+			title: {
+				display: true,
+				text: phaseSeries.axisTitle,
+			},
+			grid: {
+				drawOnChartArea: false,
+			},
+		};
+	}
+
+	// Create the chart
+	new Chart( ctx, {
+		type: 'line',
+		data: {
+			datasets,
+		},
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			interaction: {
+				mode: 'index',
+				intersect: false,
+			},
+			scales,
+			plugins: {
+				legend: {
+					position: 'top',
+				},
+				title: {
+					display: true,
+					text: options.fileName + ( source.Label ? ` - ${ source.Label }` : '' ),
+				},
+				tooltip: {
+					callbacks: {
+						title: ( items ) => {
+							const value = items?.[ 0 ]?.parsed?.x;
+							return value ? formatFrequency( value ) : '';
+						},
+					},
+				},
+			},
+		},
+	} );
 }
 
 /**

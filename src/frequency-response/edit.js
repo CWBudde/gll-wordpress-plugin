@@ -366,13 +366,47 @@ export default function Edit( { attributes, setAttributes } ) {
 					) }
 
 					{ data && chartConfig && (
-						<div className="gll-frequency-response-chart">
-							<ChartWrapper
-								config={ chartConfig }
-								height={ chartHeight }
-								className="gll-chart"
-							/>
-						</div>
+						<>
+							<div className="gll-frequency-response-metadata">
+								<span className="gll-meta-badge">
+									<strong>{ __( 'Range:', 'gll-info' ) }</strong> 20 Hz - 20 kHz
+								</span>
+								{ ( azimuth !== 0 || elevation !== 0 ) ? (
+									<span className="gll-meta-badge">
+										<strong>{ __( 'Position:', 'gll-info' ) }</strong> Az { azimuth }° / El { elevation }°
+									</span>
+								) : (
+									<span className="gll-meta-badge">
+										<strong>{ __( 'Position:', 'gll-info' ) }</strong> On-axis (0° / 0°)
+									</span>
+								) }
+								{ showPhase && (
+									<span className="gll-meta-badge">
+										<strong>{ __( 'Phase:', 'gll-info' ) }</strong> { ' ' }
+										{ phaseMode === 'group-delay' && __( 'Group Delay', 'gll-info' ) }
+										{ phaseMode === 'wrapped' && __( 'Wrapped Phase', 'gll-info' ) }
+										{ phaseMode === 'unwrapped' && __( 'Unwrapped Phase', 'gll-info' ) }
+									</span>
+								) }
+								{ normalized && (
+									<span className="gll-meta-badge gll-meta-badge-highlight">
+										<strong>{ __( 'Normalized', 'gll-info' ) }</strong>
+									</span>
+								) }
+								{ currentSource?.Label && (
+									<span className="gll-meta-badge">
+										<strong>{ __( 'Source:', 'gll-info' ) }</strong> { currentSource.Label }
+									</span>
+								) }
+							</div>
+							<div className="gll-frequency-response-chart">
+								<ChartWrapper
+									config={ chartConfig }
+									height={ chartHeight }
+									className="gll-chart"
+								/>
+							</div>
+						</>
 					) }
 
 					{ data && ! chartConfig && (
