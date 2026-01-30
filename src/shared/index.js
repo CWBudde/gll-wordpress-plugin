@@ -25,3 +25,15 @@ export {
 
 // Chart.js wrapper
 export { default as ChartWrapper } from './chart-wrapper';
+
+// Charting utilities
+export {
+	buildFrequencyPoints,
+	buildLogFrequencyScale,
+	getPhaseSeries,
+	unwrapPhase,
+	wrapPhase,
+	computeGroupDelayMs,
+	buildLogTicks,
+	formatFrequency,
+} from './charting-utils';

@@ -152,23 +152,32 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Create view.js for frontend hydration
 - [x] Create editor.scss and style.scss
 
-### Task 4.3: Response Chart Component
-- [ ] Port chart configuration from web demo
-- [ ] Implement dual Y-axis (Level dB, Phase)
-- [ ] Add logarithmic X-axis (frequency)
-- [ ] Support phase modes: unwrapped, wrapped, group delay
+### Task 4.3: Response Chart Component [COMPLETED]
+- [x] Port chart configuration from web demo
+- [x] Create charting utilities module (`src/shared/charting-utils.js`)
+- [x] Implement dual Y-axis (Level dB, Phase)
+- [x] Add logarithmic X-axis with power-of-ten ticks
+- [x] Support phase modes: unwrapped, wrapped, group delay
+- [x] Implement phase unwrapping algorithm
+- [x] Implement group delay calculation
+- [x] Extract transfer function data from GLL
+- [x] Update view.js with complete Chart.js rendering
 
-### Task 4.4: Interactive Controls
-- [ ] Source selector dropdown
-- [ ] Response index selector
-- [ ] Azimuth/Elevation sliders
-- [ ] Phase mode toggle
-- [ ] Normalized (on-axis) checkbox
+### Task 4.4: Interactive Controls [COMPLETED]
+- [x] Source selector dropdown (InspectorControls)
+- [x] Response index selector (RangeControl)
+- [x] Azimuth/Elevation sliders (RangeControl -180° to 180°, -90° to 90°)
+- [x] Phase mode toggle (SelectControl: unwrapped, wrapped, group-delay)
+- [x] Normalized (on-axis) checkbox (ToggleControl)
+- [x] Show magnitude/phase toggles
+- [x] Chart height control (200-800px)
 
-### Task 4.5: Response Metadata Display
-- [ ] Show measurement conditions
-- [ ] Display angular position
-- [ ] Show frequency range
+### Task 4.5: Response Metadata Display [COMPLETED]
+- [x] Show measurement conditions (phase mode, normalization)
+- [x] Display angular position (azimuth/elevation badges)
+- [x] Show frequency range (min/max frequency)
+- [x] Style metadata badges with responsive layout
+- [x] Add metadata to both editor and frontend views
 
 ---
 
@@ -367,13 +376,14 @@ gll-info/
 │   │   ├── wasm-loader.js      # [DONE]
 │   │   ├── gll-context.js      # [DONE]
 │   │   ├── chart-wrapper.js    # [DONE]
-│   │   └── chart.scss          # [DONE]
-│   ├── frequency-response/     # PARTIAL (structure done, chart impl pending)
+│   │   ├── chart.scss          # [DONE]
+│   │   └── charting-utils.js   # [DONE]
+│   ├── frequency-response/     # [DONE]
 │   │   ├── block.json          # [DONE]
 │   │   ├── index.js            # [DONE]
 │   │   ├── edit.js             # [DONE]
 │   │   ├── save.js             # [DONE]
-│   │   ├── view.js             # [DONE - placeholder chart]
+│   │   ├── view.js             # [DONE]
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
 │   ├── polar-plot/             # TODO
@@ -428,17 +438,17 @@ gll-info/
 | 1. Foundation | 4 | Medium | DONE |
 | 2. Core File Block | 3 | Medium | DONE |
 | 3. Overview Block | 5 | Low | DONE (integrated) |
-| 4. Frequency Response | 5 | High | PARTIAL (structure done, chart impl pending) |
+| 4. Frequency Response | 5 | High | DONE |
 | 5. Polar Plot | 4 | Medium | TODO |
 | 6. 3D Balloon | 5 | High | TODO |
-| 7. Sources List | 3 | Low | PARTIAL (integrated) |
+| 7. Sources List | 3 | Low | DONE (integrated) |
 | 8. Resources | 4 | Medium | TODO |
 | 9. Configuration | 4 | Medium | TODO |
 | 10. Integration | 5 | Medium | TODO |
 | 11. Testing | 5 | Medium | TODO |
 
 **Total: 47 tasks across 11 phases**
-**Completed: ~25 tasks (Phases 1-3, 4.1-4.2, partial 7)**
+**Completed: ~30 tasks (Phases 1-4, 7)**
 
 ---
 
