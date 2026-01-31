@@ -1,6 +1,99 @@
 <?php
 // This file is generated. Do not modify it manually.
 return array(
+	'frequency-response' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/frequency-response',
+		'version' => '0.1.0',
+		'title' => 'GLL Frequency Response',
+		'category' => 'media',
+		'icon' => 'chart-line',
+		'description' => 'Display frequency response chart from GLL file acoustic data with interactive controls.',
+		'keywords' => array(
+			'gll',
+			'frequency',
+			'response',
+			'chart',
+			'acoustic'
+		),
+		'parent' => array(
+			'gll-info/gll-info'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'sourceIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'responseIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'phaseMode' => array(
+				'type' => 'string',
+				'default' => 'unwrapped',
+				'enum' => array(
+					'unwrapped',
+					'wrapped',
+					'group-delay'
+				)
+			),
+			'normalized' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'azimuth' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'elevation' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'showPhase' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showMagnitude' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'chartHeight' => array(
+				'type' => 'number',
+				'default' => 400
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll',
+				'phaseMode' => 'unwrapped'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
+	),
 	'gll-info' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
@@ -37,6 +130,19 @@ return array(
 			'showSources' => array(
 				'type' => 'boolean',
 				'default' => true
+			),
+			'sourcesDisplayMode' => array(
+				'type' => 'string',
+				'default' => 'expandable',
+				'enum' => array(
+					'compact',
+					'detailed',
+					'expandable'
+				)
+			),
+			'showSourceResponseCharts' => array(
+				'type' => 'boolean',
+				'default' => false
 			),
 			'showResponses' => array(
 				'type' => 'boolean',
