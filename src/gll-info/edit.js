@@ -4,13 +4,13 @@
  * @package GllInfo
  */
 
-import { __ } from '@wordpress/i18n';
+import { __ } from "@wordpress/i18n";
 import {
 	useBlockProps,
 	InspectorControls,
 	MediaUpload,
 	MediaUploadCheck,
-} from '@wordpress/block-editor';
+} from "@wordpress/block-editor";
 import {
 	PanelBody,
 	Button,
@@ -18,10 +18,10 @@ import {
 	ToggleControl,
 	SelectControl,
 	Placeholder,
-} from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
-import { useGLLLoader } from '../shared';
-import './editor.scss';
+} from "@wordpress/components";
+import { useState, useEffect, useMemo } from "@wordpress/element";
+import { useGLLLoader } from "../shared";
+import "./editor.scss";
 
 /**
  * GLL File placeholder icon.
@@ -52,8 +52,8 @@ function GLLIcon() {
  * @param {Object} props.data Parsed GLL data.
  * @return {JSX.Element} Overview component.
  */
-function GLLOverview( { data } ) {
-	if ( ! data ) {
+function GLLOverview({ data }) {
+	if (!data) {
 		return null;
 	}
 
@@ -61,64 +61,60 @@ function GLLOverview( { data } ) {
 
 	return (
 		<div className="gll-overview">
-			{ GenSystem && (
+			{GenSystem && (
 				<div className="gll-section">
-					<h4>{ __( 'System Information', 'gll-info' ) }</h4>
+					<h4>{__("System Information", "gll-info")}</h4>
 					<table className="gll-info-table">
 						<tbody>
-							{ GenSystem.Label && (
+							{GenSystem.Label && (
 								<tr>
-									<th>{ __( 'Label', 'gll-info' ) }</th>
-									<td>{ GenSystem.Label }</td>
+									<th>{__("Label", "gll-info")}</th>
+									<td>{GenSystem.Label}</td>
 								</tr>
-							) }
-							{ GenSystem.Version && (
+							)}
+							{GenSystem.Version && (
 								<tr>
-									<th>{ __( 'Version', 'gll-info' ) }</th>
-									<td>{ GenSystem.Version }</td>
+									<th>{__("Version", "gll-info")}</th>
+									<td>{GenSystem.Version}</td>
 								</tr>
-							) }
-							{ GenSystem.SystemType !== undefined && (
+							)}
+							{GenSystem.SystemType !== undefined && (
 								<tr>
-									<th>{ __( 'Type', 'gll-info' ) }</th>
+									<th>{__("Type", "gll-info")}</th>
 									<td>
-										{ [
-											'Line Array',
-											'Cluster',
-											'Loudspeaker',
-										][ GenSystem.SystemType ] || 'Unknown' }
+										{["Line Array", "Cluster", "Loudspeaker"][
+											GenSystem.SystemType
+										] || "Unknown"}
 									</td>
 								</tr>
-							) }
-							{ GenSystem.Manufacturer && (
+							)}
+							{GenSystem.Manufacturer && (
 								<tr>
-									<th>
-										{ __( 'Manufacturer', 'gll-info' ) }
-									</th>
-									<td>{ GenSystem.Manufacturer }</td>
+									<th>{__("Manufacturer", "gll-info")}</th>
+									<td>{GenSystem.Manufacturer}</td>
 								</tr>
-							) }
+							)}
 						</tbody>
 					</table>
 				</div>
-			) }
+			)}
 
-			{ Metadata && Metadata.Description && (
+			{placementsList}
+			{Metadata && Metadata.Description && (
 				<div className="gll-section">
-					<h4>{ __( 'Description', 'gll-info' ) }</h4>
-					<p>{ Metadata.Description }</p>
+					<h4>{__("Description", "gll-info")}</h4>
+					<p>{Metadata.Description}</p>
 				</div>
-			) }
+			)}
 
-			{ Header && (
+			{Header && (
 				<div className="gll-section gll-section-muted">
 					<small>
-						{ __( 'Format Version:', 'gll-info' ) }{ ' ' }
-						{ Header.FormatVersion } |{ __( 'Valid:', 'gll-info' ) }{ ' ' }
-						{ Header.ChecksumValid ? 'Yes' : 'No' }
+						{__("Format Version:", "gll-info")} {Header.FormatVersion} |
+						{__("Valid:", "gll-info")} {Header.ChecksumValid ? "Yes" : "No"}
 					</small>
 				</div>
-			) }
+			)}
 		</div>
 	);
 }
@@ -129,14 +125,14 @@ function GLLOverview( { data } ) {
  * @param {number} hz Frequency in Hz.
  * @return {string} Formatted frequency string.
  */
-function formatFrequency( hz ) {
-	if ( ! hz ) {
-		return '-';
+function formatFrequency(hz) {
+	if (!hz) {
+		return "-";
 	}
-	if ( hz >= 1000 ) {
-		return `${ ( hz / 1000 ).toFixed( 1 ) } kHz`;
+	if (hz >= 1000) {
+		return `${(hz / 1000).toFixed(1)} kHz`;
 	}
-	return `${ Math.round( hz ) } Hz`;
+	return `${Math.round(hz)} Hz`;
 }
 
 /**
@@ -145,14 +141,178 @@ function formatFrequency( hz ) {
  * @param {number} dataType Data type enum value.
  * @return {string} Formatted data type.
  */
-function formatDataType( dataType ) {
+function formatDataType(dataType) {
 	const types = {
-		0: 'Unknown',
-		1: 'Pressure',
-		2: 'Velocity',
-		3: 'Intensity',
+		0: "Unknown",
+		1: "Pressure",
+		2: "Velocity",
+		3: "Intensity",
 	};
-	return types[ dataType ] || 'Unknown';
+	return types[dataType] || "Unknown";
+}
+
+/**
+ * Format a number with up to one decimal place.
+ *
+ * @param {number} value Numeric value.
+ * @return {string|null} Formatted number or null if invalid.
+ */
+function formatNumber(value) {
+	if (typeof value !== "number" || Number.isNaN(value)) {
+		return null;
+	}
+	const rounded = Math.round(value * 10) / 10;
+	return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+}
+
+/**
+ * Format angle in degrees.
+ *
+ * @param {number} angle Angle in degrees.
+ * @return {string} Formatted angle string.
+ */
+function formatAngleDegrees(angle) {
+	const formatted = formatNumber(angle);
+	return formatted === null ? "-" : `${formatted}°`;
+}
+
+/**
+ * Format position coordinates in mm.
+ *
+ * @param {Object|Array} position Position data.
+ * @return {string} Formatted position string.
+ */
+function formatPosition(position) {
+	if (!position) {
+		return "-";
+	}
+
+	const x = position.x ?? position.X ?? position[0];
+	const y = position.y ?? position.Y ?? position[1];
+	const z = position.z ?? position.Z ?? position[2];
+
+	const formattedX = formatNumber(x);
+	const formattedY = formatNumber(y);
+	const formattedZ = formatNumber(z);
+
+	if (formattedX === null && formattedY === null && formattedZ === null) {
+		return "-";
+	}
+
+	return [
+		`X: ${formattedX === null ? "-" : `${formattedX} mm`}`,
+		`Y: ${formattedY === null ? "-" : `${formattedY} mm`}`,
+		`Z: ${formattedZ === null ? "-" : `${formattedZ} mm`}`,
+	].join(", ");
+}
+
+/**
+ * Normalize value to array.
+ *
+ * @param {Array|Object} value Value to normalize.
+ * @return {Array} Array of items.
+ */
+function toArray(value) {
+	if (!value) {
+		return [];
+	}
+	if (Array.isArray(value)) {
+		return value;
+	}
+	if (typeof value === "object") {
+		return Object.values(value);
+	}
+	return [];
+}
+
+/**
+ * Build a map of source definition keys to placement instances.
+ *
+ * @param {Object} data Parsed GLL data.
+ * @return {Map<string, Array>} Map of source key to placements.
+ */
+function buildSourcePlacementsMap(data) {
+	const map = new Map();
+	if (!data?.Database) {
+		return map;
+	}
+
+	const sourceDefinitions = Array.isArray(data.Database.SourceDefinitions)
+		? data.Database.SourceDefinitions
+		: [];
+	const boxTypes = toArray(
+		data.Database.BoxTypes ||
+			data.Database.box_types ||
+			data.Database.Box_Types,
+	);
+
+	boxTypes.forEach((boxType) => {
+		const placements = toArray(
+			boxType?.SourcePlacements ||
+				boxType?.source_placements ||
+				boxType?.Sources ||
+				boxType?.SourceDefinitions ||
+				boxType?.SourcePlacement,
+		);
+
+		if (placements.length === 0) {
+			return;
+		}
+
+		const boxLabel =
+			boxType?.Label ||
+			boxType?.Name ||
+			boxType?.Key ||
+			__("Unknown", "gll-info");
+		const boxKey = boxType?.Key || boxType?.Id || boxType?.Name || "-";
+
+		placements.forEach((placement) => {
+			const sourceKey =
+				placement?.SourceDefinitionKey ||
+				placement?.SourceDefinition?.Key ||
+				placement?.SourceDefinition?.KeyRef ||
+				placement?.SourceKey ||
+				placement?.Source?.Key ||
+				(typeof placement?.SourceIndex === "number"
+					? sourceDefinitions[placement.SourceIndex]?.Key
+					: null) ||
+				placement?.Key;
+
+			if (!sourceKey) {
+				return;
+			}
+
+			const entry = {
+				boxLabel,
+				boxKey,
+				sourceLabel:
+					placement?.Label ||
+					placement?.SourceLabel ||
+					placement?.Source?.Label ||
+					placement?.SourceName,
+				sourceKey,
+				position:
+					placement?.Position ||
+					placement?.PositionMM ||
+					placement?.PositionMm ||
+					placement?.Offset ||
+					placement?.Location ||
+					placement?.Coordinates,
+				rotation:
+					placement?.Rotation ||
+					placement?.RotationAngles ||
+					placement?.Orientation ||
+					placement?.Angles ||
+					placement?.Euler,
+			};
+
+			const existing = map.get(sourceKey) || [];
+			existing.push(entry);
+			map.set(sourceKey, existing);
+		});
+	});
+
+	return map;
 }
 
 /**
@@ -160,6 +320,7 @@ function formatDataType( dataType ) {
  *
  * @param {Object}   props                Component props.
  * @param {Object}   props.source         Source data.
+ * @param {Array}    props.placements     Placement data for this source.
  * @param {number}   props.index          Source index.
  * @param {string}   props.displayMode    Display mode (compact, detailed, expandable).
  * @param {boolean}  props.showCharts     Whether to show response charts.
@@ -167,83 +328,130 @@ function formatDataType( dataType ) {
  * @param {Function} props.onToggle       Toggle callback.
  * @return {JSX.Element} Source card component.
  */
-function SourceCard( {
+function SourceCard({
 	source,
+	placements = [],
 	index,
 	displayMode,
 	showCharts,
 	isExpanded,
 	onToggle,
-} ) {
+}) {
 	const def = source.Definition || {};
 	const balloon = def.BalloonData;
 	const responseCount = source.Responses?.length || 0;
+	const placementCount = placements.length;
+
+	const placementsList = (
+		<div className="gll-source-placements">
+			<details>
+				<summary>
+					{__("Placements", "gll-info")} ({placementCount})
+				</summary>
+				<div className="gll-source-placements-list">
+					{placementCount === 0 && (
+						<div className="gll-empty-state gll-source-placements-empty">
+							{__("No placements found", "gll-info")}
+						</div>
+					)}
+					{placements.map((placement, placementIndex) => {
+						const rotation = placement.rotation || {};
+						const heading =
+							rotation.Heading ??
+							rotation.H ??
+							rotation.Yaw ??
+							rotation.Azimuth;
+						const vertical =
+							rotation.Vertical ??
+							rotation.V ??
+							rotation.Pitch ??
+							rotation.Elevation;
+						const roll = rotation.Roll ?? rotation.R;
+
+						return (
+							<div className="gll-source-placement" key={placementIndex}>
+								<div className="gll-source-placement-detail">
+									<strong>{__("Box:", "gll-info")}</strong>
+									{placement.boxLabel}{" "}
+									{placement.boxKey ? `(${placement.boxKey})` : ""}
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>{__("Source:", "gll-info")}</strong>
+									{placement.sourceLabel || placement.sourceKey} (
+									{placement.sourceKey})
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>{__("Position:", "gll-info")}</strong>
+									{formatPosition(placement.position)}
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>{__("Rotation:", "gll-info")}</strong>
+									{__("H", "gll-info")}: {formatAngleDegrees(heading)},
+									{__("V", "gll-info")}: {formatAngleDegrees(vertical)},
+									{__("R", "gll-info")}: {formatAngleDegrees(roll)}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</details>
+		</div>
+	);
 
 	// Compact mode: single line
-	if ( displayMode === 'compact' ) {
+	if (displayMode === "compact") {
 		return (
 			<div className="gll-source-card gll-source-compact">
 				<div className="gll-source-header">
-					<span className="gll-source-label">
-						{ def.Label || source.Key }
-					</span>
-					<span className="gll-source-key">{ source.Key }</span>
-					{ def.NominalBandwidthFrom && def.NominalBandwidthTo && (
+					<span className="gll-source-label">{def.Label || source.Key}</span>
+					<span className="gll-source-key">{source.Key}</span>
+					{def.NominalBandwidthFrom && def.NominalBandwidthTo && (
 						<span className="gll-source-bandwidth">
-							{ formatFrequency( def.NominalBandwidthFrom ) } -{ ' ' }
-							{ formatFrequency( def.NominalBandwidthTo ) }
+							{formatFrequency(def.NominalBandwidthFrom)} -{" "}
+							{formatFrequency(def.NominalBandwidthTo)}
 						</span>
-					) }
+					)}
 				</div>
 			</div>
 		);
 	}
 
 	// Detailed mode: always expanded
-	if ( displayMode === 'detailed' ) {
+	if (displayMode === "detailed") {
 		return (
 			<div className="gll-source-card gll-source-detailed">
 				<div className="gll-source-header">
 					<div className="gll-source-title">
-						<span className="gll-source-label">
-							{ def.Label || 'Unknown' }
-						</span>
+						<span className="gll-source-label">{def.Label || "Unknown"}</span>
 					</div>
-					<span className="gll-source-key">{ source.Key }</span>
+					<span className="gll-source-key">{source.Key}</span>
 				</div>
 				<div className="gll-source-content">
 					<div className="gll-source-details">
 						<div className="gll-source-detail">
-							<strong>{ __( 'Bandwidth:', 'gll-info' ) }</strong>{ ' ' }
-							{ formatFrequency( def.NominalBandwidthFrom ) } -{ ' ' }
-							{ formatFrequency( def.NominalBandwidthTo ) }
+							<strong>{__("Bandwidth:", "gll-info")}</strong>{" "}
+							{formatFrequency(def.NominalBandwidthFrom)} -{" "}
+							{formatFrequency(def.NominalBandwidthTo)}
 						</div>
 						<div className="gll-source-detail">
-							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong>{ ' ' }
-							{ formatDataType( def.DataType ) }
+							<strong>{__("Data Type:", "gll-info")}</strong>{" "}
+							{formatDataType(def.DataType)}
 						</div>
-						{ balloon && (
+						{balloon && (
 							<>
 								<div className="gll-source-detail">
-									<strong>
-										{ __( 'Responses:', 'gll-info' ) }
-									</strong>{ ' ' }
-									{ responseCount }
+									<strong>{__("Responses:", "gll-info")}</strong>{" "}
+									{responseCount}
 								</div>
 								<div className="gll-source-detail">
-									<strong>
-										{ __( 'Resolution:', 'gll-info' ) }
-									</strong>{ ' ' }
-									{ balloon.AngularResolution?.MeridianStep ||
-										0 }
-									° ×{ ' ' }
-									{ balloon.AngularResolution?.ParallelStep ||
-										0 }
-									°
+									<strong>{__("Resolution:", "gll-info")}</strong>{" "}
+									{balloon.AngularResolution?.MeridianStep || 0}° ×{" "}
+									{balloon.AngularResolution?.ParallelStep || 0}°
 								</div>
 							</>
-						) }
+						)}
 					</div>
+					{placementsList}
 				</div>
 			</div>
 		);
@@ -252,80 +460,66 @@ function SourceCard( {
 	// Expandable mode: collapsible cards
 	return (
 		<div
-			className={ `gll-source-card gll-source-collapsible ${
-				isExpanded ? 'is-expanded' : ''
-			}` }
+			className={`gll-source-card gll-source-collapsible ${
+				isExpanded ? "is-expanded" : ""
+			}`}
 		>
 			<button
 				className="gll-source-header gll-source-header-toggle"
-				onClick={ onToggle }
-				aria-expanded={ isExpanded }
+				onClick={onToggle}
+				aria-expanded={isExpanded}
 				type="button"
 			>
 				<div className="gll-source-title">
-					<span className="gll-source-toggle">
-						{ isExpanded ? '▼' : '▶' }
-					</span>
-					<span className="gll-source-label">
-						{ def.Label || 'Unknown' }
-					</span>
+					<span className="gll-source-toggle">{isExpanded ? "▼" : "▶"}</span>
+					<span className="gll-source-label">{def.Label || "Unknown"}</span>
 				</div>
-				<span className="gll-source-key">{ source.Key }</span>
+				<span className="gll-source-key">{source.Key}</span>
 			</button>
-			{ isExpanded && (
+			{isExpanded && (
 				<div className="gll-source-content">
 					<div className="gll-source-details">
 						<div className="gll-source-detail">
-							<strong>{ __( 'Bandwidth:', 'gll-info' ) }</strong>{ ' ' }
-							{ formatFrequency( def.NominalBandwidthFrom ) } -{ ' ' }
-							{ formatFrequency( def.NominalBandwidthTo ) }
+							<strong>{__("Bandwidth:", "gll-info")}</strong>{" "}
+							{formatFrequency(def.NominalBandwidthFrom)} -{" "}
+							{formatFrequency(def.NominalBandwidthTo)}
 						</div>
 						<div className="gll-source-detail">
-							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong>{ ' ' }
-							{ formatDataType( def.DataType ) }
+							<strong>{__("Data Type:", "gll-info")}</strong>{" "}
+							{formatDataType(def.DataType)}
 						</div>
-						{ balloon && (
+						{balloon && (
 							<>
 								<div className="gll-source-detail">
-									<strong>
-										{ __( 'Responses:', 'gll-info' ) }
-									</strong>{ ' ' }
-									{ responseCount }
+									<strong>{__("Responses:", "gll-info")}</strong>{" "}
+									{responseCount}
 								</div>
 								<div className="gll-source-detail">
-									<strong>
-										{ __( 'Resolution:', 'gll-info' ) }
-									</strong>{ ' ' }
-									{ balloon.AngularResolution?.MeridianStep ||
-										0 }
-									° ×{ ' ' }
-									{ balloon.AngularResolution?.ParallelStep ||
-										0 }
-									°
+									<strong>{__("Resolution:", "gll-info")}</strong>{" "}
+									{balloon.AngularResolution?.MeridianStep || 0}° ×{" "}
+									{placementsList}
+									{balloon.AngularResolution?.ParallelStep || 0}°
 								</div>
 							</>
-						) }
+						)}
 					</div>
-					{ showCharts && responseCount > 0 && (
+					{showCharts && responseCount > 0 && (
 						<div className="gll-source-response">
 							<p className="gll-info-message">
-								{ __(
-									'Response charts will be available in a future update.',
-									'gll-info'
-								) }
+								{__(
+									"Response charts will be available in a future update.",
+									"gll-info",
+								)}
 							</p>
 						</div>
-					) }
-					{ ! responseCount && (
+					)}
+					{!responseCount && (
 						<div className="gll-empty-state">
-							{ __(
-								'No frequency response data available',
-								'gll-info'
-							) }
+							{__("No frequency response data available", "gll-info")}
 						</div>
-					) }
+					)}
 				</div>
-			) }
+			)}
 		</div>
 	);
 }
@@ -339,18 +533,15 @@ function SourceCard( {
  * @param {boolean} props.showCharts  Whether to show response charts.
  * @return {JSX.Element} Sources list component.
  */
-function GLLSources( {
-	data,
-	displayMode = 'expandable',
-	showCharts = false,
-} ) {
-	const [ expandedSources, setExpandedSources ] = useState( {} );
+function GLLSources({ data, displayMode = "expandable", showCharts = false }) {
+	const [expandedSources, setExpandedSources] = useState({});
+	const placementsMap = useMemo(() => buildSourcePlacementsMap(data), [data]);
 
-	if ( ! data?.Database?.SourceDefinitions?.length ) {
+	if (!data?.Database?.SourceDefinitions?.length) {
 		return (
 			<div className="gll-sources">
 				<div className="gll-empty-state">
-					{ __( 'No source definitions found', 'gll-info' ) }
+					{__("No source definitions found", "gll-info")}
 				</div>
 			</div>
 		);
@@ -358,30 +549,31 @@ function GLLSources( {
 
 	const sources = data.Database.SourceDefinitions;
 
-	const handleToggle = ( index ) => {
-		setExpandedSources( ( prev ) => ( {
+	const handleToggle = (index) => {
+		setExpandedSources((prev) => ({
 			...prev,
-			[ index ]: ! prev[ index ],
-		} ) );
+			[index]: !prev[index],
+		}));
 	};
 
 	return (
 		<div className="gll-sources">
 			<h4>
-				{ __( 'Acoustic Sources', 'gll-info' ) } ({ sources.length })
+				{__("Acoustic Sources", "gll-info")} ({sources.length})
 			</h4>
 			<div className="gll-sources-list">
-				{ sources.map( ( source, index ) => (
+				{sources.map((source, index) => (
 					<SourceCard
-						key={ index }
-						source={ source }
-						index={ index }
-						displayMode={ displayMode }
-						showCharts={ showCharts }
-						isExpanded={ expandedSources[ index ] || false }
-						onToggle={ () => handleToggle( index ) }
+						key={index}
+						source={source}
+						index={index}
+						displayMode={displayMode}
+						showCharts={showCharts}
+						placements={placementsMap.get(source.Key) || []}
+						isExpanded={expandedSources[index] || false}
+						onToggle={() => handleToggle(index)}
 					/>
-				) ) }
+				))}
 			</div>
 		</div>
 	);
@@ -395,7 +587,7 @@ function GLLSources( {
  * @param {Function} props.setAttributes Function to set attributes.
  * @return {JSX.Element} Editor component.
  */
-export default function Edit( { attributes, setAttributes } ) {
+export default function Edit({ attributes, setAttributes }) {
 	const {
 		fileId,
 		fileUrl,
@@ -407,32 +599,32 @@ export default function Edit( { attributes, setAttributes } ) {
 		showResponses,
 	} = attributes;
 	const { data, isLoading, error, load, clear } = useGLLLoader();
-	const [ loadAttempted, setLoadAttempted ] = useState( false );
+	const [loadAttempted, setLoadAttempted] = useState(false);
 
-	const blockProps = useBlockProps( {
-		className: 'gll-info-block',
-	} );
+	const blockProps = useBlockProps({
+		className: "gll-info-block",
+	});
 
 	// Load file when URL changes.
-	useEffect( () => {
-		if ( fileUrl && ! data && ! isLoading && ! loadAttempted ) {
-			setLoadAttempted( true );
-			load( fileUrl, true );
+	useEffect(() => {
+		if (fileUrl && !data && !isLoading && !loadAttempted) {
+			setLoadAttempted(true);
+			load(fileUrl, true);
 		}
-	}, [ fileUrl, data, isLoading, load, loadAttempted ] );
+	}, [fileUrl, data, isLoading, load, loadAttempted]);
 
 	/**
 	 * Handle file selection from media library.
 	 *
 	 * @param {Object} media Selected media object.
 	 */
-	const onSelectMedia = ( media ) => {
-		setAttributes( {
+	const onSelectMedia = (media) => {
+		setAttributes({
 			fileId: media.id,
 			fileUrl: media.url,
 			fileName: media.filename || media.title,
-		} );
-		setLoadAttempted( false );
+		});
+		setLoadAttempted(false);
 		clear();
 	};
 
@@ -440,39 +632,36 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Handle file removal.
 	 */
 	const onRemoveMedia = () => {
-		setAttributes( {
+		setAttributes({
 			fileId: 0,
-			fileUrl: '',
-			fileName: '',
-		} );
+			fileUrl: "",
+			fileName: "",
+		});
 		clear();
-		setLoadAttempted( false );
+		setLoadAttempted(false);
 	};
 
 	// Render placeholder if no file selected.
-	if ( ! fileUrl ) {
+	if (!fileUrl) {
 		return (
-			<div { ...blockProps }>
+			<div {...blockProps}>
 				<Placeholder
-					icon={ <GLLIcon /> }
-					label={ __( 'GLL File Viewer', 'gll-info' ) }
-					instructions={ __(
-						'Select a GLL file from your media library to display loudspeaker data.',
-						'gll-info'
-					) }
+					icon={<GLLIcon />}
+					label={__("GLL File Viewer", "gll-info")}
+					instructions={__(
+						"Select a GLL file from your media library to display loudspeaker data.",
+						"gll-info",
+					)}
 				>
 					<MediaUploadCheck>
 						<MediaUpload
-							onSelect={ onSelectMedia }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							render={ ( { open } ) => (
-								<Button variant="primary" onClick={ open }>
-									{ __( 'Select GLL File', 'gll-info' ) }
+							onSelect={onSelectMedia}
+							allowedTypes={["application/x-gll", "application/octet-stream"]}
+							render={({ open }) => (
+								<Button variant="primary" onClick={open}>
+									{__("Select GLL File", "gll-info")}
 								</Button>
-							) }
+							)}
 						/>
 					</MediaUploadCheck>
 				</Placeholder>
@@ -483,153 +672,129 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={ __( 'File', 'gll-info' ) }>
+				<PanelBody title={__("File", "gll-info")}>
 					<p>
-						<strong>{ fileName }</strong>
+						<strong>{fileName}</strong>
 					</p>
 					<MediaUploadCheck>
 						<MediaUpload
-							onSelect={ onSelectMedia }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							render={ ( { open } ) => (
+							onSelect={onSelectMedia}
+							allowedTypes={["application/x-gll", "application/octet-stream"]}
+							render={({ open }) => (
 								<Button
 									variant="secondary"
-									onClick={ open }
-									style={ { marginRight: '8px' } }
+									onClick={open}
+									style={{ marginRight: "8px" }}
 								>
-									{ __( 'Replace', 'gll-info' ) }
+									{__("Replace", "gll-info")}
 								</Button>
-							) }
+							)}
 						/>
 					</MediaUploadCheck>
-					<Button
-						variant="link"
-						isDestructive
-						onClick={ onRemoveMedia }
-					>
-						{ __( 'Remove', 'gll-info' ) }
+					<Button variant="link" isDestructive onClick={onRemoveMedia}>
+						{__("Remove", "gll-info")}
 					</Button>
 				</PanelBody>
 
-				<PanelBody title={ __( 'Display Options', 'gll-info' ) }>
+				<PanelBody title={__("Display Options", "gll-info")}>
 					<ToggleControl
-						label={ __( 'Show Overview', 'gll-info' ) }
-						checked={ showOverview }
-						onChange={ ( value ) =>
-							setAttributes( { showOverview: value } )
-						}
+						label={__("Show Overview", "gll-info")}
+						checked={showOverview}
+						onChange={(value) => setAttributes({ showOverview: value })}
 					/>
 					<ToggleControl
-						label={ __( 'Show Sources', 'gll-info' ) }
-						checked={ showSources }
-						onChange={ ( value ) =>
-							setAttributes( { showSources: value } )
-						}
+						label={__("Show Sources", "gll-info")}
+						checked={showSources}
+						onChange={(value) => setAttributes({ showSources: value })}
 					/>
-					{ showSources && (
+					{showSources && (
 						<>
 							<SelectControl
-								label={ __(
-									'Sources Display Mode',
-									'gll-info'
-								) }
-								value={ sourcesDisplayMode }
-								options={ [
+								label={__("Sources Display Mode", "gll-info")}
+								value={sourcesDisplayMode}
+								options={[
 									{
-										label: __( 'Compact', 'gll-info' ),
-										value: 'compact',
+										label: __("Compact", "gll-info"),
+										value: "compact",
 									},
 									{
-										label: __( 'Detailed', 'gll-info' ),
-										value: 'detailed',
+										label: __("Detailed", "gll-info"),
+										value: "detailed",
 									},
 									{
-										label: __( 'Expandable', 'gll-info' ),
-										value: 'expandable',
+										label: __("Expandable", "gll-info"),
+										value: "expandable",
 									},
-								] }
-								onChange={ ( value ) =>
-									setAttributes( {
+								]}
+								onChange={(value) =>
+									setAttributes({
 										sourcesDisplayMode: value,
-									} )
+									})
 								}
-								help={ __(
-									'Choose how source information is displayed',
-									'gll-info'
-								) }
+								help={__(
+									"Choose how source information is displayed",
+									"gll-info",
+								)}
 							/>
 							<ToggleControl
-								label={ __(
-									'Show Response Charts',
-									'gll-info'
-								) }
-								checked={ showSourceResponseCharts }
-								onChange={ ( value ) =>
-									setAttributes( {
+								label={__("Show Response Charts", "gll-info")}
+								checked={showSourceResponseCharts}
+								onChange={(value) =>
+									setAttributes({
 										showSourceResponseCharts: value,
-									} )
+									})
 								}
-								help={ __(
-									'Display frequency response charts for each source (coming soon)',
-									'gll-info'
-								) }
+								help={__(
+									"Display frequency response charts for each source (coming soon)",
+									"gll-info",
+								)}
 							/>
 						</>
-					) }
+					)}
 					<ToggleControl
-						label={ __( 'Show Responses', 'gll-info' ) }
-						checked={ showResponses }
-						onChange={ ( value ) =>
-							setAttributes( { showResponses: value } )
-						}
-						help={ __(
-							'Coming soon: frequency response charts',
-							'gll-info'
-						) }
+						label={__("Show Responses", "gll-info")}
+						checked={showResponses}
+						onChange={(value) => setAttributes({ showResponses: value })}
+						help={__("Coming soon: frequency response charts", "gll-info")}
 					/>
 				</PanelBody>
 			</InspectorControls>
 
-			<div { ...blockProps }>
+			<div {...blockProps}>
 				<div className="gll-info-header">
 					<GLLIcon />
 					<div className="gll-info-header-text">
-						<h3>{ fileName }</h3>
-						{ data?.GenSystem?.Label && (
-							<p>{ data.GenSystem.Label }</p>
-						) }
+						<h3>{fileName}</h3>
+						{data?.GenSystem?.Label && <p>{data.GenSystem.Label}</p>}
 					</div>
 				</div>
 
-				{ isLoading && (
+				{isLoading && (
 					<div className="gll-info-loading">
 						<Spinner />
-						<span>{ __( 'Parsing GLL file...', 'gll-info' ) }</span>
+						<span>{__("Parsing GLL file...", "gll-info")}</span>
 					</div>
-				) }
+				)}
 
-				{ error && (
+				{error && (
 					<div className="gll-info-error">
-						<p>{ __( 'Error loading GLL file:', 'gll-info' ) }</p>
-						<code>{ error.message }</code>
+						<p>{__("Error loading GLL file:", "gll-info")}</p>
+						<code>{error.message}</code>
 					</div>
-				) }
+				)}
 
-				{ data && ! isLoading && (
+				{data && !isLoading && (
 					<div className="gll-info-content">
-						{ showOverview && <GLLOverview data={ data } /> }
-						{ showSources && (
+						{showOverview && <GLLOverview data={data} />}
+						{showSources && (
 							<GLLSources
-								data={ data }
-								displayMode={ sourcesDisplayMode }
-								showCharts={ showSourceResponseCharts }
+								data={data}
+								displayMode={sourcesDisplayMode}
+								showCharts={showSourceResponseCharts}
 							/>
-						) }
+						)}
 					</div>
-				) }
+				)}
 			</div>
 		</>
 	);
