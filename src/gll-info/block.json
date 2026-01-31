@@ -29,6 +29,15 @@
 			"type": "boolean",
 			"default": true
 		},
+		"sourcesDisplayMode": {
+			"type": "string",
+			"default": "expandable",
+			"enum": [ "compact", "detailed", "expandable" ]
+		},
+		"showSourceResponseCharts": {
+			"type": "boolean",
+			"default": false
+		},
 		"showResponses": {
 			"type": "boolean",
 			"default": true

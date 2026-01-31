@@ -6,7 +6,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls, MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
-import { PanelBody, Button, Spinner, ToggleControl, Placeholder } from '@wordpress/components';
+import { PanelBody, Button, Spinner, ToggleControl, SelectControl, Placeholder } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
 import { useGLLLoader } from '../shared';
 import './editor.scss';
@@ -96,34 +96,199 @@ function GLLOverview( { data } ) {
 }
 
 /**
+ * Format frequency in Hz or kHz.
+ *
+ * @param {number} hz Frequency in Hz.
+ * @return {string} Formatted frequency string.
+ */
+function formatFrequency( hz ) {
+	if ( ! hz ) {
+		return '-';
+	}
+	if ( hz >= 1000 ) {
+		return `${ ( hz / 1000 ).toFixed( 1 ) } kHz`;
+	}
+	return `${ Math.round( hz ) } Hz`;
+}
+
+/**
+ * Format data type enum to readable string.
+ *
+ * @param {number} dataType Data type enum value.
+ * @return {string} Formatted data type.
+ */
+function formatDataType( dataType ) {
+	const types = {
+		0: 'Unknown',
+		1: 'Pressure',
+		2: 'Velocity',
+		3: 'Intensity',
+	};
+	return types[ dataType ] || 'Unknown';
+}
+
+/**
+ * Single source card component with collapsible details.
+ *
+ * @param {Object}   props                Component props.
+ * @param {Object}   props.source         Source data.
+ * @param {number}   props.index          Source index.
+ * @param {string}   props.displayMode    Display mode (compact, detailed, expandable).
+ * @param {boolean}  props.showCharts     Whether to show response charts.
+ * @param {boolean}  props.isExpanded     Whether card is expanded.
+ * @param {Function} props.onToggle       Toggle callback.
+ * @return {JSX.Element} Source card component.
+ */
+function SourceCard( { source, index, displayMode, showCharts, isExpanded, onToggle } ) {
+	const def = source.Definition || {};
+	const balloon = def.BalloonData;
+	const responseCount = source.Responses?.length || 0;
+
+	// Compact mode: single line
+	if ( displayMode === 'compact' ) {
+		return (
+			<div className="gll-source-card gll-source-compact">
+				<div className="gll-source-header">
+					<span className="gll-source-label">{ def.Label || source.Key }</span>
+					<span className="gll-source-key">{ source.Key }</span>
+					{ def.NominalBandwidthFrom && def.NominalBandwidthTo && (
+						<span className="gll-source-bandwidth">
+							{ formatFrequency( def.NominalBandwidthFrom ) } - { formatFrequency( def.NominalBandwidthTo ) }
+						</span>
+					) }
+				</div>
+			</div>
+		);
+	}
+
+	// Detailed mode: always expanded
+	if ( displayMode === 'detailed' ) {
+		return (
+			<div className="gll-source-card gll-source-detailed">
+				<div className="gll-source-header">
+					<div className="gll-source-title">
+						<span className="gll-source-label">{ def.Label || 'Unknown' }</span>
+					</div>
+					<span className="gll-source-key">{ source.Key }</span>
+				</div>
+				<div className="gll-source-content">
+					<div className="gll-source-details">
+						<div className="gll-source-detail">
+							<strong>{ __( 'Bandwidth:', 'gll-info' ) }</strong> { formatFrequency( def.NominalBandwidthFrom ) } - { formatFrequency( def.NominalBandwidthTo ) }
+						</div>
+						<div className="gll-source-detail">
+							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong> { formatDataType( def.DataType ) }
+						</div>
+						{ balloon && (
+							<>
+								<div className="gll-source-detail">
+									<strong>{ __( 'Responses:', 'gll-info' ) }</strong> { responseCount }
+								</div>
+								<div className="gll-source-detail">
+									<strong>{ __( 'Resolution:', 'gll-info' ) }</strong> { balloon.AngularResolution?.MeridianStep || 0 }° × { balloon.AngularResolution?.ParallelStep || 0 }°
+								</div>
+							</>
+						) }
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Expandable mode: collapsible cards
+	return (
+		<div className={ `gll-source-card gll-source-collapsible ${ isExpanded ? 'is-expanded' : '' }` }>
+			<button
+				className="gll-source-header gll-source-header-toggle"
+				onClick={ onToggle }
+				aria-expanded={ isExpanded }
+				type="button"
+			>
+				<div className="gll-source-title">
+					<span className="gll-source-toggle">{ isExpanded ? '▼' : '▶' }</span>
+					<span className="gll-source-label">{ def.Label || 'Unknown' }</span>
+				</div>
+				<span className="gll-source-key">{ source.Key }</span>
+			</button>
+			{ isExpanded && (
+				<div className="gll-source-content">
+					<div className="gll-source-details">
+						<div className="gll-source-detail">
+							<strong>{ __( 'Bandwidth:', 'gll-info' ) }</strong> { formatFrequency( def.NominalBandwidthFrom ) } - { formatFrequency( def.NominalBandwidthTo ) }
+						</div>
+						<div className="gll-source-detail">
+							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong> { formatDataType( def.DataType ) }
+						</div>
+						{ balloon && (
+							<>
+								<div className="gll-source-detail">
+									<strong>{ __( 'Responses:', 'gll-info' ) }</strong> { responseCount }
+								</div>
+								<div className="gll-source-detail">
+									<strong>{ __( 'Resolution:', 'gll-info' ) }</strong> { balloon.AngularResolution?.MeridianStep || 0 }° × { balloon.AngularResolution?.ParallelStep || 0 }°
+								</div>
+							</>
+						) }
+					</div>
+					{ showCharts && responseCount > 0 && (
+						<div className="gll-source-response">
+							<p className="gll-info-message">{ __( 'Response charts will be available in a future update.', 'gll-info' ) }</p>
+						</div>
+					) }
+					{ ! responseCount && (
+						<div className="gll-empty-state">{ __( 'No frequency response data available', 'gll-info' ) }</div>
+					) }
+				</div>
+			) }
+		</div>
+	);
+}
+
+/**
  * Sources list component.
  *
- * @param {Object} props      Component props.
- * @param {Object} props.data Parsed GLL data.
+ * @param {Object}  props             Component props.
+ * @param {Object}  props.data        Parsed GLL data.
+ * @param {string}  props.displayMode Display mode (compact, detailed, expandable).
+ * @param {boolean} props.showCharts  Whether to show response charts.
  * @return {JSX.Element} Sources list component.
  */
-function GLLSources( { data } ) {
+function GLLSources( { data, displayMode = 'expandable', showCharts = false } ) {
+	const [ expandedSources, setExpandedSources ] = useState( {} );
+
 	if ( ! data?.Database?.SourceDefinitions?.length ) {
-		return null;
+		return (
+			<div className="gll-sources">
+				<div className="gll-empty-state">{ __( 'No source definitions found', 'gll-info' ) }</div>
+			</div>
+		);
 	}
 
 	const sources = data.Database.SourceDefinitions;
 
+	const handleToggle = ( index ) => {
+		setExpandedSources( ( prev ) => ( {
+			...prev,
+			[ index ]: ! prev[ index ],
+		} ) );
+	};
+
 	return (
 		<div className="gll-sources">
 			<h4>{ __( 'Acoustic Sources', 'gll-info' ) } ({ sources.length })</h4>
-			<ul className="gll-sources-list">
+			<div className="gll-sources-list">
 				{ sources.map( ( source, index ) => (
-					<li key={ index } className="gll-source-item">
-						<strong>{ source.Definition?.Label || source.Key }</strong>
-						{ source.Definition?.NominalBandwidthFrom && source.Definition?.NominalBandwidthTo && (
-							<span className="gll-source-bandwidth">
-								{ Math.round( source.Definition.NominalBandwidthFrom ) } - { Math.round( source.Definition.NominalBandwidthTo ) } Hz
-							</span>
-						) }
-					</li>
+					<SourceCard
+						key={ index }
+						source={ source }
+						index={ index }
+						displayMode={ displayMode }
+						showCharts={ showCharts }
+						isExpanded={ expandedSources[ index ] || false }
+						onToggle={ () => handleToggle( index ) }
+					/>
 				) ) }
-			</ul>
+			</div>
 		</div>
 	);
 }
@@ -137,7 +302,7 @@ function GLLSources( { data } ) {
  * @return {JSX.Element} Editor component.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const { fileId, fileUrl, fileName, showOverview, showSources, showResponses } = attributes;
+	const { fileId, fileUrl, fileName, showOverview, showSources, sourcesDisplayMode, showSourceResponseCharts, showResponses } = attributes;
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
@@ -238,6 +403,27 @@ export default function Edit( { attributes, setAttributes } ) {
 						checked={ showSources }
 						onChange={ ( value ) => setAttributes( { showSources: value } ) }
 					/>
+					{ showSources && (
+						<>
+							<SelectControl
+								label={ __( 'Sources Display Mode', 'gll-info' ) }
+								value={ sourcesDisplayMode }
+								options={ [
+									{ label: __( 'Compact', 'gll-info' ), value: 'compact' },
+									{ label: __( 'Detailed', 'gll-info' ), value: 'detailed' },
+									{ label: __( 'Expandable', 'gll-info' ), value: 'expandable' },
+								] }
+								onChange={ ( value ) => setAttributes( { sourcesDisplayMode: value } ) }
+								help={ __( 'Choose how source information is displayed', 'gll-info' ) }
+							/>
+							<ToggleControl
+								label={ __( 'Show Response Charts', 'gll-info' ) }
+								checked={ showSourceResponseCharts }
+								onChange={ ( value ) => setAttributes( { showSourceResponseCharts: value } ) }
+								help={ __( 'Display frequency response charts for each source (coming soon)', 'gll-info' ) }
+							/>
+						</>
+					) }
 					<ToggleControl
 						label={ __( 'Show Responses', 'gll-info' ) }
 						checked={ showResponses }
@@ -275,7 +461,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				{ data && ! isLoading && (
 					<div className="gll-info-content">
 						{ showOverview && <GLLOverview data={ data } /> }
-						{ showSources && <GLLSources data={ data } /> }
+						{ showSources && <GLLSources data={ data } displayMode={ sourcesDisplayMode } showCharts={ showSourceResponseCharts } /> }
 					</div>
 				) }
 			</div>

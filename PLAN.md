@@ -183,115 +183,462 @@ Based on the web demo, these Gutenberg blocks will be created:
 
 ## Phase 5: Polar Plot Block
 
+**Reference:** `gll-tools/web/modules/visualization.js` (lines 1-842), `app.js` (polar chart section)
+
 ### Task 5.1: Polar Chart Setup
-- [ ] Configure Chart.js for polar/radar chart
-- [ ] Create polar chart React component
+- [ ] Configure Chart.js type `radar` with `startAngle: 90` (puts front on RIGHT)
+- [ ] Create polar chart React component wrapper
+- [ ] Implement dual dataset rendering (Horizontal blue #2563eb, Vertical red #dc2626)
+- [ ] Port `computePolarSlices()` logic from web demo
 
 ### Task 5.2: Polar Plot Block Structure
 - [ ] Create block registration (`gll-info/polar-plot`)
-- [ ] Define attributes (plane, frequency, source)
+- [ ] Define attributes:
+  - `fileId`, `fileUrl`, `fileName` (GLL file reference)
+  - `sourceIndex` (selected acoustic source)
+  - `frequencyIndex` (selected frequency index)
+  - `showHorizontal`, `showVertical` (plane visibility toggles)
+  - `normalized` (normalize to max level)
+  - `chartHeight` (200-800px)
+- [ ] Create edit.js with InspectorControls
+- [ ] Create save.js with data attributes
+- [ ] Create view.js for frontend rendering
+- [ ] Create editor.scss and style.scss
 
 ### Task 5.3: Polar Visualization
-- [ ] Port polar chart from web demo
-- [ ] Implement horizontal/vertical plane toggle
-- [ ] Add frequency selector with slider
-- [ ] Display dB scale rings
+- [ ] Extract balloon_data from source via WASM
+- [ ] Compute horizontal slice (meridian 90°/270°: Front-Right-Back-Left)
+- [ ] Compute vertical slice (meridian 0°/180°: Front-Top-Back-Bottom)
+- [ ] Map levels to Chart.js radar data points
+- [ ] Handle symmetry-based data mirroring if applicable
+- [ ] Display dB scale rings (Chart.js default radial grid)
+- [ ] Implement normalization (independent per slice to local max)
 
-### Task 5.4: Polar Controls
-- [ ] Plane selector (Horizontal/Vertical)
-- [ ] Frequency dropdown and slider
-- [ ] Source selector (if multiple sources)
+### Task 5.4: Custom Chart.js Plugin - Polar Compass
+- [ ] Create `polarCompassPlugin` (renders Front/Back/Right/Left/Top/Bottom labels)
+- [ ] Position labels around radar perimeter
+- [ ] Use different colors for horizontal (blue) vs vertical (red) slice labels
+- [ ] Shared labels: Front (right), Back (left)
+- [ ] Horizontal-only: Right (top), Left (bottom)
+- [ ] Vertical-only: Top (top), Bottom (bottom)
+
+### Task 5.5: Polar Controls
+- [ ] Source selector dropdown (InspectorControls)
+- [ ] Frequency dropdown (populated from source's available frequencies)
+- [ ] Frequency slider (logarithmic mapping, syncs with dropdown)
+- [ ] Plane visibility toggles (ToggleControl for horizontal/vertical)
+- [ ] Normalization checkbox (ToggleControl)
+- [ ] Chart height slider (RangeControl 200-800px)
+
+### Task 5.6: Polar Metadata Display
+- [ ] Show selected frequency (formatted: "1.0 kHz", "50 Hz")
+- [ ] Display symmetry type (if applicable from balloon_data)
+- [ ] Show angular resolution (meridian/parallel step sizes)
+- [ ] Show normalization status badge
+- [ ] Display measurement conditions (front-half only, uses on-axis, etc.)
+- [ ] Style badges with responsive flexbox layout
 
 ---
 
 ## Phase 6: 3D Balloon Block
 
+**Reference:** `gll-tools/web/modules/visualization.js` (lines 843-1226, `buildBalloonGeometry` lines 990-1153)
+
 ### Task 6.1: Three.js Integration
-- [ ] Add Three.js as dependency
-- [ ] Create React wrapper for Three.js scene
-- [ ] Handle WebGL context lifecycle
+- [ ] Add Three.js as dependency (^0.159.0 or compatible)
+- [ ] Create React wrapper for Three.js scene with proper cleanup
+- [ ] Handle WebGL context lifecycle (mount/unmount)
+- [ ] Implement useEffect hooks for scene updates
+- [ ] Add fallback UI for browsers without WebGL support
 
 ### Task 6.2: 3D Balloon Block Structure
 - [ ] Create block registration (`gll-info/balloon-3d`)
-- [ ] Define attributes (frequency, range, scale, wireframe, autoRotate)
+- [ ] Define attributes:
+  - `fileId`, `fileUrl`, `fileName` (GLL file reference)
+  - `sourceIndex` (selected acoustic source)
+  - `frequencyIndex` (selected frequency index)
+  - `dbRange` (20-80 dB display window, default 40 dB)
+  - `scale` (0.6-1.6× size multiplier, default 1.0)
+  - `wireframe` (boolean, default false)
+  - `autoRotate` (boolean, default false)
+  - `canvasHeight` (200-800px, default 500px)
+- [ ] Create edit.js with InspectorControls
+- [ ] Create save.js with data attributes
+- [ ] Create view.js for frontend Three.js rendering
+- [ ] Create editor.scss and style.scss
 
-### Task 6.3: Balloon Visualization
-- [ ] Port balloon mesh generation from web demo
-- [ ] Implement SPL-based color mapping
-- [ ] Add coordinate axes
-- [ ] Create interactive camera controls
+### Task 6.3: Three.js Scene Setup
+- [ ] Create WebGL renderer with antialias, transparent alpha
+- [ ] Configure PerspectiveCamera (45° FOV, position at (0, 0.6, 2.6))
+- [ ] Add ambient light (0xffffff, intensity 0.65)
+- [ ] Add directional light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
+- [ ] Create reference wireframe sphere (unit radius, opacity 0.28)
+- [ ] Add axes helper (color-coded: R=X, G=Y, B=Z)
+- [ ] Implement animation loop with requestAnimationFrame
 
-### Task 6.4: Balloon Controls
-- [ ] Frequency selector with slider
-- [ ] Range (dB) slider
-- [ ] Scale slider
-- [ ] Wireframe toggle
-- [ ] Auto-rotate toggle
+### Task 6.4: Balloon Mesh Generation
+- [ ] Port `buildBalloonGeometry()` from visualization.js
+- [ ] Extract balloon_data grid from source via WASM
+- [ ] Build full sphere grid (parallels 0°-180°, meridians 0°-360°)
+- [ ] Handle symmetry-based data mirroring (canMirrorMeridian, canMirrorParallel)
+- [ ] Compute global max SPL level across all frequencies (cached in WeakMap)
+- [ ] Map levels to vertex positions using formula:
+  ```
+  radius = baseRadius + amplitude * normalized
+  where normalized = (level - displayMin) / dbRange
+        baseRadius = 0.3 * scale
+        amplitude = 0.9 * scale
+        displayMin = displayMax - dbRange
+  ```
+- [ ] Implement coordinate conversion (GLL Z-up → Three.js Y-up):
+  ```javascript
+  toViewPoint: { x: gllPoint.x, y: gllPoint.z, z: gllPoint.y }
+  ```
 
-### Task 6.5: Performance Optimization
-- [ ] Implement lazy loading (only render when in viewport)
-- [ ] Add quality presets (low/medium/high)
-- [ ] Dispose Three.js resources properly
+### Task 6.5: Color Mapping System
+- [ ] Implement HSL color mapping for SPL levels:
+  - Hue range: 0 (red, max) to 0.66 (blue, min)
+  - Saturation: 0.75 (vivid)
+  - Lightness: 0.5 (medium)
+  - Missing data: Gray (0.65, 0.65, 0.65)
+- [ ] Create per-vertex color buffer for BufferGeometry
+- [ ] Update colors when frequency or range changes
+
+### Task 6.6: Interactive Camera Controls
+- [ ] Implement OrbitControls-style dragging:
+  - Left click drag → rotate (update azimuth/polar angles)
+  - Right click drag → pan camera
+  - Scroll → zoom in/out
+- [ ] Bound rotation angles (φ ∈ [0.05, π-0.05] to avoid gimbal lock)
+- [ ] Add pointer capture for smooth dragging
+- [ ] Implement auto-rotate feature (0.0035 rad/frame around Y-axis)
+
+### Task 6.7: Balloon Controls (InspectorControls)
+- [ ] Source selector dropdown
+- [ ] Frequency dropdown (populated from source's available frequencies)
+- [ ] Frequency slider (logarithmic mapping, syncs with dropdown)
+- [ ] dB Range slider (RangeControl 20-80 dB, affects mesh shape)
+- [ ] Scale slider (RangeControl 0.6-1.6×)
+- [ ] Wireframe toggle (ToggleControl, switches material mode)
+- [ ] Auto-rotate toggle (ToggleControl)
+- [ ] Canvas height slider (RangeControl 200-800px)
+
+### Task 6.8: Balloon Metadata Display
+- [ ] Show selected frequency (formatted)
+- [ ] Display current level range (min/max dB)
+- [ ] Show display min/max (displayMax - dbRange, displayMax)
+- [ ] Display grid dimensions (meridian count × parallel count)
+- [ ] Show symmetry type
+- [ ] Show normalization status badge
+- [ ] Create color bar legend (SPL scale visualization)
+- [ ] Style badges and legend with responsive layout
+
+### Task 6.9: Performance Optimization
+- [ ] Implement lazy loading (only initialize when block in viewport)
+- [ ] Use IntersectionObserver for visibility detection
+- [ ] Cache global max levels in WeakMap (prevent recomputation)
+- [ ] Dispose mesh geometry/material before rebuilding
+- [ ] Pause animation loop when not visible
+- [ ] Add quality presets:
+  - Low: 10° angular resolution, simple shading
+  - Medium: 5° angular resolution (default)
+  - High: 2.5° angular resolution, enhanced lighting
+- [ ] Implement proper cleanup in useEffect return function:
+  ```javascript
+  return () => {
+    geometry.dispose();
+    material.dispose();
+    renderer.dispose();
+    cancelAnimationFrame(animationId);
+  }
+  ```
 
 ---
 
 ## Phase 7: Sources List Block [PARTIALLY COMPLETED]
 
+**Reference:** `gll-tools/web/app.js` (lines 580-792, `displaySources` function)
+
 *Note: Sources list is integrated into the main GLL Info block with toggle option.*
 
-### Task 7.1: Sources Block Structure [COMPLETED - integrated]
+### Task 7.1: Sources Block Structure [COMPLETED]
 - [x] Integrated into main block with `showSources` attribute
-- [ ] Define attributes (display mode, columns to show) - basic mode done
+- [x] Basic sources list display with label and bandwidth
+- [x] Convert to collapsible card-based layout (match web demo)
+- [x] Add `displayMode` attribute (compact, detailed, expandable)
+- [x] Add `showResponseCharts` attribute (toggle per-source charts)
 
-### Task 7.2: Sources Table Component [COMPLETED]
-- [x] Port sources list from web demo
-- [x] Display: Label, Bandwidth
-- [ ] Add expandable details per source
+### Task 7.2: Enhanced Sources Card Component
+- [x] Display source label and key
+- [x] Display nominal bandwidth (from/to frequencies)
+- [ ] Add collapsible/expandable card UI with toggle arrow
+- [ ] Implement expand/collapse state management
+- [ ] Add data type display (formatted string)
+- [ ] Display response count
+- [ ] Show angular resolution (meridian step × parallel step)
+- [ ] Add empty state handling ("No source definitions found")
 
-### Task 7.3: Source Details
-- [ ] Measurement conditions
-- [ ] Coverage angles
-- [ ] Response count
+### Task 7.3: Source Placements Display
+- [ ] Build source placements map from box_types data
+- [ ] Display placements section (which boxes use this source)
+- [ ] For each placement show:
+  - Box label and key
+  - Source label and key within box
+  - Position coordinates (X, Y, Z in mm)
+  - Rotation angles (Heading, Vertical, Roll in degrees)
+- [ ] Format position using `formatPosition()` helper
+- [ ] Format angles using `formatAngleDegrees()` helper
+- [ ] Handle multiple placements per source definition
+- [ ] Add collapsible placement list UI
+
+### Task 7.4: Per-Source Response Controls [NEW]
+- [ ] Add response selector dropdown (if source has responses)
+- [ ] Populate options with response indices
+- [ ] Display angle labels for each response (Azimuth/Elevation)
+- [ ] Add phase mode selector (unwrapped, wrapped, group-delay)
+- [ ] Add normalization checkbox toggle
+- [ ] Add azimuth slider (-180° to 180°, step 1°)
+- [ ] Add elevation slider (-90° to 90°, step 1°)
+- [ ] Display current angle values beside sliders
+- [ ] Sync sliders with response index selection
+- [ ] Handle sources without response data gracefully
+
+### Task 7.5: Per-Source Response Charts [NEW]
+- [ ] Embed Chart.js frequency response chart per source
+- [ ] Reuse charting utilities from Phase 4
+- [ ] Create canvas element with unique ID per source
+- [ ] Render dual-axis chart (Level dB + Phase)
+- [ ] Update chart when controls change (response, phase, angles)
+- [ ] Display response metadata below chart
+- [ ] Handle chart lifecycle (create/update/destroy)
+- [ ] Add "No frequency response data" empty state
+- [ ] Optimize: lazy-load charts only when source expanded
+
+### Task 7.6: Source Response Utilities
+- [ ] Port `computeResponseAngles()` function
+  - Calculate meridian/parallel degrees from response index
+  - Use balloon_data angular resolution
+  - Handle symmetry and grid wrapping
+- [ ] Port `buildSourcePlacementsMap()` function
+  - Extract placements from box_types
+  - Map source definition keys to placement instances
+  - Return Map of key → placements array
+- [ ] Create `formatDataType()` helper
+  - Convert data_type enum to readable string
+  - Handle: PRESSURE, VELOCITY, UNKNOWN, etc.
+- [ ] Create `formatPosition()` helper
+  - Format {x, y, z} to "X, Y, Z" string with units
+  - Handle missing coordinates gracefully
+
+### Task 7.7: Interactive Source Cards
+- [ ] Implement toggle function for expand/collapse
+- [ ] Update toggle arrow direction (▶ collapsed, ▼ expanded)
+- [ ] Animate content visibility (slide down/up)
+- [ ] Persist expansion state in component state
+- [ ] Add keyboard navigation (Enter/Space to toggle)
+- [ ] Add ARIA attributes (aria-expanded, role="button")
+
+### Task 7.8: Styling Enhancements
+- [ ] Port source card styles from web demo
+- [ ] Style collapsible header with hover effects
+- [ ] Style source details section with proper spacing
+- [ ] Style placement list with nested indentation
+- [ ] Style response controls grid layout
+- [ ] Style slider labels and value displays
+- [ ] Add responsive breakpoints for mobile
+- [ ] Support WordPress theme color variables
+- [ ] Add loading skeleton for chart rendering
+
+### Task 7.9: Performance Optimization
+- [ ] Implement virtualization for long source lists (>20 sources)
+- [ ] Lazy-load response charts (render only when expanded)
+- [ ] Debounce slider input handlers
+- [ ] Memoize computed placements map
+- [ ] Cache formatted values (bandwidth, angles)
+- [ ] Dispose Chart.js instances on collapse/unmount
 
 ---
 
-## Phase 8: Resources Block
+## Phase 8: Geometry Viewer Block
 
-### Task 8.1: Resources Block Structure
+**Reference:** `gll-tools/web/modules/geometry.js` (953 lines), `app.js` (geometry section)
+
+### Task 8.1: Three.js Geometry Scene Setup
+- [ ] Add Three.js dependency if not already present (from Phase 6)
+- [ ] Create geometry viewer React component with proper cleanup
+- [ ] Configure WebGL renderer (antialias, alpha, pixelRatio ≤ 2)
+- [ ] Setup PerspectiveCamera (42° FOV, position at (0, 0.4, 2.2))
+- [ ] Add ambient light (0xffffff, intensity 0.7)
+- [ ] Add directional key light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
+- [ ] Create grid helper (2 units, 12 divisions)
+- [ ] Add axes helper (0.8 unit size, semi-transparent opacity 0.5)
+- [ ] Implement animation loop with requestAnimationFrame
+
+### Task 8.2: Geometry Block Structure
+- [ ] Create block registration (`gll-info/geometry`)
+- [ ] Define attributes:
+  - `fileId`, `fileUrl`, `fileName` (GLL file reference)
+  - `geometryIndex` (which case geometry to display)
+  - `showFaces` (boolean, default true)
+  - `showEdges` (boolean, default true)
+  - `showMarkers` (object: {ref: true, com: true, pivot: false})
+  - `showSources` (boolean, display acoustic source cones)
+  - `centerReference` (boolean, center on reference point vs origin)
+  - `autoRotate` (boolean, OrbitControls auto-rotation)
+  - `canvasHeight` (200-800px, default 500px)
+- [ ] Create edit.js with InspectorControls
+- [ ] Create save.js with data attributes
+- [ ] Create view.js for frontend Three.js rendering
+- [ ] Create editor.scss and style.scss
+
+### Task 8.3: OrbitControls Integration
+- [ ] Add Three.js OrbitControls to dependencies
+- [ ] Configure OrbitControls settings:
+  - Enable damping (dampingFactor: 0.08)
+  - Enable screen space panning
+  - Enable zoom, pan, rotate, keys
+  - Set distance limits (min: 0.25, max: 25)
+  - Configure mouse buttons (LEFT: rotate, MIDDLE: dolly, RIGHT: pan)
+  - Set rotation/pan speeds (0.6, 0.9)
+  - Enable auto-rotate option (controlled by attribute)
+- [ ] Add fallback pointer controls when OrbitControls unavailable
+- [ ] Implement manual orbit calculation (theta, phi, radius, target)
+
+### Task 8.4: Geometry Mesh Building
+- [ ] Extract case_geometry data from GLL via WASM
+- [ ] Resolve vertex positions using `resolveGeometryVertex()` helper
+- [ ] Build sequential edge pairs from face/edge definitions
+- [ ] Create BufferGeometry for faces:
+  - Position buffer (Float32Array)
+  - Color buffer (per-vertex colors from face/edge definitions)
+  - Index buffer (triangle indices)
+  - Compute vertex normals
+- [ ] Apply MeshStandardMaterial:
+  - vertexColors: true
+  - flatShading: true
+  - metalness: 0.05, roughness: 0.75
+  - side: DoubleSide
+- [ ] Create LineSegments for edges:
+  - LineBasicMaterial with vertexColors
+  - Transparent with opacity 0.9
+
+### Task 8.5: Coordinate Conversion & Centering
+- [ ] Implement GLL Z-up to Three.js Y-up conversion:
+  ```javascript
+  toViewPoint: { x: gllPoint.x, y: gllPoint.z, z: gllPoint.y }
+  ```
+- [ ] Compute bounding box (minX/Y/Z, maxX/Y/Z)
+- [ ] Calculate geometry center and size
+- [ ] Apply scale factor (targetSize 1.2 / actualSize)
+- [ ] Center geometry group based on:
+  - Reference point if `centerReference` is true
+  - Bounding box center otherwise
+- [ ] Convert Euler angles (HVR) to quaternion for source orientations
+
+### Task 8.6: Marker System
+- [ ] Create sphere markers with radius 0.01 world units
+- [ ] Reference Point marker (red #ef4444 sphere)
+- [ ] Center of Mass marker (green #22c55e sphere)
+- [ ] Next Pivot marker (amber #f59e0b sphere)
+- [ ] Add marker visibility toggles in InspectorControls
+- [ ] Scale markers appropriately with geometry scale factor
+- [ ] Position markers in world space using toViewPoint conversion
+
+### Task 8.7: Acoustic Source Visualization
+- [ ] Create cone meshes for each acoustic source
+- [ ] Position cones at source reference points
+- [ ] Orient cones using source rotation quaternions
+- [ ] Color cones with distinct hues per source
+- [ ] Add source labels (TextSprite or HTML overlay)
+- [ ] Toggle source visibility with `showSources` attribute
+- [ ] Show source coverage angles visually
+
+### Task 8.8: Theme-Aware Grid Colors
+- [ ] Read CSS variables for grid colors:
+  - `--geom-grid-major` (default: #94a3b8)
+  - `--geom-grid-minor` (default: #e2e8f0)
+  - `--geom-grid-opacity` (default: 0.45)
+  - `--geom-edge-default` (fallback edge color)
+  - `--geom-face-default` (fallback face color)
+- [ ] Apply theme colors to GridHelper materials
+- [ ] Update on WordPress theme change (if applicable)
+- [ ] Support dark mode variants
+
+### Task 8.9: Geometry Controls (InspectorControls)
+- [ ] Geometry selector dropdown (if multiple case geometries)
+- [ ] Show Faces toggle (ToggleControl)
+- [ ] Show Edges toggle (ToggleControl)
+- [ ] Marker visibility controls (separate toggles for ref/com/pivot)
+- [ ] Show Sources toggle (ToggleControl)
+- [ ] Center on Reference toggle (ToggleControl)
+- [ ] Auto-rotate toggle (ToggleControl)
+- [ ] Canvas height slider (RangeControl 200-800px)
+
+### Task 8.10: Geometry Metadata Display
+- [ ] Show geometry bounds (min/max X/Y/Z)
+- [ ] Display geometry size (largest dimension)
+- [ ] Show vertex/face/edge counts
+- [ ] Display reference point coordinates (if available)
+- [ ] Show center of mass coordinates (if available)
+- [ ] Display source count (if showSources enabled)
+- [ ] Style metadata badges with responsive layout
+
+### Task 8.11: Performance Optimization
+- [ ] Implement lazy loading (IntersectionObserver)
+- [ ] Dispose geometry/materials on rebuild
+- [ ] Pause animation when not visible
+- [ ] Limit pixel ratio to 2× for performance
+- [ ] Implement proper cleanup in useEffect:
+  ```javascript
+  return () => {
+    geometry.dispose();
+    material.dispose();
+    renderer.dispose();
+    controls?.dispose();
+    cancelAnimationFrame(animationId);
+  }
+  ```
+- [ ] Cache resolved vertices to avoid recomputation
+
+---
+
+## Phase 9: Resources Block
+
+### Task 9.1: Resources Block Structure
 - [ ] Create block registration (`gll-info/resources`)
 - [ ] Define attributes (resource types to show)
 
-### Task 8.2: Documentation Display
+### Task 9.2: Documentation Display
 - [ ] List embedded PDFs with download links
 - [ ] Preview images inline
 - [ ] Show file sizes
 
-### Task 8.3: Data Files Display
+### Task 9.3: Data Files Display
 - [ ] List geometry files (XED)
 - [ ] Show data file metadata
 
-### Task 8.4: Download Handling
+### Task 9.4: Download Handling
 - [ ] Generate data URIs for downloads
 - [ ] Add download buttons
 - [ ] Handle large file downloads gracefully
 
 ---
 
-## Phase 9: Configuration Block
+## Phase 10: Configuration Block
 
-### Task 9.1: Config Block Structure
+### Task 10.1: Config Block Structure
 - [ ] Create block registration (`gll-info/config`)
 - [ ] Define attributes (sections to show, collapsed state)
 
-### Task 9.2: Collapsible Cards Component
+### Task 10.2: Collapsible Cards Component
 - [ ] Port collapsible card UI from web demo
 - [ ] Persist collapsed state
 
-### Task 9.3: Box Types Display
+### Task 10.3: Box Types Display
 - [ ] List box types with specifications
 - [ ] Show geometry if available
 
-### Task 9.4: Other Config Sections
+### Task 10.4: Other Config Sections
 - [ ] Frames display
 - [ ] Filter groups display
 - [ ] Limits display
@@ -299,54 +646,56 @@ Based on the web demo, these Gutenberg blocks will be created:
 
 ---
 
-## Phase 10: Integration & Polish
+## Phase 11: Integration & Polish
 
-### Task 10.1: Block Patterns
+### Task 11.1: Block Patterns
 - [ ] Create "Full GLL Viewer" pattern (all blocks)
 - [ ] Create "Quick Overview" pattern
 - [ ] Create "Acoustic Analysis" pattern
 
-### Task 10.2: Block Variations
+### Task 11.2: Block Variations
 - [ ] Register block variations for common configurations
 
-### Task 10.3: Internationalization
+### Task 11.3: Internationalization
 - [ ] Add translation support
 - [ ] Extract all strings to translation functions
 
-### Task 10.4: Accessibility
+### Task 11.4: Accessibility
 - [ ] Add ARIA labels to interactive elements
 - [ ] Ensure keyboard navigation works
 - [ ] Test with screen readers
 
-### Task 10.5: Documentation
+### Task 11.5: Documentation
 - [ ] Add inline block help
 - [ ] Create user documentation
 - [ ] Add example patterns
 
 ---
 
-## Phase 11: Testing & Release
+## Phase 12: Testing & Release
 
-### Task 11.1: Unit Tests
+### Task 12.1: Unit Tests
 - [ ] Test WASM loader
 - [ ] Test data parsing utilities
 - [ ] Test React components
 
-### Task 11.2: Integration Tests
+### Task 12.2: Integration Tests
 - [ ] Test block registration
 - [ ] Test media library integration
 - [ ] Test frontend rendering
 
-### Task 11.3: Browser Testing
+### Task 12.3: Browser Testing
 - [ ] Test WASM in Chrome, Firefox, Safari, Edge
+- [ ] Test WebGL in different browsers (for 3D blocks)
 - [ ] Test fallback for older browsers
 
-### Task 11.4: Performance Testing
+### Task 12.4: Performance Testing
 - [ ] Test with large GLL files (100MB+)
 - [ ] Measure memory usage
+- [ ] Test Three.js scene performance with complex geometries
 - [ ] Optimize if needed
 
-### Task 11.5: Release Preparation
+### Task 12.5: Release Preparation
 - [ ] Update readme.txt
 - [ ] Create changelog
 - [ ] Build production assets
@@ -386,10 +735,11 @@ gll-info/
 │   │   ├── view.js             # [DONE]
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
-│   ├── polar-plot/             # TODO
-│   ├── balloon-3d/             # TODO
-│   ├── resources/              # TODO
-│   └── config/                 # TODO
+│   ├── polar-plot/             # TODO Phase 5
+│   ├── balloon-3d/             # TODO Phase 6
+│   ├── geometry/               # TODO Phase 8
+│   ├── resources/              # TODO Phase 9
+│   └── config/                 # TODO Phase 10
 ├── assets/
 │   ├── wasm/
 │   │   ├── gll.wasm            # [DONE]
@@ -439,21 +789,49 @@ gll-info/
 | 2. Core File Block | 3 | Medium | DONE |
 | 3. Overview Block | 5 | Low | DONE (integrated) |
 | 4. Frequency Response | 5 | High | DONE |
-| 5. Polar Plot | 4 | Medium | TODO |
-| 6. 3D Balloon | 5 | High | TODO |
-| 7. Sources List | 3 | Low | DONE (integrated) |
-| 8. Resources | 4 | Medium | TODO |
-| 9. Configuration | 4 | Medium | TODO |
-| 10. Integration | 5 | Medium | TODO |
-| 11. Testing | 5 | Medium | TODO |
+| 5. Polar Plot | 6 | Medium-High | TODO |
+| 6. 3D Balloon | 9 | Very High | TODO |
+| 7. Sources List | 9 | Medium-High | PARTIAL (basic integration done) |
+| 8. Geometry Viewer | 11 | Very High | TODO |
+| 9. Resources | 4 | Medium | TODO |
+| 10. Configuration | 4 | Medium | TODO |
+| 11. Integration | 5 | Medium | TODO |
+| 12. Testing | 5 | Medium | TODO |
 
-**Total: 47 tasks across 11 phases**
-**Completed: ~30 tasks (Phases 1-4, 7)**
+**Total: 70 tasks across 12 phases**
+**Completed: ~30 tasks (Phases 1-4)**
+**Partially Completed: ~2 tasks (Phase 7 basic integration)**
+**Remaining: ~38 tasks (Phases 5-12)**
 
 ---
 
 ## Getting Started
 
-Begin with Phase 1 to establish the foundation, then proceed sequentially. Phase 4 (Frequency Response) and Phase 6 (3D Balloon) are the most complex and may benefit from referencing the web demo code closely.
+Begin with Phase 1 to establish the foundation, then proceed sequentially. The most complex phases requiring close reference to the web demo are:
+
+- **Phase 4** (Frequency Response) - COMPLETED
+- **Phase 5** (Polar Plot) - Medium-High complexity, requires custom Chart.js plugin
+- **Phase 6** (3D Balloon) - Very High complexity, advanced Three.js mesh generation
+- **Phase 8** (Geometry Viewer) - Very High complexity, Three.js with OrbitControls
 
 The existing web demo at `https://meko-christian.github.io/gll-tools/` serves as the reference implementation for all visualizations.
+
+## Implementation Notes
+
+### Shared Dependencies
+Phases 6 (3D Balloon) and 8 (Geometry Viewer) both use Three.js and can share:
+- Three.js core library
+- OrbitControls (for Phase 8, custom controls for Phase 6)
+- Coordinate conversion utilities (GLL Z-up → Three.js Y-up)
+- Theme-aware color system
+- Animation loop patterns
+- WebGL context management
+
+Consider implementing Phase 6 before Phase 8 to establish the Three.js foundation.
+
+### Reference Files by Phase
+- **Phase 5:** `gll-tools/web/modules/visualization.js` (lines 1-842), `charting.js`
+- **Phase 6:** `gll-tools/web/modules/visualization.js` (lines 843-1226)
+- **Phase 8:** `gll-tools/web/modules/geometry.js` (all 953 lines)
+- **Phase 9:** `gll-tools/web/modules/exporters.js`, `app.js` (resources section)
+- **Phase 10:** `gll-tools/web/app.js` (configuration cards section)
