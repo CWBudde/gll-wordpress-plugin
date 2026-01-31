@@ -83,12 +83,11 @@ export default function Edit( { attributes, setAttributes } ) {
 	};
 
 	// Build source options from parsed data
-	const sourceOptions = data?.Database?.SourceDefinitions?.map(
-		( source, index ) => ( {
+	const sourceOptions =
+		data?.Database?.SourceDefinitions?.map( ( source, index ) => ( {
 			label: source.Label || `Source ${ index + 1 }`,
 			value: index,
-		} )
-	) || [];
+		} ) ) || [];
 
 	// Build phase mode options
 	const phaseModeOptions = [
@@ -101,74 +100,80 @@ export default function Edit( { attributes, setAttributes } ) {
 	const currentSource = data?.Database?.SourceDefinitions?.[ sourceIndex ];
 
 	// Build chart configuration (simplified for editor preview)
-	const chartConfig = data ? {
-		type: 'line',
-		data: {
-			datasets: [
-				showMagnitude && {
-					label: __( 'Magnitude (dB)', 'gll-info' ),
-					data: [],
-					borderColor: 'rgb(75, 192, 192)',
-					backgroundColor: 'rgba(75, 192, 192, 0.2)',
-					yAxisID: 'y',
+	const chartConfig = data
+		? {
+				type: 'line',
+				data: {
+					datasets: [
+						showMagnitude && {
+							label: __( 'Magnitude (dB)', 'gll-info' ),
+							data: [],
+							borderColor: 'rgb(75, 192, 192)',
+							backgroundColor: 'rgba(75, 192, 192, 0.2)',
+							yAxisID: 'y',
+						},
+						showPhase && {
+							label:
+								phaseMode === 'group-delay'
+									? __( 'Group Delay (ms)', 'gll-info' )
+									: __( 'Phase (rad)', 'gll-info' ),
+							data: [],
+							borderColor: 'rgb(255, 99, 132)',
+							backgroundColor: 'rgba(255, 99, 132, 0.2)',
+							yAxisID: 'y1',
+						},
+					].filter( Boolean ),
 				},
-				showPhase && {
-					label: phaseMode === 'group-delay'
-						? __( 'Group Delay (ms)', 'gll-info' )
-						: __( 'Phase (rad)', 'gll-info' ),
-					data: [],
-					borderColor: 'rgb(255, 99, 132)',
-					backgroundColor: 'rgba(255, 99, 132, 0.2)',
-					yAxisID: 'y1',
-				},
-			].filter( Boolean ),
-		},
-		options: {
-			responsive: true,
-			plugins: {
-				title: {
-					display: true,
-					text: fileName || __( 'Frequency Response', 'gll-info' ),
-				},
-				legend: {
-					display: true,
-				},
-			},
-			scales: {
-				x: {
-					type: 'logarithmic',
-					display: true,
-					title: {
-						display: true,
-						text: __( 'Frequency (Hz)', 'gll-info' ),
+				options: {
+					responsive: true,
+					plugins: {
+						title: {
+							display: true,
+							text:
+								fileName ||
+								__( 'Frequency Response', 'gll-info' ),
+						},
+						legend: {
+							display: true,
+						},
+					},
+					scales: {
+						x: {
+							type: 'logarithmic',
+							display: true,
+							title: {
+								display: true,
+								text: __( 'Frequency (Hz)', 'gll-info' ),
+							},
+						},
+						y: showMagnitude && {
+							type: 'linear',
+							display: true,
+							position: 'left',
+							title: {
+								display: true,
+								text: __( 'Magnitude (dB)', 'gll-info' ),
+							},
+						},
+						y1: showPhase && {
+							type: 'linear',
+							display: true,
+							position: 'right',
+							title: {
+								display: true,
+								text:
+									phaseMode === 'group-delay'
+										? __( 'Group Delay (ms)', 'gll-info' )
+										: __( 'Phase (rad)', 'gll-info' ),
+							},
+							grid: {
+								drawOnChartArea: false,
+							},
+						},
 					},
 				},
-				y: showMagnitude && {
-					type: 'linear',
-					display: true,
-					position: 'left',
-					title: {
-						display: true,
-						text: __( 'Magnitude (dB)', 'gll-info' ),
-					},
-				},
-				y1: showPhase && {
-					type: 'linear',
-					display: true,
-					position: 'right',
-					title: {
-						display: true,
-						text: phaseMode === 'group-delay'
-							? __( 'Group Delay (ms)', 'gll-info' )
-							: __( 'Phase (rad)', 'gll-info' ),
-					},
-					grid: {
-						drawOnChartArea: false,
-					},
-				},
-			},
-		},
-	} : null;
+		  }
+		: null;
 
 	// Render file selection placeholder if no file is selected
 	if ( ! fileUrl ) {
@@ -219,7 +224,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								<Button
 									variant="secondary"
 									onClick={ open }
-									style={ { marginTop: '10px', marginRight: '10px' } }
+									style={ {
+										marginTop: '10px',
+										marginRight: '10px',
+									} }
 								>
 									{ __( 'Replace File', 'gll-info' ) }
 								</Button>
@@ -244,11 +252,16 @@ export default function Edit( { attributes, setAttributes } ) {
 						>
 							{ sourceOptions.length > 0 && (
 								<SelectControl
-									label={ __( 'Acoustic Source', 'gll-info' ) }
+									label={ __(
+										'Acoustic Source',
+										'gll-info'
+									) }
 									value={ sourceIndex }
 									options={ sourceOptions }
 									onChange={ ( value ) =>
-										setAttributes( { sourceIndex: parseInt( value, 10 ) } )
+										setAttributes( {
+											sourceIndex: parseInt( value, 10 ),
+										} )
 									}
 								/>
 							) }
@@ -292,7 +305,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								/>
 							) }
 							<ToggleControl
-								label={ __( 'Normalize (On-Axis)', 'gll-info' ) }
+								label={ __(
+									'Normalize (On-Axis)',
+									'gll-info'
+								) }
 								checked={ normalized }
 								onChange={ ( value ) =>
 									setAttributes( { normalized: value } )
@@ -325,7 +341,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								step={ 5 }
 							/>
 							<RangeControl
-								label={ __( 'Elevation (degrees)', 'gll-info' ) }
+								label={ __(
+									'Elevation (degrees)',
+									'gll-info'
+								) }
 								value={ elevation }
 								onChange={ ( value ) =>
 									setAttributes( { elevation: value } )
@@ -345,7 +364,8 @@ export default function Edit( { attributes, setAttributes } ) {
 						<h3>{ fileName }</h3>
 						{ currentSource && (
 							<p className="gll-source-label">
-								{ __( 'Source:', 'gll-info' ) } { currentSource.Label }
+								{ __( 'Source:', 'gll-info' ) }{ ' ' }
+								{ currentSource.Label }
 							</p>
 						) }
 					</div>
@@ -360,7 +380,8 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ error && (
 						<div className="gll-frequency-response-error">
 							<p>
-								{ __( 'Error loading GLL file:', 'gll-info' ) } { error.message }
+								{ __( 'Error loading GLL file:', 'gll-info' ) }{ ' ' }
+								{ error.message }
 							</p>
 						</div>
 					) }
@@ -369,33 +390,55 @@ export default function Edit( { attributes, setAttributes } ) {
 						<>
 							<div className="gll-frequency-response-metadata">
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Range:', 'gll-info' ) }</strong> 20 Hz - 20 kHz
+									<strong>
+										{ __( 'Range:', 'gll-info' ) }
+									</strong>{ ' ' }
+									20 Hz - 20 kHz
 								</span>
-								{ ( azimuth !== 0 || elevation !== 0 ) ? (
+								{ azimuth !== 0 || elevation !== 0 ? (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Position:', 'gll-info' ) }</strong> Az { azimuth }° / El { elevation }°
+										<strong>
+											{ __( 'Position:', 'gll-info' ) }
+										</strong>{ ' ' }
+										Az { azimuth }° / El { elevation }°
 									</span>
 								) : (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Position:', 'gll-info' ) }</strong> On-axis (0° / 0°)
+										<strong>
+											{ __( 'Position:', 'gll-info' ) }
+										</strong>{ ' ' }
+										On-axis (0° / 0°)
 									</span>
 								) }
 								{ showPhase && (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Phase:', 'gll-info' ) }</strong> { ' ' }
-										{ phaseMode === 'group-delay' && __( 'Group Delay', 'gll-info' ) }
-										{ phaseMode === 'wrapped' && __( 'Wrapped Phase', 'gll-info' ) }
-										{ phaseMode === 'unwrapped' && __( 'Unwrapped Phase', 'gll-info' ) }
+										<strong>
+											{ __( 'Phase:', 'gll-info' ) }
+										</strong>{ ' ' }
+										{ phaseMode === 'group-delay' &&
+											__( 'Group Delay', 'gll-info' ) }
+										{ phaseMode === 'wrapped' &&
+											__( 'Wrapped Phase', 'gll-info' ) }
+										{ phaseMode === 'unwrapped' &&
+											__(
+												'Unwrapped Phase',
+												'gll-info'
+											) }
 									</span>
 								) }
 								{ normalized && (
 									<span className="gll-meta-badge gll-meta-badge-highlight">
-										<strong>{ __( 'Normalized', 'gll-info' ) }</strong>
+										<strong>
+											{ __( 'Normalized', 'gll-info' ) }
+										</strong>
 									</span>
 								) }
 								{ currentSource?.Label && (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Source:', 'gll-info' ) }</strong> { currentSource.Label }
+										<strong>
+											{ __( 'Source:', 'gll-info' ) }
+										</strong>{ ' ' }
+										{ currentSource.Label }
 									</span>
 								) }
 							</div>

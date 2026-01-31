@@ -18,10 +18,13 @@
 	 * Get settings from WordPress.
 	 */
 	function getSettings() {
-		return window.gllInfoSettings || {
-			wasmUrl: '/wp-content/plugins/gll-info/assets/wasm/gll.wasm',
-			wasmExecUrl: '/wp-content/plugins/gll-info/assets/wasm/wasm_exec.js',
-		};
+		return (
+			window.gllInfoSettings || {
+				wasmUrl: '/wp-content/plugins/gll-info/assets/wasm/gll.wasm',
+				wasmExecUrl:
+					'/wp-content/plugins/gll-info/assets/wasm/wasm_exec.js',
+			}
+		);
 	}
 
 	/**
@@ -37,7 +40,8 @@
 			const script = document.createElement( 'script' );
 			script.src = getSettings().wasmExecUrl;
 			script.onload = resolve;
-			script.onerror = () => reject( new Error( 'Failed to load wasm_exec.js' ) );
+			script.onerror = () =>
+				reject( new Error( 'Failed to load wasm_exec.js' ) );
 			document.head.appendChild( script );
 		} );
 	}
@@ -60,14 +64,21 @@
 				const go = new window.Go();
 				const response = await fetch( getSettings().wasmUrl );
 				if ( ! response.ok ) {
-					throw new Error( `Failed to fetch WASM: ${ response.status }` );
+					throw new Error(
+						`Failed to fetch WASM: ${ response.status }`
+					);
 				}
 
-				const result = await WebAssembly.instantiateStreaming( response, go.importObject );
+				const result = await WebAssembly.instantiateStreaming(
+					response,
+					go.importObject
+				);
 				go.run( result.instance );
 
 				if ( typeof window.parseGLL !== 'function' ) {
-					throw new Error( 'WASM module did not export parseGLL function' );
+					throw new Error(
+						'WASM module did not export parseGLL function'
+					);
 				}
 
 				wasmReady = true;
@@ -115,24 +126,34 @@
 			html += '<table class="gll-info-table"><tbody>';
 
 			if ( GenSystem.Label ) {
-				html += `<tr><th>Label</th><td>${ escapeHtml( GenSystem.Label ) }</td></tr>`;
+				html += `<tr><th>Label</th><td>${ escapeHtml(
+					GenSystem.Label
+				) }</td></tr>`;
 			}
 			if ( GenSystem.Version ) {
-				html += `<tr><th>Version</th><td>${ escapeHtml( GenSystem.Version ) }</td></tr>`;
+				html += `<tr><th>Version</th><td>${ escapeHtml(
+					GenSystem.Version
+				) }</td></tr>`;
 			}
 			if ( GenSystem.SystemType !== undefined ) {
 				const types = [ 'Line Array', 'Cluster', 'Loudspeaker' ];
-				html += `<tr><th>Type</th><td>${ types[ GenSystem.SystemType ] || 'Unknown' }</td></tr>`;
+				html += `<tr><th>Type</th><td>${
+					types[ GenSystem.SystemType ] || 'Unknown'
+				}</td></tr>`;
 			}
 			if ( GenSystem.Manufacturer ) {
-				html += `<tr><th>Manufacturer</th><td>${ escapeHtml( GenSystem.Manufacturer ) }</td></tr>`;
+				html += `<tr><th>Manufacturer</th><td>${ escapeHtml(
+					GenSystem.Manufacturer
+				) }</td></tr>`;
 			}
 
 			html += '</tbody></table></div>';
 		}
 
 		if ( Metadata && Metadata.Description ) {
-			html += `<div class="gll-section"><h4>Description</h4><p>${ escapeHtml( Metadata.Description ) }</p></div>`;
+			html += `<div class="gll-section"><h4>Description</h4><p>${ escapeHtml(
+				Metadata.Description
+			) }</p></div>`;
 		}
 
 		return html;
@@ -159,7 +180,9 @@
 			html += `<strong>${ escapeHtml( label ) }</strong>`;
 
 			if ( bandFrom && bandTo ) {
-				html += `<span class="gll-source-bandwidth">${ Math.round( bandFrom ) } - ${ Math.round( bandTo ) } Hz</span>`;
+				html += `<span class="gll-source-bandwidth">${ Math.round(
+					bandFrom
+				) } - ${ Math.round( bandTo ) } Hz</span>`;
 			}
 
 			html += '</li>';
@@ -239,7 +262,9 @@
 	 * Initialize all GLL blocks on the page.
 	 */
 	function init() {
-		const blocks = document.querySelectorAll( '.wp-block-gll-info-gll-info' );
+		const blocks = document.querySelectorAll(
+			'.wp-block-gll-info-gll-info'
+		);
 		blocks.forEach( initBlock );
 	}
 

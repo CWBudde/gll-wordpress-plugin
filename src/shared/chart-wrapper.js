@@ -18,19 +18,27 @@ import './chart.scss';
  * @param {Function} props.onChartReady   Optional callback when chart instance is ready.
  * @return {JSX.Element} Chart wrapper.
  */
-export default function ChartWrapper( { config, className = '', height = 320, onChartReady } ) {
+export default function ChartWrapper( {
+	config,
+	className = '',
+	height = 320,
+	onChartReady,
+} ) {
 	const canvasRef = useRef( null );
 	const chartRef = useRef( null );
 	const containerRef = useRef( null );
 
-	const mergedConfig = useMemo( () => ( {
-		...config,
-		options: {
-			responsive: true,
-			maintainAspectRatio: false,
-			...( config?.options || {} ),
-		},
-	} ), [ config ] );
+	const mergedConfig = useMemo(
+		() => ( {
+			...config,
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				...( config?.options || {} ),
+			},
+		} ),
+		[ config ]
+	);
 
 	useEffect( () => {
 		if ( ! canvasRef.current ) {

@@ -32,7 +32,10 @@ export function buildFrequencyPoints( frequencies, values ) {
 	const minFrequency = Math.min( ...frequencies );
 	const maxFrequency = Math.max( ...frequencies );
 
-	if ( ! Number.isFinite( minFrequency ) || ! Number.isFinite( maxFrequency ) ) {
+	if (
+		! Number.isFinite( minFrequency ) ||
+		! Number.isFinite( maxFrequency )
+	) {
 		return null;
 	}
 
@@ -149,7 +152,8 @@ export function wrapPhase( value ) {
 		return null;
 	}
 	const twoPi = 2 * Math.PI;
-	const wrapped = ( ( ( ( value + Math.PI ) % twoPi ) + twoPi ) % twoPi ) - Math.PI;
+	const wrapped =
+		( ( ( ( value + Math.PI ) % twoPi ) + twoPi ) % twoPi ) - Math.PI;
 	return wrapped;
 }
 

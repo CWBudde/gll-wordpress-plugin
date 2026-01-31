@@ -56,20 +56,32 @@ export default function save( { attributes } ) {
 	return (
 		<div { ...blockProps }>
 			<div className="gll-frequency-response-header">
-				<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
+				<svg
+					viewBox="0 0 24 24"
+					width="32"
+					height="32"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+				>
 					<path d="M3 3v18h18" />
 					<path d="M18 17l-5-5-3 3-4-4" />
 				</svg>
 				<div className="gll-frequency-response-header-text">
 					<h3>{ fileName }</h3>
-					<p className="gll-loading-text">Loading frequency response...</p>
+					<p className="gll-loading-text">
+						Loading frequency response...
+					</p>
 				</div>
 			</div>
 			<div className="gll-frequency-response-loading">
 				<span className="gll-spinner"></span>
 				<span>Parsing GLL file...</span>
 			</div>
-			<div className="gll-frequency-response-chart" style={ { display: 'none', minHeight: chartHeight + 'px' } }></div>
+			<div
+				className="gll-frequency-response-chart"
+				style={ { display: 'none', minHeight: chartHeight + 'px' } }
+			></div>
 		</div>
 	);
 }

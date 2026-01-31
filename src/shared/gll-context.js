@@ -6,8 +6,20 @@
  * @package GllInfo
  */
 
-import { createContext, useContext, useState, useCallback, useMemo } from '@wordpress/element';
-import { initWasm, parseGLL, parseGLLFromUrl, isWasmReady, getWasmError } from './wasm-loader';
+import {
+	createContext,
+	useContext,
+	useState,
+	useCallback,
+	useMemo,
+} from '@wordpress/element';
+import {
+	initWasm,
+	parseGLL,
+	parseGLLFromUrl,
+	isWasmReady,
+	getWasmError,
+} from './wasm-loader';
 
 /**
  * GLL Context value shape.
@@ -85,31 +97,34 @@ export function GLLProvider( { children } ) {
 	 * @param {number|null} attachmentId  Optional WordPress attachment ID.
 	 * @return {Promise<Object|null>} Parsed data or null on error.
 	 */
-	const loadFile = useCallback( async ( file, attachmentId = null ) => {
-		setIsLoading( true );
-		setError( null );
+	const loadFile = useCallback(
+		async ( file, attachmentId = null ) => {
+			setIsLoading( true );
+			setError( null );
 
-		try {
-			const ready = await ensureWasmReady();
-			if ( ! ready ) {
-				throw new Error( 'WASM failed to initialize' );
+			try {
+				const ready = await ensureWasmReady();
+				if ( ! ready ) {
+					throw new Error( 'WASM failed to initialize' );
+				}
+
+				const arrayBuffer = await file.arrayBuffer();
+				const parsedData = await parseGLL( arrayBuffer );
+
+				setData( parsedData );
+				setFileName( file.name );
+				setFileId( attachmentId );
+				setIsLoading( false );
+
+				return parsedData;
+			} catch ( err ) {
+				setError( err );
+				setIsLoading( false );
+				return null;
 			}
-
-			const arrayBuffer = await file.arrayBuffer();
-			const parsedData = await parseGLL( arrayBuffer );
-
-			setData( parsedData );
-			setFileName( file.name );
-			setFileId( attachmentId );
-			setIsLoading( false );
-
-			return parsedData;
-		} catch ( err ) {
-			setError( err );
-			setIsLoading( false );
-			return null;
-		}
-	}, [ ensureWasmReady ] );
+		},
+		[ ensureWasmReady ]
+	);
 
 	/**
 	 * Load and parse a GLL file from a URL.
@@ -119,30 +134,33 @@ export function GLLProvider( { children } ) {
 	 * @param {number|null} attachmentId  Optional WordPress attachment ID.
 	 * @return {Promise<Object|null>} Parsed data or null on error.
 	 */
-	const loadFromUrl = useCallback( async ( url, name = null, attachmentId = null ) => {
-		setIsLoading( true );
-		setError( null );
+	const loadFromUrl = useCallback(
+		async ( url, name = null, attachmentId = null ) => {
+			setIsLoading( true );
+			setError( null );
 
-		try {
-			const ready = await ensureWasmReady();
-			if ( ! ready ) {
-				throw new Error( 'WASM failed to initialize' );
+			try {
+				const ready = await ensureWasmReady();
+				if ( ! ready ) {
+					throw new Error( 'WASM failed to initialize' );
+				}
+
+				const parsedData = await parseGLLFromUrl( url );
+
+				setData( parsedData );
+				setFileName( name || url.split( '/' ).pop() );
+				setFileId( attachmentId );
+				setIsLoading( false );
+
+				return parsedData;
+			} catch ( err ) {
+				setError( err );
+				setIsLoading( false );
+				return null;
 			}
-
-			const parsedData = await parseGLLFromUrl( url );
-
-			setData( parsedData );
-			setFileName( name || url.split( '/' ).pop() );
-			setFileId( attachmentId );
-			setIsLoading( false );
-
-			return parsedData;
-		} catch ( err ) {
-			setError( err );
-			setIsLoading( false );
-			return null;
-		}
-	}, [ ensureWasmReady ] );
+		},
+		[ ensureWasmReady ]
+	);
 
 	/**
 	 * Clear all loaded data.
@@ -157,17 +175,30 @@ export function GLLProvider( { children } ) {
 	/**
 	 * Memoized context value.
 	 */
-	const contextValue = useMemo( () => ( {
-		data,
-		isLoading,
-		error,
-		wasmReady,
-		loadFile,
-		loadFromUrl,
-		clearData,
-		fileName,
-		fileId,
-	} ), [ data, isLoading, error, wasmReady, loadFile, loadFromUrl, clearData, fileName, fileId ] );
+	const contextValue = useMemo(
+		() => ( {
+			data,
+			isLoading,
+			error,
+			wasmReady,
+			loadFile,
+			loadFromUrl,
+			clearData,
+			fileName,
+			fileId,
+		} ),
+		[
+			data,
+			isLoading,
+			error,
+			wasmReady,
+			loadFile,
+			loadFromUrl,
+			clearData,
+			fileName,
+			fileId,
+		]
+	);
 
 	return (
 		<GLLContext.Provider value={ contextValue }>

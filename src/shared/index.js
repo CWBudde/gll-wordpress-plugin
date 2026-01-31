@@ -16,12 +16,7 @@ export {
 } from './wasm-loader';
 
 // GLL Context
-export {
-	GLLContext,
-	GLLProvider,
-	useGLL,
-	useGLLLoader,
-} from './gll-context';
+export { GLLContext, GLLProvider, useGLL, useGLLLoader } from './gll-context';
 
 // Chart.js wrapper
 export { default as ChartWrapper } from './chart-wrapper';
