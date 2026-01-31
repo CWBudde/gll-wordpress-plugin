@@ -7,7 +7,13 @@
 	"category": "media",
 	"icon": "format-audio",
 	"description": "Display GLL (Generic Loudspeaker Library) file data with interactive visualizations.",
-	"keywords": [ "gll", "loudspeaker", "audio", "acoustic", "frequency response" ],
+	"keywords": [
+		"gll",
+		"loudspeaker",
+		"audio",
+		"acoustic",
+		"frequency response"
+	],
 	"attributes": {
 		"fileId": {
 			"type": "number",

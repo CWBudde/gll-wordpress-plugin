@@ -17,7 +17,14 @@ import { useBlockProps } from '@wordpress/block-editor';
  * @return {JSX.Element} Saved markup.
  */
 export default function save( { attributes } ) {
-	const { fileId, fileUrl, fileName, showOverview, showSources, showResponses } = attributes;
+	const {
+		fileId,
+		fileUrl,
+		fileName,
+		showOverview,
+		showSources,
+		showResponses,
+	} = attributes;
 
 	// If no file selected, don't render anything.
 	if ( ! fileUrl ) {
@@ -37,7 +44,14 @@ export default function save( { attributes } ) {
 	return (
 		<div { ...blockProps }>
 			<div className="gll-info-header">
-				<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
+				<svg
+					viewBox="0 0 24 24"
+					width="48"
+					height="48"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.5"
+				>
 					<circle cx="12" cy="12" r="3" />
 					<path d="M12 9V6M12 18v-3M9 12H6M18 12h-3" />
 				</svg>
@@ -50,7 +64,10 @@ export default function save( { attributes } ) {
 				<span className="gll-spinner"></span>
 				<span>Parsing GLL file...</span>
 			</div>
-			<div className="gll-info-content" style={ { display: 'none' } }></div>
+			<div
+				className="gll-info-content"
+				style={ { display: 'none' } }
+			></div>
 		</div>
 	);
 }

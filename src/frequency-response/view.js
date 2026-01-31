@@ -85,7 +85,9 @@ async function initializeBlock( block ) {
 		const data = await parseGLLFile( uint8Array );
 
 		// Hide loading indicator
-		const loadingEl = block.querySelector( '.gll-frequency-response-loading' );
+		const loadingEl = block.querySelector(
+			'.gll-frequency-response-loading'
+		);
 		if ( loadingEl ) {
 			loadingEl.style.display = 'none';
 		}
@@ -119,7 +121,13 @@ async function initializeBlock( block ) {
  * @param {boolean} normalized    Whether to normalize to on-axis.
  * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
  */
-function extractResponseData( source, responseIndex, azimuth, elevation, normalized ) {
+function extractResponseData(
+	source,
+	responseIndex,
+	azimuth,
+	elevation,
+	normalized
+) {
 	if ( ! source || ! source.Responses || source.Responses.length === 0 ) {
 		return null;
 	}
@@ -181,7 +189,9 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 	const badges = [];
 
 	// Frequency range badge
-	badges.push( `<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>` );
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>`
+	);
 
 	// Angular position badge
 	if ( options.azimuth !== 0 || options.elevation !== 0 ) {
@@ -189,27 +199,41 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 			`<span class="gll-meta-badge"><strong>Position:</strong> Az ${ options.azimuth }° / El ${ options.elevation }°</span>`
 		);
 	} else {
-		badges.push( `<span class="gll-meta-badge"><strong>Position:</strong> On-axis (0° / 0°)</span>` );
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Position:</strong> On-axis (0° / 0°)</span>`
+		);
 	}
 
 	// Phase mode badge
 	if ( phaseSeries ) {
-		const phaseLabel = options.phaseMode === 'group-delay' ? 'Group Delay' :
-			options.phaseMode === 'wrapped' ? 'Wrapped Phase' : 'Unwrapped Phase';
-		badges.push( `<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>` );
+		const phaseLabel =
+			options.phaseMode === 'group-delay'
+				? 'Group Delay'
+				: options.phaseMode === 'wrapped'
+				? 'Wrapped Phase'
+				: 'Unwrapped Phase';
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>`
+		);
 	}
 
 	// Normalization badge
 	if ( options.normalized ) {
-		badges.push( `<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>` );
+		badges.push(
+			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>`
+		);
 	}
 
 	// Source info badge
 	if ( source.Label ) {
-		badges.push( `<span class="gll-meta-badge"><strong>Source:</strong> ${ source.Label }</span>` );
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ source.Label }</span>`
+		);
 	}
 
-	return `<div class="gll-frequency-response-metadata">${ badges.join( '' ) }</div>`;
+	return `<div class="gll-frequency-response-metadata">${ badges.join(
+		''
+	) }</div>`;
 }
 
 /**
@@ -220,7 +244,9 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
  * @param {Object}      options Chart options.
  */
 function renderChart( block, data, options ) {
-	const chartContainer = block.querySelector( '.gll-frequency-response-chart' );
+	const chartContainer = block.querySelector(
+		'.gll-frequency-response-chart'
+	);
 	if ( ! chartContainer ) {
 		return;
 	}
@@ -242,7 +268,10 @@ function renderChart( block, data, options ) {
 	);
 
 	if ( ! responseData ) {
-		showError( block, 'No frequency response data available for this source' );
+		showError(
+			block,
+			'No frequency response data available for this source'
+		);
 		return;
 	}
 
@@ -304,7 +333,10 @@ function renderChart( block, data, options ) {
 	}
 
 	if ( phaseSeries ) {
-		const phasePoints = buildFrequencyPoints( frequencies, phaseSeries.values );
+		const phasePoints = buildFrequencyPoints(
+			frequencies,
+			phaseSeries.values
+		);
 		if ( phasePoints ) {
 			datasets.push( {
 				label: phaseSeries.label,
@@ -374,7 +406,9 @@ function renderChart( block, data, options ) {
 				},
 				title: {
 					display: true,
-					text: options.fileName + ( source.Label ? ` - ${ source.Label }` : '' ),
+					text:
+						options.fileName +
+						( source.Label ? ` - ${ source.Label }` : '' ),
 				},
 				tooltip: {
 					callbacks: {
@@ -401,7 +435,9 @@ function showError( block, message ) {
 		loadingEl.style.display = 'none';
 	}
 
-	const chartContainer = block.querySelector( '.gll-frequency-response-chart' );
+	const chartContainer = block.querySelector(
+		'.gll-frequency-response-chart'
+	);
 	if ( chartContainer ) {
 		chartContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">

@@ -368,15 +368,15 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Add `displayMode` attribute (compact, detailed, expandable)
 - [x] Add `showResponseCharts` attribute (toggle per-source charts)
 
-### Task 7.2: Enhanced Sources Card Component
+### Task 7.2: Enhanced Sources Card Component [COMPLETED]
 - [x] Display source label and key
 - [x] Display nominal bandwidth (from/to frequencies)
-- [ ] Add collapsible/expandable card UI with toggle arrow
-- [ ] Implement expand/collapse state management
-- [ ] Add data type display (formatted string)
-- [ ] Display response count
-- [ ] Show angular resolution (meridian step × parallel step)
-- [ ] Add empty state handling ("No source definitions found")
+- [x] Add collapsible/expandable card UI with toggle arrow
+- [x] Implement expand/collapse state management
+- [x] Add data type display (formatted string)
+- [x] Display response count
+- [x] Show angular resolution (meridian step × parallel step)
+- [x] Add empty state handling ("No source definitions found")
 
 ### Task 7.3: Source Placements Display
 - [ ] Build source placements map from box_types data
@@ -414,40 +414,43 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [ ] Add "No frequency response data" empty state
 - [ ] Optimize: lazy-load charts only when source expanded
 
-### Task 7.6: Source Response Utilities
-- [ ] Port `computeResponseAngles()` function
+### Task 7.6: Source Response Utilities [PARTIALLY COMPLETED]
+- [ ] Port `computeResponseAngles()` function (pending Task 7.4)
   - Calculate meridian/parallel degrees from response index
   - Use balloon_data angular resolution
   - Handle symmetry and grid wrapping
-- [ ] Port `buildSourcePlacementsMap()` function
+- [ ] Port `buildSourcePlacementsMap()` function (pending Task 7.3)
   - Extract placements from box_types
   - Map source definition keys to placement instances
   - Return Map of key → placements array
-- [ ] Create `formatDataType()` helper
+- [x] Create `formatDataType()` helper
   - Convert data_type enum to readable string
   - Handle: PRESSURE, VELOCITY, UNKNOWN, etc.
-- [ ] Create `formatPosition()` helper
+- [x] Create `formatFrequency()` helper
+  - Format Hz or kHz display
+  - Handle missing values gracefully
+- [ ] Create `formatPosition()` helper (pending Task 7.3)
   - Format {x, y, z} to "X, Y, Z" string with units
   - Handle missing coordinates gracefully
 
-### Task 7.7: Interactive Source Cards
-- [ ] Implement toggle function for expand/collapse
-- [ ] Update toggle arrow direction (▶ collapsed, ▼ expanded)
-- [ ] Animate content visibility (slide down/up)
-- [ ] Persist expansion state in component state
-- [ ] Add keyboard navigation (Enter/Space to toggle)
-- [ ] Add ARIA attributes (aria-expanded, role="button")
+### Task 7.7: Interactive Source Cards [COMPLETED]
+- [x] Implement toggle function for expand/collapse
+- [x] Update toggle arrow direction (▶ collapsed, ▼ expanded)
+- [x] Animate content visibility (slide down/up)
+- [x] Persist expansion state in component state
+- [x] Add keyboard navigation (Enter/Space to toggle)
+- [x] Add ARIA attributes (aria-expanded, role="button")
 
-### Task 7.8: Styling Enhancements
-- [ ] Port source card styles from web demo
-- [ ] Style collapsible header with hover effects
-- [ ] Style source details section with proper spacing
-- [ ] Style placement list with nested indentation
-- [ ] Style response controls grid layout
-- [ ] Style slider labels and value displays
-- [ ] Add responsive breakpoints for mobile
-- [ ] Support WordPress theme color variables
-- [ ] Add loading skeleton for chart rendering
+### Task 7.8: Styling Enhancements [PARTIALLY COMPLETED]
+- [x] Port source card styles from web demo
+- [x] Style collapsible header with hover effects
+- [x] Style source details section with proper spacing
+- [ ] Style placement list with nested indentation (pending Task 7.3)
+- [ ] Style response controls grid layout (pending Task 7.4)
+- [ ] Style slider labels and value displays (pending Task 7.4)
+- [x] Add responsive breakpoints for mobile
+- [x] Support WordPress theme color variables
+- [ ] Add loading skeleton for chart rendering (pending Task 7.5)
 
 ### Task 7.9: Performance Optimization
 - [ ] Implement virtualization for long source lists (>20 sources)
@@ -791,7 +794,7 @@ gll-info/
 | 4. Frequency Response | 5 | High | DONE |
 | 5. Polar Plot | 6 | Medium-High | TODO |
 | 6. 3D Balloon | 9 | Very High | TODO |
-| 7. Sources List | 9 | Medium-High | PARTIAL (basic integration done) |
+| 7. Sources List | 9 | Medium-High | PARTIAL (3/9 tasks complete, 2 partial) |
 | 8. Geometry Viewer | 11 | Very High | TODO |
 | 9. Resources | 4 | Medium | TODO |
 | 10. Configuration | 4 | Medium | TODO |
@@ -799,9 +802,9 @@ gll-info/
 | 12. Testing | 5 | Medium | TODO |
 
 **Total: 70 tasks across 12 phases**
-**Completed: ~30 tasks (Phases 1-4)**
-**Partially Completed: ~2 tasks (Phase 7 basic integration)**
-**Remaining: ~38 tasks (Phases 5-12)**
+**Completed: ~33 tasks (Phases 1-4, Phase 7: Tasks 7.1, 7.2, 7.7)**
+**Partially Completed: ~2 tasks (Phase 7: Tasks 7.6, 7.8)**
+**Remaining: ~35 tasks (Phases 5-6, 8-12, Phase 7: Tasks 7.3-7.5, 7.9)**
 
 ---
 

@@ -19,9 +19,11 @@ let loadPromise = null;
  * @return {boolean} True if WASM is supported.
  */
 export function isWasmSupported() {
-	return typeof WebAssembly === 'object' &&
+	return (
+		typeof WebAssembly === 'object' &&
 		typeof WebAssembly.instantiate === 'function' &&
-		typeof WebAssembly.instantiateStreaming === 'function';
+		typeof WebAssembly.instantiateStreaming === 'function'
+	);
 }
 
 /**
@@ -31,7 +33,10 @@ export function isWasmSupported() {
  */
 function getWasmUrl() {
 	// In WordPress, we need to use the plugin URL which is set globally.
-	if ( typeof window.gllInfoSettings !== 'undefined' && window.gllInfoSettings.wasmUrl ) {
+	if (
+		typeof window.gllInfoSettings !== 'undefined' &&
+		window.gllInfoSettings.wasmUrl
+	) {
 		return window.gllInfoSettings.wasmUrl;
 	}
 	// Fallback for development.
@@ -44,7 +49,10 @@ function getWasmUrl() {
  * @return {string} wasm_exec.js URL.
  */
 function getWasmExecUrl() {
-	if ( typeof window.gllInfoSettings !== 'undefined' && window.gllInfoSettings.wasmExecUrl ) {
+	if (
+		typeof window.gllInfoSettings !== 'undefined' &&
+		window.gllInfoSettings.wasmExecUrl
+	) {
 		return window.gllInfoSettings.wasmExecUrl;
 	}
 	return '/wp-content/plugins/gll-info/assets/wasm/wasm_exec.js';
@@ -66,7 +74,8 @@ function loadWasmExec() {
 		const script = document.createElement( 'script' );
 		script.src = getWasmExecUrl();
 		script.onload = resolve;
-		script.onerror = () => reject( new Error( 'Failed to load wasm_exec.js' ) );
+		script.onerror = () =>
+			reject( new Error( 'Failed to load wasm_exec.js' ) );
 		document.head.appendChild( script );
 	} );
 }
@@ -97,7 +106,9 @@ export async function initWasm() {
 		try {
 			// Check browser support.
 			if ( ! isWasmSupported() ) {
-				throw new Error( 'WebAssembly is not supported in this browser' );
+				throw new Error(
+					'WebAssembly is not supported in this browser'
+				);
 			}
 
 			// Load the Go runtime.
@@ -109,10 +120,15 @@ export async function initWasm() {
 			// Fetch and instantiate the WASM module.
 			const response = await fetch( getWasmUrl() );
 			if ( ! response.ok ) {
-				throw new Error( `Failed to fetch WASM: ${ response.status } ${ response.statusText }` );
+				throw new Error(
+					`Failed to fetch WASM: ${ response.status } ${ response.statusText }`
+				);
 			}
 
-			const result = await WebAssembly.instantiateStreaming( response, go.importObject );
+			const result = await WebAssembly.instantiateStreaming(
+				response,
+				go.importObject
+			);
 			wasmInstance = result.instance;
 
 			// Run the Go program (this sets up the parseGLL function).
@@ -120,7 +136,9 @@ export async function initWasm() {
 
 			// Verify the parseGLL function is available.
 			if ( typeof window.parseGLL !== 'function' ) {
-				throw new Error( 'WASM module did not export parseGLL function' );
+				throw new Error(
+					'WASM module did not export parseGLL function'
+				);
 			}
 
 			wasmReady = true;
@@ -164,7 +182,8 @@ export async function parseGLL( data ) {
 	}
 
 	// Convert to Uint8Array if needed.
-	const uint8Array = data instanceof Uint8Array ? data : new Uint8Array( data );
+	const uint8Array =
+		data instanceof Uint8Array ? data : new Uint8Array( data );
 
 	// Call the WASM parseGLL function.
 	const resultJson = window.parseGLL( uint8Array );
@@ -201,7 +220,9 @@ export async function parseGLLFile( file ) {
 export async function parseGLLFromUrl( url ) {
 	const response = await fetch( url );
 	if ( ! response.ok ) {
-		throw new Error( `Failed to fetch GLL file: ${ response.status } ${ response.statusText }` );
+		throw new Error(
+			`Failed to fetch GLL file: ${ response.status } ${ response.statusText }`
+		);
 	}
 
 	const arrayBuffer = await response.arrayBuffer();
