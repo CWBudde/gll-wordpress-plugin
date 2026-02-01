@@ -32,3 +32,16 @@ export {
 	buildLogTicks,
 	formatFrequency,
 } from './charting-utils';
+
+// Polar plot utilities
+export {
+	computePolarSlices,
+	computeLevelRange,
+	getBalloonGrid,
+	buildPolarAngles,
+	formatPolarLabel,
+	buildLogFrequencies,
+} from './polar-utils';
+
+// Polar compass Chart.js plugin
+export { default as polarCompassPlugin } from './polar-compass-plugin';
