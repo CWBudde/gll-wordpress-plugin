@@ -1,0 +1,123 @@
+/**
+ * Polar Plot Block - Editor Styles
+ *
+ * @package GllInfo
+ */
+
+.gll-polar-plot-block {
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+
+	.gll-polar-plot-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 1px solid #e0e0e0;
+
+		h3 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 600;
+			color: #1e1e1e;
+		}
+
+		.gll-source-label {
+			margin: 4px 0 0;
+			font-size: 14px;
+			color: #666;
+		}
+	}
+
+	.gll-polar-plot-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		padding: 40px;
+		background: #f9f9f9;
+		border-radius: 4px;
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+
+	.gll-polar-plot-error {
+		padding: 20px;
+		background: #fff8f8;
+		border: 1px solid #d63638;
+		border-radius: 4px;
+		color: #d63638;
+
+		p {
+			margin: 0;
+		}
+	}
+
+	.gll-polar-plot-metadata {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-bottom: 16px;
+		padding: 12px;
+		background: #f8f9fa;
+		border-radius: 4px;
+		border: 1px solid #e9ecef;
+
+		.gll-meta-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 6px 12px;
+			background: #fff;
+			border: 1px solid #dee2e6;
+			border-radius: 4px;
+			font-size: 13px;
+			line-height: 1.4;
+			color: #495057;
+
+			strong {
+				margin-right: 4px;
+				font-weight: 600;
+				color: #212529;
+			}
+
+			&.gll-meta-badge-highlight {
+				background: #e7f3ff;
+				border-color: #0073aa;
+				color: #0073aa;
+
+				strong {
+					color: #0073aa;
+				}
+			}
+		}
+	}
+
+	.gll-polar-plot-chart {
+		margin-top: 0;
+
+		.gll-chart {
+			background: #fff;
+			border-radius: 4px;
+			border: 1px solid #e0e0e0;
+			padding: 16px;
+		}
+	}
+
+	.gll-polar-plot-empty {
+		padding: 40px;
+		text-align: center;
+		background: #f9f9f9;
+		border-radius: 4px;
+
+		p {
+			margin: 0;
+			color: #666;
+		}
+	}
+}
