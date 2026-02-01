@@ -1,0 +1,64 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "gll-info/polar-plot",
+	"version": "0.1.0",
+	"title": "GLL Polar Plot",
+	"category": "media",
+	"icon": "chart-pie",
+	"description": "Display polar directivity plot from GLL file acoustic data with horizontal and vertical slices.",
+	"keywords": [ "gll", "polar", "directivity", "plot", "acoustic" ],
+	"parent": [ "gll-info/gll-info" ],
+	"attributes": {
+		"fileId": {
+			"type": "number",
+			"default": 0
+		},
+		"fileUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"fileName": {
+			"type": "string",
+			"default": ""
+		},
+		"sourceIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"frequencyIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"showHorizontal": {
+			"type": "boolean",
+			"default": true
+		},
+		"showVertical": {
+			"type": "boolean",
+			"default": true
+		},
+		"normalized": {
+			"type": "boolean",
+			"default": false
+		},
+		"chartHeight": {
+			"type": "number",
+			"default": 400
+		}
+	},
+	"example": {
+		"attributes": {
+			"fileName": "example-speaker.gll"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "gll-info",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}
