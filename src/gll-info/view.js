@@ -41,236 +41,30 @@
 			script.src = getSettings().wasmExecUrl;
 			script.onload = resolve;
 			script.onerror = () =>
-					const sources = data.Database.SourceDefinitions;
-					const placementsMap = buildSourcePlacementsMap( data );
-					let html = `<div class="gll-sources"><h4>Acoustic Sources (${ sources.length })</h4>`;
-					html += '<div class="gll-sources-list">';
+				reject( new Error( 'Failed to load wasm_exec.js' ) );
+			document.head.appendChild( script );
+		} );
+	}
 
-					for ( const source of sources ) {
-						const def = source.Definition || {};
-						const label = def.Label || source.Key;
-						const bandFrom = def.NominalBandwidthFrom;
-						const bandTo = def.NominalBandwidthTo;
-						const balloon = def.BalloonData;
-						const responseCount = source.Responses?.length || 0;
-						const placements = placementsMap.get( source.Key ) || [];
+	/**
+	 * Initialize the WASM runtime.
+	 */
+	async function initWasm() {
+		if ( wasmReady ) {
+			return;
+		}
 
-						html += '<div class="gll-source-card gll-source-detailed">';
-						html += '<div class="gll-source-header">';
-						html += '<div class="gll-source-title">';
-						html += `<span class="gll-source-label">${ escapeHtml( label ) }</span>`;
-						html += '</div>';
-						html += `<span class="gll-source-key">${ escapeHtml( source.Key ) }</span>`;
-						html += '</div>';
+		if ( wasmPromise ) {
+			return wasmPromise;
+		}
 
-						html += '<div class="gll-source-content">';
-						html += '<div class="gll-source-details">';
-						html += `<div class="gll-source-detail"><strong>Bandwidth:</strong> ${ escapeHtml( formatFrequency( bandFrom ) ) } - ${ escapeHtml( formatFrequency( bandTo ) ) }</div>`;
-						html += `<div class="gll-source-detail"><strong>Data Type:</strong> ${ escapeHtml( formatDataType( def.DataType ) ) }</div>`;
+		wasmPromise = ( async () => {
+			try {
+				await loadWasmExec();
 
-						if ( balloon ) {
-							html += `<div class="gll-source-detail"><strong>Responses:</strong> ${ responseCount }</div>`;
-							html += `<div class="gll-source-detail"><strong>Resolution:</strong> ${ balloon.AngularResolution?.MeridianStep || 0 }° × ${ balloon.AngularResolution?.ParallelStep || 0 }°</div>`;
-						}
-						html += '</div>';
-
-						html += '<div class="gll-source-placements">';
-						html += `<details><summary>Placements (${ placements.length })</summary>`;
-						html += '<div class="gll-source-placements-list">';
-						if ( placements.length === 0 ) {
-							html += '<div class="gll-empty-state gll-source-placements-empty">No placements found</div>';
-						} else {
-							for ( const placement of placements ) {
-								const rotation = placement.rotation || {};
-								const heading = rotation.Heading ?? rotation.H ?? rotation.Yaw ?? rotation.Azimuth;
-								const vertical = rotation.Vertical ?? rotation.V ?? rotation.Pitch ?? rotation.Elevation;
-								const roll = rotation.Roll ?? rotation.R;
-
-								html += '<div class="gll-source-placement">';
-								html += `<div class="gll-source-placement-detail"><strong>Box:</strong> ${ escapeHtml( placement.boxLabel ) }${ placement.boxKey ? ` (${ escapeHtml( placement.boxKey ) })` : '' }</div>`;
-								html += `<div class="gll-source-placement-detail"><strong>Source:</strong> ${ escapeHtml( placement.sourceLabel || placement.sourceKey ) } (${ escapeHtml( placement.sourceKey ) })</div>`;
-								html += `<div class="gll-source-placement-detail"><strong>Position:</strong> ${ escapeHtml( formatPosition( placement.position ) ) }</div>`;
-								html += `<div class="gll-source-placement-detail"><strong>Rotation:</strong> H: ${ escapeHtml( formatAngleDegrees( heading ) ) }, V: ${ escapeHtml( formatAngleDegrees( vertical ) ) }, R: ${ escapeHtml( formatAngleDegrees( roll ) ) }</div>`;
-								html += '</div>';
-							}
-						}
-						html += '</div></details></div>';
-						html += '</div>';
-						html += '</div>';
-					}
-
-					html += '</div></div>';
-					return html;
+				const go = new window.Go();
 				const response = await fetch( getSettings().wasmUrl );
 
-				/**
-				 * Format frequency in Hz or kHz.
-				 */
-				function formatFrequency( hz ) {
-					if ( ! hz ) {
-						return '-';
-					}
-					if ( hz >= 1000 ) {
-						return `${ ( hz / 1000 ).toFixed( 1 ) } kHz`;
-					}
-					return `${ Math.round( hz ) } Hz`;
-				}
-
-				/**
-				 * Format data type enum to readable string.
-				 */
-				function formatDataType( dataType ) {
-					const types = {
-						0: 'Unknown',
-						1: 'Pressure',
-						2: 'Velocity',
-						3: 'Intensity',
-					};
-					return types[ dataType ] || 'Unknown';
-				}
-
-				/**
-				 * Format number with one decimal place.
-				 */
-				function formatNumber( value ) {
-					if ( typeof value !== 'number' || Number.isNaN( value ) ) {
-						return null;
-					}
-					const rounded = Math.round( value * 10 ) / 10;
-					return Number.isInteger( rounded ) ? `${ rounded }` : rounded.toFixed( 1 );
-				}
-
-				/**
-				 * Format angle degrees.
-				 */
-				function formatAngleDegrees( angle ) {
-					const formatted = formatNumber( angle );
-					return formatted === null ? '-' : `${ formatted }°`;
-				}
-
-				/**
-				 * Format position coordinates in mm.
-				 */
-				function formatPosition( position ) {
-					if ( ! position ) {
-						return '-';
-					}
-					const x = position.x ?? position.X ?? position[ 0 ];
-					const y = position.y ?? position.Y ?? position[ 1 ];
-					const z = position.z ?? position.Z ?? position[ 2 ];
-					const formattedX = formatNumber( x );
-					const formattedY = formatNumber( y );
-					const formattedZ = formatNumber( z );
-
-					if ( formattedX === null && formattedY === null && formattedZ === null ) {
-						return '-';
-					}
-
-					return [
-						`X: ${ formattedX === null ? '-' : `${ formattedX } mm` }`,
-						`Y: ${ formattedY === null ? '-' : `${ formattedY } mm` }`,
-						`Z: ${ formattedZ === null ? '-' : `${ formattedZ } mm` }`,
-					].join( ', ' );
-				}
-
-				/**
-				 * Normalize value to array.
-				 */
-				function toArray( value ) {
-					if ( ! value ) {
-						return [];
-					}
-					if ( Array.isArray( value ) ) {
-						return value;
-					}
-					if ( typeof value === 'object' ) {
-						return Object.values( value );
-					}
-					return [];
-				}
-
-				/**
-				 * Build a map of source keys to placement instances.
-				 */
-				function buildSourcePlacementsMap( data ) {
-					const map = new Map();
-					if ( ! data?.Database ) {
-						return map;
-					}
-
-					const sourceDefinitions = Array.isArray( data.Database.SourceDefinitions )
-						? data.Database.SourceDefinitions
-						: [];
-					const boxTypes = toArray(
-						data.Database.BoxTypes ||
-							data.Database.box_types ||
-							data.Database.Box_Types
-					);
-
-					boxTypes.forEach( ( boxType ) => {
-						const placements = toArray(
-							boxType?.SourcePlacements ||
-								boxType?.source_placements ||
-								boxType?.Sources ||
-								boxType?.SourceDefinitions ||
-								boxType?.SourcePlacement
-						);
-
-						if ( placements.length === 0 ) {
-							return;
-						}
-
-						const boxLabel = boxType?.Label || boxType?.Name || boxType?.Key || 'Unknown';
-						const boxKey = boxType?.Key || boxType?.Id || boxType?.Name || '-';
-
-						placements.forEach( ( placement ) => {
-							const sourceKey =
-								placement?.SourceDefinitionKey ||
-								placement?.SourceDefinition?.Key ||
-								placement?.SourceDefinition?.KeyRef ||
-								placement?.SourceKey ||
-								placement?.Source?.Key ||
-								( typeof placement?.SourceIndex === 'number'
-									? sourceDefinitions[ placement.SourceIndex ]?.Key
-									: null ) ||
-								placement?.Key;
-
-							if ( ! sourceKey ) {
-								return;
-							}
-
-							const entry = {
-								boxLabel,
-								boxKey,
-								sourceLabel:
-									placement?.Label ||
-									placement?.SourceLabel ||
-									placement?.Source?.Label ||
-									placement?.SourceName,
-								sourceKey,
-								position:
-									placement?.Position ||
-									placement?.PositionMM ||
-									placement?.PositionMm ||
-									placement?.Offset ||
-									placement?.Location ||
-									placement?.Coordinates,
-								rotation:
-									placement?.Rotation ||
-									placement?.RotationAngles ||
-									placement?.Orientation ||
-									placement?.Angles ||
-									placement?.Euler,
-							};
-
-							const existing = map.get( sourceKey ) || [];
-							existing.push( entry );
-							map.set( sourceKey, existing );
-						} );
-					} );
-
-					return map;
-				}
 				if ( ! response.ok ) {
 					throw new Error(
 						`Failed to fetch WASM: ${ response.status }`

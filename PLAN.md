@@ -186,41 +186,41 @@ Based on the web demo, these Gutenberg blocks will be created:
 **Reference:** `gll-tools/web/modules/visualization.js` (lines 1-842), `app.js` (polar chart section)
 
 ### Task 5.1: Polar Chart Setup
-- [ ] Configure Chart.js type `radar` with `startAngle: 90` (puts front on RIGHT)
-- [ ] Create polar chart React component wrapper
-- [ ] Implement dual dataset rendering (Horizontal blue #2563eb, Vertical red #dc2626)
-- [ ] Port `computePolarSlices()` logic from web demo
+- [x] Configure Chart.js type `radar` with `startAngle: 90` (puts front on RIGHT)
+- [x] Create polar chart React component wrapper
+- [x] Implement dual dataset rendering (Horizontal blue #2563eb, Vertical red #dc2626)
+- [x] Port `computePolarSlices()` logic from web demo
 
 ### Task 5.2: Polar Plot Block Structure
-- [ ] Create block registration (`gll-info/polar-plot`)
-- [ ] Define attributes:
+- [x] Create block registration (`gll-info/polar-plot`)
+- [x] Define attributes:
   - `fileId`, `fileUrl`, `fileName` (GLL file reference)
   - `sourceIndex` (selected acoustic source)
   - `frequencyIndex` (selected frequency index)
   - `showHorizontal`, `showVertical` (plane visibility toggles)
   - `normalized` (normalize to max level)
   - `chartHeight` (200-800px)
-- [ ] Create edit.js with InspectorControls
-- [ ] Create save.js with data attributes
-- [ ] Create view.js for frontend rendering
-- [ ] Create editor.scss and style.scss
+- [x] Create edit.js with InspectorControls
+- [x] Create save.js with data attributes
+- [x] Create view.js for frontend rendering
+- [x] Create editor.scss and style.scss
 
 ### Task 5.3: Polar Visualization
-- [ ] Extract balloon_data from source via WASM
-- [ ] Compute horizontal slice (meridian 90°/270°: Front-Right-Back-Left)
-- [ ] Compute vertical slice (meridian 0°/180°: Front-Top-Back-Bottom)
-- [ ] Map levels to Chart.js radar data points
-- [ ] Handle symmetry-based data mirroring if applicable
-- [ ] Display dB scale rings (Chart.js default radial grid)
-- [ ] Implement normalization (independent per slice to local max)
+- [x] Extract balloon_data from source via WASM
+- [x] Compute horizontal slice (meridian 90°/270°: Front-Right-Back-Left)
+- [x] Compute vertical slice (meridian 0°/180°: Front-Top-Back-Bottom)
+- [x] Map levels to Chart.js radar data points
+- [x] Handle symmetry-based data mirroring if applicable
+- [x] Display dB scale rings (Chart.js default radial grid)
+- [x] Implement normalization (independent per slice to local max)
 
 ### Task 5.4: Custom Chart.js Plugin - Polar Compass
-- [ ] Create `polarCompassPlugin` (renders Front/Back/Right/Left/Top/Bottom labels)
-- [ ] Position labels around radar perimeter
-- [ ] Use different colors for horizontal (blue) vs vertical (red) slice labels
-- [ ] Shared labels: Front (right), Back (left)
-- [ ] Horizontal-only: Right (top), Left (bottom)
-- [ ] Vertical-only: Top (top), Bottom (bottom)
+- [x] Create `polarCompassPlugin` (renders Front/Back/Right/Left/Top/Bottom labels)
+- [x] Position labels around radar perimeter
+- [x] Use different colors for horizontal (blue) vs vertical (red) slice labels
+- [x] Shared labels: Front (right), Back (left)
+- [x] Horizontal-only: Right (top), Left (bottom)
+- [x] Vertical-only: Top (top), Bottom (bottom)
 
 ### Task 5.5: Polar Controls
 - [ ] Source selector dropdown (InspectorControls)
@@ -738,7 +738,7 @@ gll-info/
 │   │   ├── view.js             # [DONE]
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
-│   ├── polar-plot/             # TODO Phase 5
+│   ├── polar-plot/             # PARTIAL Phase 5 (5.1-5.4 done)
 │   ├── balloon-3d/             # TODO Phase 6
 │   ├── geometry/               # TODO Phase 8
 │   ├── resources/              # TODO Phase 9
@@ -813,7 +813,7 @@ gll-info/
 Begin with Phase 1 to establish the foundation, then proceed sequentially. The most complex phases requiring close reference to the web demo are:
 
 - **Phase 4** (Frequency Response) - COMPLETED
-- **Phase 5** (Polar Plot) - Medium-High complexity, requires custom Chart.js plugin
+- **Phase 5** (Polar Plot) - PARTIAL (4/6 tasks complete: 5.1-5.4 done, 5.5-5.6 remaining)
 - **Phase 6** (3D Balloon) - Very High complexity, advanced Three.js mesh generation
 - **Phase 8** (Geometry Viewer) - Very High complexity, Three.js with OrbitControls
 
