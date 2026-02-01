@@ -252,6 +252,111 @@
 			padding-top: 16px;
 			border-top: 1px solid var(--gll-border);
 		}
+
+		.gll-source-placements {
+			margin-top: 16px;
+			padding-top: 16px;
+			border-top: 1px dashed var(--gll-border);
+
+			details {
+				summary {
+					cursor: pointer;
+					font-size: 13px;
+					color: var(--gll-text);
+					font-weight: 600;
+					list-style: none;
+				}
+
+				summary::-webkit-details-marker {
+					display: none;
+				}
+			}
+
+			.gll-source-placements-list {
+				margin-top: 10px;
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.gll-source-placement {
+				background: var(--gll-background-muted);
+				border: 1px solid var(--gll-border);
+				border-radius: 6px;
+				padding: 10px 12px;
+			}
+
+			.gll-source-placement-detail {
+				font-size: 13px;
+				color: var(--gll-text-muted);
+				margin-bottom: 6px;
+
+				strong {
+					color: var(--gll-text);
+					font-weight: 600;
+					margin-right: 6px;
+				}
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+			}
+
+			.gll-source-placements-empty {
+				padding: 10px;
+				font-size: 13px;
+			}
+		}
+
+		.gll-source-placements {
+			margin-top: 16px;
+			padding-top: 16px;
+			border-top: 1px solid var(--gll-border);
+
+			details {
+				background: var(--gll-background-muted);
+				border: 1px solid var(--gll-border);
+				border-radius: 6px;
+				padding: 10px 12px;
+			}
+
+			summary {
+				cursor: pointer;
+				font-weight: 500;
+				font-size: 14px;
+				color: var(--gll-text);
+			}
+
+			.gll-source-placements-list {
+				margin-top: 10px;
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.gll-source-placement {
+				background: var(--gll-background);
+				border: 1px solid var(--gll-border);
+				border-radius: 6px;
+				padding: 10px 12px;
+			}
+
+			.gll-source-placement-detail {
+				font-size: 13px;
+				color: var(--gll-text-muted);
+
+				strong {
+					color: var(--gll-text);
+					font-weight: 500;
+					margin-right: 6px;
+				}
+			}
+
+			.gll-source-placements-empty {
+				padding: 10px;
+				font-size: 13px;
+			}
+		}
 	}
 
 	// Expandable mode specific styles

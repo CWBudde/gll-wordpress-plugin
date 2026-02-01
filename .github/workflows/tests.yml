@@ -15,5 +15,5 @@ jobs:
   lint:
     uses: ./.github/workflows/test-lint.yml
 
-  can_build:
+  build:
     uses: ./.github/workflows/test-can-build.yml

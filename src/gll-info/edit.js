@@ -99,7 +99,6 @@ function GLLOverview({ data }) {
 				</div>
 			)}
 
-			{placementsList}
 			{Metadata && Metadata.Description && (
 				<div className="gll-section">
 					<h4>{__("Description", "gll-info")}</h4>
@@ -497,12 +496,12 @@ function SourceCard({
 								<div className="gll-source-detail">
 									<strong>{__("Resolution:", "gll-info")}</strong>{" "}
 									{balloon.AngularResolution?.MeridianStep || 0}° ×{" "}
-									{placementsList}
 									{balloon.AngularResolution?.ParallelStep || 0}°
 								</div>
 							</>
 						)}
 					</div>
+					{placementsList}
 					{showCharts && responseCount > 0 && (
 						<div className="gll-source-response">
 							<p className="gll-info-message">

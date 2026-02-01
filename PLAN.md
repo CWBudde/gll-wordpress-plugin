@@ -379,17 +379,17 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Add empty state handling ("No source definitions found")
 
 ### Task 7.3: Source Placements Display
-- [ ] Build source placements map from box_types data
-- [ ] Display placements section (which boxes use this source)
-- [ ] For each placement show:
+- [x] Build source placements map from box_types data
+- [x] Display placements section (which boxes use this source)
+- [x] For each placement show:
   - Box label and key
   - Source label and key within box
   - Position coordinates (X, Y, Z in mm)
   - Rotation angles (Heading, Vertical, Roll in degrees)
-- [ ] Format position using `formatPosition()` helper
-- [ ] Format angles using `formatAngleDegrees()` helper
-- [ ] Handle multiple placements per source definition
-- [ ] Add collapsible placement list UI
+- [x] Format position using `formatPosition()` helper
+- [x] Format angles using `formatAngleDegrees()` helper
+- [x] Handle multiple placements per source definition
+- [x] Add collapsible placement list UI
 
 ### Task 7.4: Per-Source Response Controls [NEW]
 - [ ] Add response selector dropdown (if source has responses)
@@ -419,7 +419,7 @@ Based on the web demo, these Gutenberg blocks will be created:
   - Calculate meridian/parallel degrees from response index
   - Use balloon_data angular resolution
   - Handle symmetry and grid wrapping
-- [ ] Port `buildSourcePlacementsMap()` function (pending Task 7.3)
+- [x] Port `buildSourcePlacementsMap()` function (pending Task 7.3)
   - Extract placements from box_types
   - Map source definition keys to placement instances
   - Return Map of key → placements array
@@ -429,7 +429,7 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Create `formatFrequency()` helper
   - Format Hz or kHz display
   - Handle missing values gracefully
-- [ ] Create `formatPosition()` helper (pending Task 7.3)
+- [x] Create `formatPosition()` helper (pending Task 7.3)
   - Format {x, y, z} to "X, Y, Z" string with units
   - Handle missing coordinates gracefully
 
