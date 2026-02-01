@@ -166,5 +166,80 @@ return array(
 		'editorStyle' => 'file:./index.css',
 		'style' => 'file:./style-index.css',
 		'viewScript' => 'file:./view.js'
+	),
+	'polar-plot' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/polar-plot',
+		'version' => '0.1.0',
+		'title' => 'GLL Polar Plot',
+		'category' => 'media',
+		'icon' => 'chart-pie',
+		'description' => 'Display polar directivity plot from GLL file acoustic data with horizontal and vertical slices.',
+		'keywords' => array(
+			'gll',
+			'polar',
+			'directivity',
+			'plot',
+			'acoustic'
+		),
+		'parent' => array(
+			'gll-info/gll-info'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'sourceIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'frequencyIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'showHorizontal' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showVertical' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'normalized' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'chartHeight' => array(
+				'type' => 'number',
+				'default' => 400
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
 	)
 );
