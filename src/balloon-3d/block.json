@@ -1,0 +1,76 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "gll-info/balloon-3d",
+	"version": "0.1.0",
+	"title": "GLL 3D Balloon",
+	"category": "media",
+	"icon": "admin-site-alt3",
+	"description": "Display 3D directivity balloon visualization from GLL file acoustic data using Three.js.",
+	"keywords": [ "gll", "3d", "balloon", "directivity", "three", "visualization" ],
+	"parent": [ "gll-info/gll-info" ],
+	"attributes": {
+		"fileId": {
+			"type": "number",
+			"default": 0
+		},
+		"fileUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"fileName": {
+			"type": "string",
+			"default": ""
+		},
+		"sourceIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"frequencyIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"dbRange": {
+			"type": "number",
+			"default": 40
+		},
+		"scale": {
+			"type": "number",
+			"default": 1.0
+		},
+		"wireframe": {
+			"type": "boolean",
+			"default": false
+		},
+		"autoRotate": {
+			"type": "boolean",
+			"default": false
+		},
+		"showReferenceSphere": {
+			"type": "boolean",
+			"default": true
+		},
+		"showAxesHelper": {
+			"type": "boolean",
+			"default": true
+		},
+		"canvasHeight": {
+			"type": "number",
+			"default": 500
+		}
+	},
+	"example": {
+		"attributes": {
+			"fileName": "example-speaker.gll"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "gll-info",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}
