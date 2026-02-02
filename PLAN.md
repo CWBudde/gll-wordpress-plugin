@@ -244,16 +244,16 @@ Based on the web demo, these Gutenberg blocks will be created:
 
 **Reference:** `gll-tools/web/modules/visualization.js` (lines 843-1226, `buildBalloonGeometry` lines 990-1153)
 
-### Task 6.1: Three.js Integration
-- [ ] Add Three.js as dependency (^0.159.0 or compatible)
-- [ ] Create React wrapper for Three.js scene with proper cleanup
-- [ ] Handle WebGL context lifecycle (mount/unmount)
-- [ ] Implement useEffect hooks for scene updates
-- [ ] Add fallback UI for browsers without WebGL support
+### Task 6.1: Three.js Integration [COMPLETED]
+- [x] Add Three.js as dependency (^0.159.0 or compatible)
+- [x] Create React wrapper for Three.js scene with proper cleanup
+- [x] Handle WebGL context lifecycle (mount/unmount)
+- [x] Implement useEffect hooks for scene updates
+- [x] Add fallback UI for browsers without WebGL support
 
-### Task 6.2: 3D Balloon Block Structure
-- [ ] Create block registration (`gll-info/balloon-3d`)
-- [ ] Define attributes:
+### Task 6.2: 3D Balloon Block Structure [COMPLETED]
+- [x] Create block registration (`gll-info/balloon-3d`)
+- [x] Define attributes:
   - `fileId`, `fileUrl`, `fileName` (GLL file reference)
   - `sourceIndex` (selected acoustic source)
   - `frequencyIndex` (selected frequency index)
@@ -262,10 +262,10 @@ Based on the web demo, these Gutenberg blocks will be created:
   - `wireframe` (boolean, default false)
   - `autoRotate` (boolean, default false)
   - `canvasHeight` (200-800px, default 500px)
-- [ ] Create edit.js with InspectorControls
-- [ ] Create save.js with data attributes
-- [ ] Create view.js for frontend Three.js rendering
-- [ ] Create editor.scss and style.scss
+- [x] Create edit.tsx with InspectorControls
+- [x] Create save.tsx with data attributes
+- [x] Create view.ts for frontend Three.js rendering
+- [x] Create editor.scss and style.scss
 
 ### Task 6.3: Three.js Scene Setup
 - [ ] Create WebGL renderer with antialias, transparent alpha
@@ -739,7 +739,7 @@ gll-info/
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
 │   ├── polar-plot/             # PARTIAL Phase 5 (5.1-5.4 done)
-│   ├── balloon-3d/             # TODO Phase 6
+│   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.2 done)
 │   ├── geometry/               # TODO Phase 8
 │   ├── resources/              # TODO Phase 9
 │   └── config/                 # TODO Phase 10

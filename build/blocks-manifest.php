@@ -1,6 +1,94 @@
 <?php
 // This file is generated. Do not modify it manually.
 return array(
+	'balloon-3d' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/balloon-3d',
+		'version' => '0.1.0',
+		'title' => 'GLL 3D Balloon',
+		'category' => 'media',
+		'icon' => 'admin-site-alt3',
+		'description' => 'Display 3D directivity balloon visualization from GLL file acoustic data using Three.js.',
+		'keywords' => array(
+			'gll',
+			'3d',
+			'balloon',
+			'directivity',
+			'three',
+			'visualization'
+		),
+		'parent' => array(
+			'gll-info/gll-info'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'sourceIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'frequencyIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'dbRange' => array(
+				'type' => 'number',
+				'default' => 40
+			),
+			'scale' => array(
+				'type' => 'number',
+				'default' => 1
+			),
+			'wireframe' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'autoRotate' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'showReferenceSphere' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showAxesHelper' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'canvasHeight' => array(
+				'type' => 'number',
+				'default' => 500
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
+	),
 	'frequency-response' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
