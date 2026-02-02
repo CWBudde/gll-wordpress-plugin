@@ -16,6 +16,7 @@ import {
 	useImperativeHandle,
 } from '@wordpress/element';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import './three.scss';
 
 /**
@@ -88,6 +89,30 @@ export interface ThreeSceneConfig {
 	autoRotate?: boolean;
 	/** Auto-rotation speed in radians per frame (default: 0.0035) */
 	autoRotateSpeed?: number;
+	/** Enable orbit controls for camera interaction (default: true) */
+	enableControls?: boolean;
+	/** Enable rotation via left-click drag (default: true) */
+	enableRotate?: boolean;
+	/** Enable panning via right-click drag (default: true) */
+	enablePan?: boolean;
+	/** Enable zoom via scroll wheel (default: true) */
+	enableZoom?: boolean;
+	/** Enable damping for smooth camera movement (default: true) */
+	enableDamping?: boolean;
+	/** Damping factor (default: 0.08) */
+	dampingFactor?: number;
+	/** Minimum polar angle in radians (default: 0.05 to avoid gimbal lock) */
+	minPolarAngle?: number;
+	/** Maximum polar angle in radians (default: Math.PI - 0.05 to avoid gimbal lock) */
+	maxPolarAngle?: number;
+	/** Minimum zoom distance (default: 0.5) */
+	minDistance?: number;
+	/** Maximum zoom distance (default: 10) */
+	maxDistance?: number;
+	/** Rotation speed multiplier (default: 0.8) */
+	rotateSpeed?: number;
+	/** Pan speed multiplier (default: 0.8) */
+	panSpeed?: number;
 }
 
 /**
@@ -100,10 +125,14 @@ export interface ThreeWrapperRef {
 	camera: THREE.PerspectiveCamera | null;
 	/** The Three.js renderer */
 	renderer: THREE.WebGLRenderer | null;
+	/** The orbit controls (if enabled) */
+	controls: OrbitControls | null;
 	/** Request a render (useful for static scenes) */
 	requestRender: () => void;
 	/** Get container dimensions */
 	getSize: () => { width: number; height: number };
+	/** Reset camera to initial position */
+	resetCamera: () => void;
 }
 
 /**
@@ -159,6 +188,19 @@ const defaultConfig: Required< ThreeSceneConfig > = {
 	antialias: true,
 	autoRotate: false,
 	autoRotateSpeed: 0.0035,
+	// OrbitControls settings
+	enableControls: true,
+	enableRotate: true,
+	enablePan: true,
+	enableZoom: true,
+	enableDamping: true,
+	dampingFactor: 0.08,
+	minPolarAngle: 0.05,
+	maxPolarAngle: Math.PI - 0.05,
+	minDistance: 0.5,
+	maxDistance: 10,
+	rotateSpeed: 0.8,
+	panSpeed: 0.8,
 };
 
 /**
@@ -190,11 +232,13 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 		const sceneRef = useRef< THREE.Scene | null >( null );
 		const cameraRef = useRef< THREE.PerspectiveCamera | null >( null );
 		const rendererRef = useRef< THREE.WebGLRenderer | null >( null );
+		const controlsRef = useRef< OrbitControls | null >( null );
 		const animationIdRef = useRef< number | null >( null );
 		const lastTimeRef = useRef< number >( 0 );
 		const referenceSphereRef = useRef< THREE.Mesh | null >( null );
 		const axesHelperRef = useRef< THREE.AxesHelper | null >( null );
 		const isInitializedRef = useRef< boolean >( false );
+		const initialCameraPositionRef = useRef< THREE.Vector3 >( new THREE.Vector3() );
 
 		const [ webGLSupported, setWebGLSupported ] = useState< boolean | null >(
 			null
@@ -231,6 +275,18 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			return { width: 0, height: 0 };
 		}, [] );
 
+		/**
+		 * Reset camera to initial position.
+		 */
+		const resetCamera = useCallback( () => {
+			if ( cameraRef.current && controlsRef.current ) {
+				cameraRef.current.position.copy( initialCameraPositionRef.current );
+				cameraRef.current.lookAt( 0, 0, 0 );
+				controlsRef.current.target.set( 0, 0, 0 );
+				controlsRef.current.update();
+			}
+		}, [] );
+
 		// Expose ref handle
 		useImperativeHandle(
 			ref,
@@ -238,10 +294,12 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 				scene: sceneRef.current,
 				camera: cameraRef.current,
 				renderer: rendererRef.current,
+				controls: controlsRef.current,
 				requestRender,
 				getSize,
+				resetCamera,
 			} ),
-			[ requestRender, getSize ]
+			[ requestRender, getSize, resetCamera ]
 		);
 
 		/**
@@ -282,6 +340,9 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			camera.lookAt( 0, 0, 0 );
 			cameraRef.current = camera;
 
+			// Store initial camera position for reset
+			initialCameraPositionRef.current.copy( camera.position );
+
 			// Create renderer
 			const renderer = new THREE.WebGLRenderer( {
 				canvas,
@@ -300,6 +361,52 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 				mergedConfig.clearAlpha
 			);
 			rendererRef.current = renderer;
+
+			// Create orbit controls if enabled
+			if ( mergedConfig.enableControls ) {
+				const controls = new OrbitControls( camera, canvas );
+
+				// Configure rotation
+				controls.enableRotate = mergedConfig.enableRotate;
+				controls.rotateSpeed = mergedConfig.rotateSpeed;
+
+				// Configure pan
+				controls.enablePan = mergedConfig.enablePan;
+				controls.panSpeed = mergedConfig.panSpeed;
+				controls.screenSpacePanning = true;
+
+				// Configure zoom
+				controls.enableZoom = mergedConfig.enableZoom;
+				controls.minDistance = mergedConfig.minDistance;
+				controls.maxDistance = mergedConfig.maxDistance;
+
+				// Configure damping for smooth movement
+				controls.enableDamping = mergedConfig.enableDamping;
+				controls.dampingFactor = mergedConfig.dampingFactor;
+
+				// Bound polar angles to avoid gimbal lock
+				controls.minPolarAngle = mergedConfig.minPolarAngle;
+				controls.maxPolarAngle = mergedConfig.maxPolarAngle;
+
+				// Configure auto-rotate (handled by controls instead of scene rotation)
+				controls.autoRotate = mergedConfig.autoRotate;
+				controls.autoRotateSpeed = mergedConfig.autoRotateSpeed * 60; // Convert from rad/frame to deg/sec
+
+				// Mouse button configuration
+				controls.mouseButtons = {
+					LEFT: THREE.MOUSE.ROTATE,
+					MIDDLE: THREE.MOUSE.DOLLY,
+					RIGHT: THREE.MOUSE.PAN,
+				};
+
+				// Touch configuration
+				controls.touches = {
+					ONE: THREE.TOUCH.ROTATE,
+					TWO: THREE.TOUCH.DOLLY_PAN,
+				};
+
+				controlsRef.current = controls;
+			}
 
 			// Add ambient light
 			const ambientLight = new THREE.AmbientLight(
@@ -354,6 +461,12 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 					animationIdRef.current = null;
 				}
 
+				// Dispose orbit controls
+				if ( controlsRef.current ) {
+					controlsRef.current.dispose();
+					controlsRef.current = null;
+				}
+
 				// Dispose reference sphere
 				if ( referenceSphereRef.current ) {
 					const sphereMesh = referenceSphereRef.current;
@@ -401,6 +514,7 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			const scene = sceneRef.current;
 			const camera = cameraRef.current;
 			const renderer = rendererRef.current;
+			const controls = controlsRef.current;
 
 			const animate = ( time: number ) => {
 				if ( paused ) {
@@ -411,9 +525,9 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 				const deltaTime = ( time - lastTimeRef.current ) / 1000;
 				lastTimeRef.current = time;
 
-				// Auto-rotation
-				if ( mergedConfig.autoRotate && scene.children.length > 0 ) {
-					scene.rotation.y += mergedConfig.autoRotateSpeed;
+				// Update controls (required for damping and auto-rotate)
+				if ( controls ) {
+					controls.update();
 				}
 
 				// Call onAnimate callback
@@ -437,7 +551,7 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 					animationIdRef.current = null;
 				}
 			};
-		}, [ paused, mergedConfig.autoRotate, mergedConfig.autoRotateSpeed, onAnimate ] );
+		}, [ paused, onAnimate ] );
 
 		/**
 		 * Handle container resize.
@@ -497,7 +611,24 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			if ( axesHelperRef.current ) {
 				axesHelperRef.current.visible = mergedConfig.showAxesHelper;
 			}
-		}, [ mergedConfig.showReferenceSphere, mergedConfig.showAxesHelper ] );
+
+			// Update controls properties
+			if ( controlsRef.current ) {
+				controlsRef.current.autoRotate = mergedConfig.autoRotate;
+				controlsRef.current.autoRotateSpeed = mergedConfig.autoRotateSpeed * 60;
+				controlsRef.current.enableRotate = mergedConfig.enableRotate;
+				controlsRef.current.enablePan = mergedConfig.enablePan;
+				controlsRef.current.enableZoom = mergedConfig.enableZoom;
+			}
+		}, [
+			mergedConfig.showReferenceSphere,
+			mergedConfig.showAxesHelper,
+			mergedConfig.autoRotate,
+			mergedConfig.autoRotateSpeed,
+			mergedConfig.enableRotate,
+			mergedConfig.enablePan,
+			mergedConfig.enableZoom,
+		] );
 
 		// Render fallback if WebGL is not supported
 		if ( webGLSupported === false ) {

@@ -1,0 +1,41 @@
+/**
+ * Geometry Viewer Block - Frontend Styles
+ *
+ * @package GllInfo
+ */
+
+.gll-geometry-block {
+	padding: 20px;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	background: #fff;
+
+	.gll-geometry-header {
+		margin-bottom: 16px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid #e5e7eb;
+
+		h3 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 600;
+			color: #111827;
+		}
+	}
+
+	.gll-geometry-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 32px;
+		background: #f9fafb;
+		border-radius: 4px;
+		color: #6b7280;
+		font-size: 14px;
+	}
+
+	.gll-geometry-canvas {
+		border-radius: 4px;
+		overflow: hidden;
+	}
+}

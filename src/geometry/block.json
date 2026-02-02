@@ -1,0 +1,76 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "gll-info/geometry",
+	"version": "0.1.0",
+	"title": "GLL Geometry Viewer",
+	"category": "media",
+	"icon": "admin-site-alt3",
+	"description": "Display GLL case geometry in a Three.js viewer.",
+	"keywords": [ "gll", "geometry", "3d", "viewer", "three" ],
+	"parent": [ "gll-info/gll-info" ],
+	"attributes": {
+		"fileId": {
+			"type": "number",
+			"default": 0
+		},
+		"fileUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"fileName": {
+			"type": "string",
+			"default": ""
+		},
+		"geometryIndex": {
+			"type": "number",
+			"default": 0
+		},
+		"showFaces": {
+			"type": "boolean",
+			"default": true
+		},
+		"showEdges": {
+			"type": "boolean",
+			"default": true
+		},
+		"showMarkers": {
+			"type": "object",
+			"default": {
+				"ref": true,
+				"com": true,
+				"pivot": false
+			}
+		},
+		"showSources": {
+			"type": "boolean",
+			"default": false
+		},
+		"centerReference": {
+			"type": "boolean",
+			"default": false
+		},
+		"autoRotate": {
+			"type": "boolean",
+			"default": false
+		},
+		"canvasHeight": {
+			"type": "number",
+			"default": 500
+		}
+	},
+	"example": {
+		"attributes": {
+			"fileName": "example-speaker.gll"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "gll-info",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}

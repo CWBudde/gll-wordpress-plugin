@@ -7,6 +7,7 @@
  */
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
 import { formatFrequency } from '../shared/charting-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
@@ -218,6 +219,48 @@ function initThreeScene(
 	renderer.setClearColor( 0x000000, 0 );
 	container.appendChild( renderer.domElement );
 
+	// Create orbit controls
+	const controls = new OrbitControls( camera, renderer.domElement );
+
+	// Configure rotation
+	controls.enableRotate = true;
+	controls.rotateSpeed = 0.8;
+
+	// Configure pan
+	controls.enablePan = true;
+	controls.panSpeed = 0.8;
+	controls.screenSpacePanning = true;
+
+	// Configure zoom
+	controls.enableZoom = true;
+	controls.minDistance = 0.5;
+	controls.maxDistance = 10;
+
+	// Configure damping for smooth movement
+	controls.enableDamping = true;
+	controls.dampingFactor = 0.08;
+
+	// Bound polar angles to avoid gimbal lock
+	controls.minPolarAngle = 0.05;
+	controls.maxPolarAngle = Math.PI - 0.05;
+
+	// Configure auto-rotate
+	controls.autoRotate = options.autoRotate;
+	controls.autoRotateSpeed = 0.0035 * 60; // Convert from rad/frame to deg/sec
+
+	// Mouse button configuration
+	controls.mouseButtons = {
+		LEFT: THREE.MOUSE.ROTATE,
+		MIDDLE: THREE.MOUSE.DOLLY,
+		RIGHT: THREE.MOUSE.PAN,
+	};
+
+	// Touch configuration
+	controls.touches = {
+		ONE: THREE.TOUCH.ROTATE,
+		TWO: THREE.TOUCH.DOLLY_PAN,
+	};
+
 	// Add lights
 	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.65 );
 	scene.add( ambientLight );
@@ -265,9 +308,8 @@ function initThreeScene(
 	function animate() {
 		animationId = requestAnimationFrame( animate );
 
-		if ( options.autoRotate && balloonMesh ) {
-			scene.rotation.y += 0.0035;
-		}
+		// Update controls (required for damping and auto-rotate)
+		controls.update();
 
 		renderer.render( scene, camera );
 	}
@@ -277,6 +319,7 @@ function initThreeScene(
 	window.addEventListener( 'beforeunload', () => {
 		cancelAnimationFrame( animationId );
 		resizeObserver.disconnect();
+		controls.dispose();
 		renderer.dispose();
 		if ( balloonMesh ) {
 			balloonMesh.geometry.dispose();
