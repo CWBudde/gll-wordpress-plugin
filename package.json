@@ -22,6 +22,13 @@
 		"react-chartjs-2": "^5.2.0"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^31.3.0"
+		"@types/chart.js": "^2.9.41",
+		"@types/wordpress__block-editor": "^15.0.0",
+		"@types/wordpress__blocks": "^12.5.18",
+		"@types/wordpress__components": "^23.0.12",
+		"@types/wordpress__element": "^2.4.1",
+		"@types/wordpress__i18n": "^3.4.0",
+		"@wordpress/scripts": "^31.3.0",
+		"typescript": "^5.9.3"
 	}
 }

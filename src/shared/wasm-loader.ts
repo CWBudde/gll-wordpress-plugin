@@ -63,17 +63,17 @@ function getWasmExecUrl() {
  *
  * @return {Promise<void>} Promise that resolves when script is loaded.
  */
-function loadWasmExec() {
+function loadWasmExec(): Promise<void> {
 	return new Promise( ( resolve, reject ) => {
 		// Check if already loaded.
 		if ( typeof window.Go !== 'undefined' ) {
-			resolve();
+			resolve( undefined );
 			return;
 		}
 
 		const script = document.createElement( 'script' );
 		script.src = getWasmExecUrl();
-		script.onload = resolve;
+		script.onload = () => resolve( undefined );
 		script.onerror = () =>
 			reject( new Error( 'Failed to load wasm_exec.js' ) );
 		document.head.appendChild( script );
@@ -228,6 +228,9 @@ export async function parseGLLFromUrl( url ) {
 	const arrayBuffer = await response.arrayBuffer();
 	return parseGLL( arrayBuffer );
 }
+
+// Alias for backward compatibility with view scripts
+export const ensureWasmReady = initWasm;
 
 // Export default initialization function.
 export default initWasm;

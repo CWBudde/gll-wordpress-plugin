@@ -54,7 +54,7 @@ const defaultContextValue = {
 /**
  * GLL Context.
  */
-export const GLLContext = createContext( defaultContextValue );
+export const GLLContext = createContext( defaultContextValue as any );
 
 /**
  * GLL Context Provider component.

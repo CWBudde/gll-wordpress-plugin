@@ -96,7 +96,7 @@ function buildPolarChartConfig( slices, frequency, showHorizontal, showVertical,
 	}
 
 	return {
-		type: 'radar',
+		type: 'radar' as const,
 		plugins: [ polarCompassPlugin ],
 		data: {
 			labels: slices.labels,

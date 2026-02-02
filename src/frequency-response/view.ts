@@ -351,7 +351,7 @@ function renderChart( block, data, options ) {
 	}
 
 	// Build scales configuration
-	const scales = {
+	const scales: Record<string, any> = {
 		x: buildLogFrequencyScale(
 			frequencyData.minFrequency,
 			frequencyData.maxFrequency,

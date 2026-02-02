@@ -102,7 +102,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Build chart configuration (simplified for editor preview)
 	const chartConfig = data
 		? {
-				type: 'line',
+				type: 'line' as const,
 				data: {
 					datasets: [
 						showMagnitude && {
