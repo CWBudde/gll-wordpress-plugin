@@ -295,23 +295,23 @@ Based on the web demo, these Gutenberg blocks will be created:
   toViewPoint: { x: gllPoint.x, y: gllPoint.z, z: gllPoint.y }
   ```
 
-### Task 6.5: Color Mapping System
-- [ ] Implement HSL color mapping for SPL levels:
+### Task 6.5: Color Mapping System [COMPLETED]
+- [x] Implement HSL color mapping for SPL levels:
   - Hue range: 0 (red, max) to 0.66 (blue, min)
   - Saturation: 0.75 (vivid)
   - Lightness: 0.5 (medium)
   - Missing data: Gray (0.65, 0.65, 0.65)
-- [ ] Create per-vertex color buffer for BufferGeometry
-- [ ] Update colors when frequency or range changes
+- [x] Create per-vertex color buffer for BufferGeometry
+- [x] Update colors when frequency or range changes
 
-### Task 6.6: Interactive Camera Controls
-- [ ] Implement OrbitControls-style dragging:
+### Task 6.6: Interactive Camera Controls [COMPLETED]
+- [x] Implement OrbitControls-style dragging:
   - Left click drag → rotate (update azimuth/polar angles)
   - Right click drag → pan camera
   - Scroll → zoom in/out
-- [ ] Bound rotation angles (φ ∈ [0.05, π-0.05] to avoid gimbal lock)
-- [ ] Add pointer capture for smooth dragging
-- [ ] Implement auto-rotate feature (0.0035 rad/frame around Y-axis)
+- [x] Bound rotation angles (φ ∈ [0.05, π-0.05] to avoid gimbal lock)
+- [x] Add pointer capture for smooth dragging
+- [x] Implement auto-rotate feature (0.0035 rad/frame around Y-axis)
 
 ### Task 6.7: Balloon Controls (InspectorControls)
 - [ ] Source selector dropdown

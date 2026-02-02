@@ -333,7 +333,25 @@ export function sphericalToCartesian(
 }
 
 /**
- * Map a level value to HSL color.
+ * Gray color constant for missing data.
+ * RGB values (0.65, 0.65, 0.65) - neutral gray.
+ */
+export const MISSING_DATA_COLOR = { r: 0.65, g: 0.65, b: 0.65 };
+
+/**
+ * Missing data level marker constant.
+ * Levels below this threshold are considered missing/invalid.
+ */
+export const MISSING_LEVEL_MARKER = -99;
+
+/**
+ * Map a normalized SPL value to HSL color.
+ *
+ * Color scale:
+ * - Hue 0 (red) = maximum level
+ * - Hue 0.66 (blue) = minimum level
+ * - Saturation 0.75 (vivid)
+ * - Lightness 0.5 (medium brightness)
  *
  * @param normalized Normalized value 0-1 (0=min, 1=max).
  * @return Object with r, g, b values (0-1 range).
@@ -371,6 +389,33 @@ export function levelToColor( normalized: number ): { r: number; g: number; b: n
 		g: g + m,
 		b: b + m,
 	};
+}
+
+/**
+ * Map an SPL level to RGB color, handling missing data.
+ *
+ * Wraps levelToColor to first check if the level is valid.
+ * Missing data (below MISSING_LEVEL_MARKER) renders as gray.
+ *
+ * @param level      Raw SPL level in dB.
+ * @param displayMin Minimum display level (displayMax - dbRange).
+ * @param dbRange    Dynamic range in dB.
+ * @return Object with r, g, b values (0-1 range).
+ */
+export function levelToColorWithMissing(
+	level: number,
+	displayMin: number,
+	dbRange: number
+): { r: number; g: number; b: number } {
+	// Check for missing/invalid data
+	if ( level <= MISSING_LEVEL_MARKER ) {
+		return MISSING_DATA_COLOR;
+	}
+
+	// Calculate normalized value (clamped to 0-1)
+	const normalized = Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
+
+	return levelToColor( normalized );
 }
 
 /**
@@ -420,10 +465,16 @@ export function buildBalloonGeometryData(
 			// Get level for this point (wrap meridian index)
 			const levelPIdx = Math.min( pIdx, fullParallelCount - 1 );
 			const levelMIdx = mIdx % fullMeridianCount;
-			const level = levels[ levelPIdx ]?.[ levelMIdx ] ?? displayMin;
+			const level = levels[ levelPIdx ]?.[ levelMIdx ] ?? MISSING_LEVEL_MARKER - 1;
+
+			// Check if this is missing data
+			const isMissing = level <= MISSING_LEVEL_MARKER;
 
 			// Calculate normalized value (clamped to 0-1)
-			const normalized = Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
+			// Missing data uses 0 for radius calculation (minimum protrusion)
+			const normalized = isMissing
+				? 0
+				: Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
 
 			// Calculate radius based on level
 			const radius = baseRadius + amplitude * normalized;
@@ -432,8 +483,8 @@ export function buildBalloonGeometryData(
 			const pos = sphericalToCartesian( radius, parallelRad, azimuthRad );
 			vertices.push( pos.x, pos.y, pos.z );
 
-			// Map level to color
-			const color = levelToColor( normalized );
+			// Map level to color (missing data renders as gray)
+			const color = levelToColorWithMissing( level, displayMin, dbRange );
 			colors.push( color.r, color.g, color.b );
 		}
 	}

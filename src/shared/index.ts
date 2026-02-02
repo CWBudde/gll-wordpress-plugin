@@ -58,15 +58,22 @@ export type {
 	ThreeWrapperProps,
 } from './three-wrapper';
 
+// Geometry viewer
+export { default as GeometryViewer } from './geometry-viewer';
+export type { GeometryViewerRef, GeometryViewerProps } from './geometry-viewer';
+
 // Balloon 3D utilities
 export {
 	SYMMETRY,
+	MISSING_DATA_COLOR,
+	MISSING_LEVEL_MARKER,
 	getResponseWithSymmetry,
 	computeGlobalMaxLevel,
 	clearGlobalMaxCache,
 	buildFullSphereLevels,
 	sphericalToCartesian,
 	levelToColor,
+	levelToColorWithMissing,
 	buildBalloonGeometryData,
 } from './balloon-utils';
 export type {

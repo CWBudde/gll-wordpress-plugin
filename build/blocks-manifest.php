@@ -182,6 +182,93 @@ return array(
 		'style' => 'file:./style-index.css',
 		'viewScript' => 'file:./view.js'
 	),
+	'geometry' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/geometry',
+		'version' => '0.1.0',
+		'title' => 'GLL Geometry Viewer',
+		'category' => 'media',
+		'icon' => 'admin-site-alt3',
+		'description' => 'Display GLL case geometry in a Three.js viewer.',
+		'keywords' => array(
+			'gll',
+			'geometry',
+			'3d',
+			'viewer',
+			'three'
+		),
+		'parent' => array(
+			'gll-info/gll-info'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'geometryIndex' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'showFaces' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showEdges' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showMarkers' => array(
+				'type' => 'object',
+				'default' => array(
+					'ref' => true,
+					'com' => true,
+					'pivot' => false
+				)
+			),
+			'showSources' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'centerReference' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'autoRotate' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'canvasHeight' => array(
+				'type' => 'number',
+				'default' => 500
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
+	),
 	'gll-info' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
