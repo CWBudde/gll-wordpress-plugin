@@ -45,3 +45,15 @@ export {
 
 // Polar compass Chart.js plugin
 export { default as polarCompassPlugin } from './polar-compass-plugin';
+
+// Three.js wrapper
+export {
+	default as ThreeWrapper,
+	isWebGLSupported,
+	isWebGL2Supported,
+} from './three-wrapper';
+export type {
+	ThreeSceneConfig,
+	ThreeWrapperRef,
+	ThreeWrapperProps,
+} from './three-wrapper';
