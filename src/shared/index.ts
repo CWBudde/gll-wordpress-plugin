@@ -57,3 +57,20 @@ export type {
 	ThreeWrapperRef,
 	ThreeWrapperProps,
 } from './three-wrapper';
+
+// Balloon 3D utilities
+export {
+	SYMMETRY,
+	getResponseWithSymmetry,
+	computeGlobalMaxLevel,
+	clearGlobalMaxCache,
+	buildFullSphereLevels,
+	sphericalToCartesian,
+	levelToColor,
+	buildBalloonGeometryData,
+} from './balloon-utils';
+export type {
+	BalloonGridInfo,
+	BalloonBuildOptions,
+	BalloonGeometryData,
+} from './balloon-utils';
