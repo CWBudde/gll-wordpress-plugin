@@ -1,5 +1,5 @@
 /**
- * Registers the Frequency Response block.
+ * Registers the Polar Plot block.
  *
  * @package GllInfo
  */
@@ -11,9 +11,6 @@ import save from './save';
 import metadata from './block.json';
 
 /**
- * Register the Frequency Response block.
+ * Register the Polar Plot block.
  */
-registerBlockType( metadata.name, {
-	edit: Edit,
-	save,
-} );
+registerBlockType( metadata as any, { edit: Edit, save } );

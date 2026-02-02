@@ -8,25 +8,26 @@ import { useEffect, useMemo, useRef } from '@wordpress/element';
 import Chart from 'chart.js/auto';
 import './chart.scss';
 
+interface ChartWrapperProps {
+	// Using 'any' for config to avoid deep Chart.js type mismatches
+	config: any;
+	className?: string;
+	height?: number;
+	onChartReady?: ( chart: Chart ) => void;
+}
+
 /**
  * Chart wrapper component.
- *
- * @param {Object}   props                Component props.
- * @param {Object}   props.config         Chart.js configuration object.
- * @param {string}   props.className      Optional class name for container.
- * @param {number}   props.height         Minimum chart height in pixels.
- * @param {Function} props.onChartReady   Optional callback when chart instance is ready.
- * @return {JSX.Element} Chart wrapper.
  */
 export default function ChartWrapper( {
 	config,
 	className = '',
 	height = 320,
 	onChartReady,
-} ) {
-	const canvasRef = useRef( null );
-	const chartRef = useRef( null );
-	const containerRef = useRef( null );
+}: ChartWrapperProps ) {
+	const canvasRef = useRef<HTMLCanvasElement>( null );
+	const chartRef = useRef<Chart | null>( null );
+	const containerRef = useRef<HTMLDivElement>( null );
 
 	const mergedConfig = useMemo(
 		() => ( {

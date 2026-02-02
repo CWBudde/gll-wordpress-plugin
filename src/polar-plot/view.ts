@@ -250,7 +250,7 @@ function renderChart( block, data, options ) {
 							if ( item?.raw === null || item?.raw === undefined ) {
 								return `${ item.dataset?.label || 'Level' }: -`;
 							}
-							return `${ item.dataset?.label || 'Level' }: ${ item.raw.toFixed( 1 ) } dB`;
+							return `${ item.dataset?.label || 'Level' }: ${ ( item.raw as number ).toFixed( 1 ) } dB`;
 						},
 					},
 				},

@@ -30,16 +30,16 @@
 	/**
 	 * Load the wasm_exec.js script.
 	 */
-	function loadWasmExec() {
+	function loadWasmExec(): Promise<void> {
 		return new Promise( ( resolve, reject ) => {
 			if ( typeof window.Go !== 'undefined' ) {
-				resolve();
+				resolve( undefined );
 				return;
 			}
 
 			const script = document.createElement( 'script' );
 			script.src = getSettings().wasmExecUrl;
-			script.onload = resolve;
+			script.onload = () => resolve( undefined );
 			script.onerror = () =>
 				reject( new Error( 'Failed to load wasm_exec.js' ) );
 			document.head.appendChild( script );
