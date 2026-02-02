@@ -26,7 +26,12 @@ import * as THREE from 'three';
 import { useGLLLoader, ThreeWrapper, isWebGLSupported } from '../shared';
 import type { ThreeWrapperRef } from '../shared';
 import { formatFrequency } from '../shared/charting-utils';
-import { getBalloonGrid } from '../shared/polar-utils';
+import {
+	getBalloonGrid,
+	buildBalloonGeometryData,
+	computeGlobalMaxLevel,
+} from '../shared/balloon-utils';
+import type { BalloonGridInfo } from '../shared/balloon-utils';
 import './editor.scss';
 
 /**
@@ -123,14 +128,22 @@ export default function Edit( { attributes, setAttributes } ) {
 		if ( ! currentSource ) {
 			return null;
 		}
-		return getBalloonGrid( currentSource );
+		return getBalloonGrid( currentSource ) as BalloonGridInfo | null;
+	}, [ currentSource ] );
+
+	// Get global max level (cached)
+	const globalMax = useMemo( () => {
+		if ( ! currentSource ) {
+			return 0;
+		}
+		return computeGlobalMaxLevel( currentSource );
 	}, [ currentSource ] );
 
 	/**
-	 * Build the balloon mesh geometry.
+	 * Build the balloon mesh geometry using new utilities with symmetry handling.
 	 */
 	const buildBalloonMesh = useCallback( () => {
-		if ( ! threeRef.current?.scene || ! balloonGrid || frequencies.length === 0 ) {
+		if ( ! threeRef.current?.scene || ! balloonGrid || frequencies.length === 0 || ! currentSource ) {
 			return;
 		}
 
@@ -148,93 +161,28 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		const freqIdx = Math.min( frequencyIndex, frequencies.length - 1 );
 
-		// Get levels for the selected frequency
-		const levels: number[][] = [];
-		const { meridianStep, parallelStep, meridians, parallels } = balloonGrid;
+		// Build geometry data using new utilities with symmetry handling
+		const geometryData = buildBalloonGeometryData( currentSource, {
+			frequencyIndex: freqIdx,
+			dbRange,
+			scale,
+		} );
 
-		// Build full sphere grid from balloon data
-		for ( let p = 0; p < parallels; p++ ) {
-			const parallelLevels: number[] = [];
-			for ( let m = 0; m < meridians; m++ ) {
-				// Get response for this direction
-				const responseIdx = p * meridians + m;
-				const response = currentSource?.Responses?.[ responseIdx ];
-				const level = response?.Levels?.[ freqIdx ] ?? null;
-				parallelLevels.push( level ?? -100 );
-			}
-			levels.push( parallelLevels );
+		if ( ! geometryData ) {
+			return;
 		}
 
-		// Find global max level
-		let globalMax = -Infinity;
-		for ( const row of levels ) {
-			for ( const level of row ) {
-				if ( level !== null && level > globalMax ) {
-					globalMax = level;
-				}
-			}
-		}
-
-		if ( globalMax === -Infinity ) {
-			globalMax = 0;
-		}
-
-		const displayMin = globalMax - dbRange;
-		const baseRadius = 0.3 * scale;
-		const amplitude = 0.9 * scale;
-
-		// Build geometry
+		// Create Three.js geometry
 		const geometry = new THREE.BufferGeometry();
-		const vertices: number[] = [];
-		const colors: number[] = [];
-		const indices: number[] = [];
-
-		// Create sphere vertices with radius based on level
-		for ( let p = 0; p <= parallels; p++ ) {
-			const phi = ( p / parallels ) * Math.PI; // 0 to PI (top to bottom)
-
-			for ( let m = 0; m <= meridians; m++ ) {
-				const theta = ( m / meridians ) * Math.PI * 2; // 0 to 2PI
-
-				// Get level for this point
-				const pIdx = Math.min( p, parallels - 1 );
-				const mIdx = m % meridians;
-				const level = levels[ pIdx ]?.[ mIdx ] ?? displayMin;
-
-				// Calculate normalized value and radius
-				const normalized = Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
-				const radius = baseRadius + amplitude * normalized;
-
-				// Convert spherical to cartesian (GLL Z-up to Three.js Y-up)
-				const x = radius * Math.sin( phi ) * Math.cos( theta );
-				const z = radius * Math.sin( phi ) * Math.sin( theta ); // GLL Y -> Three.js Z
-				const y = radius * Math.cos( phi ); // GLL Z -> Three.js Y
-
-				vertices.push( x, y, z );
-
-				// Color based on level (HSL: red=max to blue=min)
-				const hue = ( 1 - normalized ) * 0.66; // 0 (red) to 0.66 (blue)
-				const color = new THREE.Color();
-				color.setHSL( hue, 0.75, 0.5 );
-				colors.push( color.r, color.g, color.b );
-			}
-		}
-
-		// Create triangle indices
-		for ( let p = 0; p < parallels; p++ ) {
-			for ( let m = 0; m < meridians; m++ ) {
-				const current = p * ( meridians + 1 ) + m;
-				const next = current + meridians + 1;
-
-				// Two triangles per quad
-				indices.push( current, next, current + 1 );
-				indices.push( current + 1, next, next + 1 );
-			}
-		}
-
-		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-		geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-		geometry.setIndex( indices );
+		geometry.setAttribute(
+			'position',
+			new THREE.Float32BufferAttribute( geometryData.vertices, 3 )
+		);
+		geometry.setAttribute(
+			'color',
+			new THREE.Float32BufferAttribute( geometryData.colors, 3 )
+		);
+		geometry.setIndex( geometryData.indices );
 		geometry.computeVertexNormals();
 
 		// Create material
@@ -479,8 +427,16 @@ export default function Edit( { attributes, setAttributes } ) {
 									{ dbRange } dB
 								</span>
 								<span className="gll-meta-badge">
+									<strong>{ __( 'Max Level:', 'gll-info' ) }</strong>{ ' ' }
+									{ globalMax.toFixed( 1 ) } dB
+								</span>
+								<span className="gll-meta-badge">
 									<strong>{ __( 'Resolution:', 'gll-info' ) }</strong>{ ' ' }
 									{ balloonGrid.meridianStep }&deg; &times; { balloonGrid.parallelStep }&deg;
+								</span>
+								<span className="gll-meta-badge">
+									<strong>{ __( 'Symmetry:', 'gll-info' ) }</strong>{ ' ' }
+									{ balloonGrid.symmetryName }
 								</span>
 								{ wireframe && (
 									<span className="gll-meta-badge gll-meta-badge-highlight">

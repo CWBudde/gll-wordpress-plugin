@@ -267,22 +267,22 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Create view.ts for frontend Three.js rendering
 - [x] Create editor.scss and style.scss
 
-### Task 6.3: Three.js Scene Setup
-- [ ] Create WebGL renderer with antialias, transparent alpha
-- [ ] Configure PerspectiveCamera (45° FOV, position at (0, 0.6, 2.6))
-- [ ] Add ambient light (0xffffff, intensity 0.65)
-- [ ] Add directional light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
-- [ ] Create reference wireframe sphere (unit radius, opacity 0.28)
-- [ ] Add axes helper (color-coded: R=X, G=Y, B=Z)
-- [ ] Implement animation loop with requestAnimationFrame
+### Task 6.3: Three.js Scene Setup [COMPLETED]
+- [x] Create WebGL renderer with antialias, transparent alpha
+- [x] Configure PerspectiveCamera (45° FOV, position at (0, 0.6, 2.6))
+- [x] Add ambient light (0xffffff, intensity 0.65)
+- [x] Add directional light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
+- [x] Create reference wireframe sphere (unit radius, opacity 0.28)
+- [x] Add axes helper (color-coded: R=X, G=Y, B=Z)
+- [x] Implement animation loop with requestAnimationFrame
 
-### Task 6.4: Balloon Mesh Generation
-- [ ] Port `buildBalloonGeometry()` from visualization.js
-- [ ] Extract balloon_data grid from source via WASM
-- [ ] Build full sphere grid (parallels 0°-180°, meridians 0°-360°)
-- [ ] Handle symmetry-based data mirroring (canMirrorMeridian, canMirrorParallel)
-- [ ] Compute global max SPL level across all frequencies (cached in WeakMap)
-- [ ] Map levels to vertex positions using formula:
+### Task 6.4: Balloon Mesh Generation [COMPLETED]
+- [x] Port `buildBalloonGeometry()` from visualization.js
+- [x] Extract balloon_data grid from source via WASM
+- [x] Build full sphere grid (parallels 0°-180°, meridians 0°-360°)
+- [x] Handle symmetry-based data mirroring (canMirrorMeridian, canMirrorParallel)
+- [x] Compute global max SPL level across all frequencies (cached in WeakMap)
+- [x] Map levels to vertex positions using formula:
   ```
   radius = baseRadius + amplitude * normalized
   where normalized = (level - displayMin) / dbRange
@@ -290,7 +290,7 @@ Based on the web demo, these Gutenberg blocks will be created:
         amplitude = 0.9 * scale
         displayMin = displayMax - dbRange
   ```
-- [ ] Implement coordinate conversion (GLL Z-up → Three.js Y-up):
+- [x] Implement coordinate conversion (GLL Z-up → Three.js Y-up):
   ```javascript
   toViewPoint: { x: gllPoint.x, y: gllPoint.z, z: gllPoint.y }
   ```
@@ -739,7 +739,7 @@ gll-info/
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
 │   ├── polar-plot/             # PARTIAL Phase 5 (5.1-5.4 done)
-│   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.2 done)
+│   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.4 done)
 │   ├── geometry/               # TODO Phase 8
 │   ├── resources/              # TODO Phase 9
 │   └── config/                 # TODO Phase 10
