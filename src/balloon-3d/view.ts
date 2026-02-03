@@ -154,12 +154,15 @@ function render3DBalloon( block: HTMLElement, data: any, options: BlockOptions )
 
 	// Get global max level (cached)
 	const globalMax = computeGlobalMaxLevel( source );
+	const displayMax = globalMax;
+	const displayMin = globalMax - options.dbRange;
+	const midLevel = ( displayMin + displayMax ) / 2;
 
 	// Build metadata HTML
 	const badges = [];
 	badges.push( `<span class="gll-meta-badge"><strong>Frequency:</strong> ${ formatFrequency( frequency ) }</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>dB Range:</strong> ${ options.dbRange } dB</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Max Level:</strong> ${ globalMax.toFixed( 1 ) } dB</span>` );
+	badges.push( `<span class="gll-meta-badge"><strong>Display Range:</strong> ${ displayMin.toFixed( 1 ) } &ndash; ${ displayMax.toFixed( 1 ) } dB</span>` );
+	badges.push( `<span class="gll-meta-badge"><strong>Grid:</strong> ${ balloonGrid.fullMeridianCount } &times; ${ balloonGrid.fullParallelCount }</span>` );
 	badges.push( `<span class="gll-meta-badge"><strong>Resolution:</strong> ${ balloonGrid.meridianStep }\u00b0 \u00d7 ${ balloonGrid.parallelStep }\u00b0</span>` );
 	badges.push( `<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>` );
 	if ( options.wireframe ) {
@@ -175,12 +178,24 @@ function render3DBalloon( block: HTMLElement, data: any, options: BlockOptions )
 
 	const metadataHtml = `<div class="gll-balloon-3d-metadata">${ badges.join( '' ) }</div>`;
 
+	// Build color bar legend HTML
+	const colorbarHtml = `
+		<div class="gll-balloon-3d-colorbar">
+			<div class="gll-colorbar-gradient"></div>
+			<div class="gll-colorbar-labels">
+				<span>${ displayMin.toFixed( 0 ) } dB</span>
+				<span>${ midLevel.toFixed( 0 ) } dB</span>
+				<span>${ displayMax.toFixed( 0 ) } dB</span>
+			</div>
+		</div>
+	`;
+
 	// Create Three.js container
 	const threeContainer = document.createElement( 'div' );
 	threeContainer.className = 'gll-three-container';
 	threeContainer.style.minHeight = options.canvasHeight + 'px';
 
-	canvasContainer.innerHTML = metadataHtml;
+	canvasContainer.innerHTML = metadataHtml + colorbarHtml;
 	canvasContainer.appendChild( threeContainer );
 	( canvasContainer as HTMLElement ).style.display = 'block';
 

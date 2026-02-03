@@ -139,6 +139,10 @@ export default function Edit( { attributes, setAttributes } ) {
 		return computeGlobalMaxLevel( currentSource );
 	}, [ currentSource ] );
 
+	// Calculate display range
+	const displayMax = globalMax;
+	const displayMin = globalMax - dbRange;
+
 	/**
 	 * Build the balloon mesh geometry using new utilities with symmetry handling.
 	 */
@@ -423,12 +427,12 @@ export default function Edit( { attributes, setAttributes } ) {
 									{ formatFrequency( frequencies[ Math.min( frequencyIndex, frequencies.length - 1 ) ] ) }
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'dB Range:', 'gll-info' ) }</strong>{ ' ' }
-									{ dbRange } dB
+									<strong>{ __( 'Display Range:', 'gll-info' ) }</strong>{ ' ' }
+									{ displayMin.toFixed( 1 ) } &ndash; { displayMax.toFixed( 1 ) } dB
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Max Level:', 'gll-info' ) }</strong>{ ' ' }
-									{ globalMax.toFixed( 1 ) } dB
+									<strong>{ __( 'Grid:', 'gll-info' ) }</strong>{ ' ' }
+									{ balloonGrid.fullMeridianCount } &times; { balloonGrid.fullParallelCount }
 								</span>
 								<span className="gll-meta-badge">
 									<strong>{ __( 'Resolution:', 'gll-info' ) }</strong>{ ' ' }
@@ -448,6 +452,14 @@ export default function Edit( { attributes, setAttributes } ) {
 										{ __( 'Auto-Rotate', 'gll-info' ) }
 									</span>
 								) }
+							</div>
+							<div className="gll-balloon-3d-colorbar">
+								<div className="gll-colorbar-gradient" />
+								<div className="gll-colorbar-labels">
+									<span>{ displayMin.toFixed( 0 ) } dB</span>
+									<span>{ ( ( displayMin + displayMax ) / 2 ).toFixed( 0 ) } dB</span>
+									<span>{ displayMax.toFixed( 0 ) } dB</span>
+								</div>
 							</div>
 							<div className="gll-balloon-3d-canvas">
 								<ThreeWrapper
