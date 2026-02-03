@@ -323,15 +323,15 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Auto-rotate toggle (ToggleControl)
 - [x] Canvas height slider (RangeControl 200-800px)
 
-### Task 6.8: Balloon Metadata Display
-- [ ] Show selected frequency (formatted)
-- [ ] Display current level range (min/max dB)
-- [ ] Show display min/max (displayMax - dbRange, displayMax)
-- [ ] Display grid dimensions (meridian count × parallel count)
-- [ ] Show symmetry type
-- [ ] Show normalization status badge
-- [ ] Create color bar legend (SPL scale visualization)
-- [ ] Style badges and legend with responsive layout
+### Task 6.8: Balloon Metadata Display [COMPLETED]
+- [x] Show selected frequency (formatted)
+- [x] Display current level range (min/max dB)
+- [x] Show display min/max (displayMax - dbRange, displayMax)
+- [x] Display grid dimensions (meridian count × parallel count)
+- [x] Show symmetry type
+- [x] Show normalization status badge (wireframe/auto-rotate indicators)
+- [x] Create color bar legend (SPL scale visualization)
+- [x] Style badges and legend with responsive layout
 
 ### Task 6.9: Performance Optimization
 - [ ] Implement lazy loading (only initialize when block in viewport)
@@ -526,14 +526,14 @@ Based on the web demo, these Gutenberg blocks will be created:
   - Transparent with opacity 0.9
 
 ### Task 8.5: Coordinate Conversion & Centering
-- [ ] Implement GLL Z-up to Three.js Y-up conversion:
+- [x] Implement GLL Z-up to Three.js Y-up conversion:
   ```javascript
   toViewPoint: { x: gllPoint.x, y: gllPoint.z, z: gllPoint.y }
   ```
-- [ ] Compute bounding box (minX/Y/Z, maxX/Y/Z)
-- [ ] Calculate geometry center and size
-- [ ] Apply scale factor (targetSize 1.2 / actualSize)
-- [ ] Center geometry group based on:
+- [x] Compute bounding box (minX/Y/Z, maxX/Y/Z)
+- [x] Calculate geometry center and size
+- [x] Apply scale factor (targetSize 1.2 / actualSize)
+- [x] Center geometry group based on:
   - Reference point if `centerReference` is true
   - Bounding box center otherwise
 - [ ] Convert Euler angles (HVR) to quaternion for source orientations

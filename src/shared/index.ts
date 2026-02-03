@@ -67,6 +67,15 @@ export {
 	buildCaseGeometryData,
 	resolveGeometryVertex,
 } from './geometry-utils';
+export type { GeometryBounds } from './geometry-utils';
+export {
+	getCaseGeometryVertices,
+	resolveGeometryPoint,
+	getReferencePoint,
+	toViewPoint,
+	computeBounds,
+	computeScaleFactor,
+} from './geometry-utils';
 
 // Balloon 3D utilities
 export {

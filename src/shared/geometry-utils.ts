@@ -39,6 +39,13 @@ export interface GeometryBuildResult {
 	};
 }
 
+export interface GeometryBounds {
+	min: GeometryVertex;
+	max: GeometryVertex;
+	size: GeometryVertex;
+	center: GeometryVertex;
+}
+
 export function buildCaseGeometryData(
 	geometry: any,
 	options: GeometryBuildOptions = {}
@@ -146,6 +153,78 @@ export function resolveGeometryVertex(
 ): GeometryVertex | null {
 	const vertices = extractVertices( geometry );
 	return vertices[ index ] || null;
+}
+
+export function getCaseGeometryVertices( geometry: any ): GeometryVertex[] {
+	return extractVertices( geometry );
+}
+
+export function resolveGeometryPoint(
+	geometry: any,
+	keys: string[]
+): GeometryVertex | null {
+	for ( const key of keys ) {
+		if ( geometry && geometry[ key ] ) {
+			const parsed = parseVertex( geometry[ key ] );
+			if ( parsed ) {
+				return parsed;
+			}
+		}
+	}
+	return null;
+}
+
+export function getReferencePoint( geometry: any ): GeometryVertex | null {
+	return resolveGeometryPoint( geometry, [
+		'ReferencePoint',
+		'RefPoint',
+		'Reference',
+		'ReferencePosition',
+		'ReferenceCoordinates',
+		'RefPosition',
+	] );
+}
+
+export function toViewPoint( point: GeometryVertex ): GeometryVertex {
+	return { x: point.x, y: point.z, z: point.y };
+}
+
+export function computeBounds( vertices: GeometryVertex[] ): GeometryBounds {
+	const min: GeometryVertex = { x: Infinity, y: Infinity, z: Infinity };
+	const max: GeometryVertex = { x: -Infinity, y: -Infinity, z: -Infinity };
+
+	vertices.forEach( ( vertex ) => {
+		min.x = Math.min( min.x, vertex.x );
+		min.y = Math.min( min.y, vertex.y );
+		min.z = Math.min( min.z, vertex.z );
+		max.x = Math.max( max.x, vertex.x );
+		max.y = Math.max( max.y, vertex.y );
+		max.z = Math.max( max.z, vertex.z );
+	} );
+
+	const size = {
+		x: max.x - min.x,
+		y: max.y - min.y,
+		z: max.z - min.z,
+	};
+	const center = {
+		x: min.x + size.x / 2,
+		y: min.y + size.y / 2,
+		z: min.z + size.z / 2,
+	};
+
+	return { min, max, size, center };
+}
+
+export function computeScaleFactor(
+	bounds: GeometryBounds,
+	targetSize = 1.2
+): number {
+	const maxSize = Math.max( bounds.size.x, bounds.size.y, bounds.size.z );
+	if ( maxSize <= 0 ) {
+		return 1;
+	}
+	return targetSize / maxSize;
 }
 
 function extractVertices(

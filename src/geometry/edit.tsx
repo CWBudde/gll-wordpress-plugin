@@ -34,6 +34,11 @@ import {
 	GeometryViewer,
 	isWebGLSupported,
 	buildCaseGeometryData,
+	getCaseGeometryVertices,
+	getReferencePoint,
+	toViewPoint,
+	computeBounds,
+	computeScaleFactor,
 } from '../shared';
 import type { GeometryViewerRef } from '../shared';
 import './editor.scss';
@@ -111,8 +116,29 @@ export default function Edit( { attributes, setAttributes } ) {
 		if ( ! caseGeometry ) {
 			return null;
 		}
-		return buildCaseGeometryData( caseGeometry );
-	}, [ caseGeometry ] );
+		const vertices = getCaseGeometryVertices( caseGeometry );
+		if ( vertices.length === 0 ) {
+			return null;
+		}
+		const viewVertices = vertices.map( toViewPoint );
+		const bounds = computeBounds( viewVertices );
+		const reference = centerReference
+			? getReferencePoint( caseGeometry )
+			: null;
+		const center = reference ? toViewPoint( reference ) : bounds.center;
+		const scale = computeScaleFactor( bounds, 1.2 );
+
+		return buildCaseGeometryData( caseGeometry, {
+			transform: ( vertex ) => {
+				const viewPoint = toViewPoint( vertex );
+				return {
+					x: ( viewPoint.x - center.x ) * scale,
+					y: ( viewPoint.y - center.y ) * scale,
+					z: ( viewPoint.z - center.z ) * scale,
+				};
+			},
+		} );
+	}, [ caseGeometry, centerReference ] );
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
 

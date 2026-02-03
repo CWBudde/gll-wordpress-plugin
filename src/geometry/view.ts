@@ -7,7 +7,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
-import { buildCaseGeometryData } from '../shared/geometry-utils';
+import {
+	buildCaseGeometryData,
+	getCaseGeometryVertices,
+	getReferencePoint,
+	toViewPoint,
+	computeBounds,
+	computeScaleFactor,
+} from '../shared/geometry-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 
 document.addEventListener( 'DOMContentLoaded', () => {
@@ -61,6 +68,7 @@ async function initializeBlock( block: HTMLElement ) {
 	const geometryIndex = parseInt( block.dataset.geometryIndex || '0', 10 );
 	const showFaces = block.dataset.showFaces !== 'false';
 	const showEdges = block.dataset.showEdges !== 'false';
+	const centerReference = block.dataset.centerReference === 'true';
 
 	const loadingEl = block.querySelector( '.gll-geometry-loading' );
 	if ( loadingEl ) {
@@ -77,7 +85,29 @@ async function initializeBlock( block: HTMLElement ) {
 		const data = await parseGLL( arrayBuffer );
 		const geometries = data?.Database?.CaseGeometries || [];
 		const geometry = geometries[ Math.min( geometryIndex, geometries.length - 1 ) ];
-		const geometryData = geometry ? buildCaseGeometryData( geometry ) : null;
+		let geometryData = null;
+		if ( geometry ) {
+			const vertices = getCaseGeometryVertices( geometry );
+			if ( vertices.length > 0 ) {
+				const viewVertices = vertices.map( toViewPoint );
+				const bounds = computeBounds( viewVertices );
+				const reference = centerReference
+					? getReferencePoint( geometry )
+					: null;
+				const center = reference ? toViewPoint( reference ) : bounds.center;
+				const scale = computeScaleFactor( bounds, 1.2 );
+				geometryData = buildCaseGeometryData( geometry, {
+					transform: ( vertex ) => {
+						const viewPoint = toViewPoint( vertex );
+						return {
+							x: ( viewPoint.x - center.x ) * scale,
+							y: ( viewPoint.y - center.y ) * scale,
+							z: ( viewPoint.z - center.z ) * scale,
+						};
+					},
+				} );
+			}
+		}
 
 		if ( ! geometryData ) {
 			showError( block, 'No geometry data available in this file.' );
