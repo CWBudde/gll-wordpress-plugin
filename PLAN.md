@@ -467,19 +467,19 @@ Based on the web demo, these Gutenberg blocks will be created:
 **Reference:** `gll-tools/web/modules/geometry.js` (953 lines), `app.js` (geometry section)
 
 ### Task 8.1: Three.js Geometry Scene Setup
-- [ ] Add Three.js dependency if not already present (from Phase 6)
-- [ ] Create geometry viewer React component with proper cleanup
-- [ ] Configure WebGL renderer (antialias, alpha, pixelRatio ≤ 2)
-- [ ] Setup PerspectiveCamera (42° FOV, position at (0, 0.4, 2.2))
-- [ ] Add ambient light (0xffffff, intensity 0.7)
-- [ ] Add directional key light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
-- [ ] Create grid helper (2 units, 12 divisions)
-- [ ] Add axes helper (0.8 unit size, semi-transparent opacity 0.5)
-- [ ] Implement animation loop with requestAnimationFrame
+- [x] Add Three.js dependency if not already present (from Phase 6)
+- [x] Create geometry viewer React component with proper cleanup
+- [x] Configure WebGL renderer (antialias, alpha, pixelRatio ≤ 2)
+- [x] Setup PerspectiveCamera (42° FOV, position at (0, 0.4, 2.2))
+- [x] Add ambient light (0xffffff, intensity 0.7)
+- [x] Add directional key light (0xffffff, intensity 0.85, position (2.5, 2.5, 2))
+- [x] Create grid helper (2 units, 12 divisions)
+- [x] Add axes helper (0.8 unit size, semi-transparent opacity 0.5)
+- [x] Implement animation loop with requestAnimationFrame
 
 ### Task 8.2: Geometry Block Structure
-- [ ] Create block registration (`gll-info/geometry`)
-- [ ] Define attributes:
+- [x] Create block registration (`gll-info/geometry`)
+- [x] Define attributes:
   - `fileId`, `fileUrl`, `fileName` (GLL file reference)
   - `geometryIndex` (which case geometry to display)
   - `showFaces` (boolean, default true)
@@ -489,14 +489,14 @@ Based on the web demo, these Gutenberg blocks will be created:
   - `centerReference` (boolean, center on reference point vs origin)
   - `autoRotate` (boolean, OrbitControls auto-rotation)
   - `canvasHeight` (200-800px, default 500px)
-- [ ] Create edit.js with InspectorControls
-- [ ] Create save.js with data attributes
-- [ ] Create view.js for frontend Three.js rendering
-- [ ] Create editor.scss and style.scss
+- [x] Create edit.js with InspectorControls
+- [x] Create save.js with data attributes
+- [x] Create view.js for frontend Three.js rendering
+- [x] Create editor.scss and style.scss
 
 ### Task 8.3: OrbitControls Integration
-- [ ] Add Three.js OrbitControls to dependencies
-- [ ] Configure OrbitControls settings:
+- [x] Add Three.js OrbitControls to dependencies
+- [x] Configure OrbitControls settings:
   - Enable damping (dampingFactor: 0.08)
   - Enable screen space panning
   - Enable zoom, pan, rotate, keys
@@ -504,24 +504,24 @@ Based on the web demo, these Gutenberg blocks will be created:
   - Configure mouse buttons (LEFT: rotate, MIDDLE: dolly, RIGHT: pan)
   - Set rotation/pan speeds (0.6, 0.9)
   - Enable auto-rotate option (controlled by attribute)
-- [ ] Add fallback pointer controls when OrbitControls unavailable
+- [x] Add fallback pointer controls when OrbitControls unavailable
 - [ ] Implement manual orbit calculation (theta, phi, radius, target)
 
 ### Task 8.4: Geometry Mesh Building
-- [ ] Extract case_geometry data from GLL via WASM
-- [ ] Resolve vertex positions using `resolveGeometryVertex()` helper
-- [ ] Build sequential edge pairs from face/edge definitions
-- [ ] Create BufferGeometry for faces:
+- [x] Extract case_geometry data from GLL via WASM
+- [x] Resolve vertex positions using `resolveGeometryVertex()` helper
+- [x] Build sequential edge pairs from face/edge definitions
+- [x] Create BufferGeometry for faces:
   - Position buffer (Float32Array)
   - Color buffer (per-vertex colors from face/edge definitions)
   - Index buffer (triangle indices)
   - Compute vertex normals
-- [ ] Apply MeshStandardMaterial:
+- [x] Apply MeshStandardMaterial:
   - vertexColors: true
   - flatShading: true
   - metalness: 0.05, roughness: 0.75
   - side: DoubleSide
-- [ ] Create LineSegments for edges:
+- [x] Create LineSegments for edges:
   - LineBasicMaterial with vertexColors
   - Transparent with opacity 0.9
 
