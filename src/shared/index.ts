@@ -62,6 +62,12 @@ export type {
 export { default as GeometryViewer } from './geometry-viewer';
 export type { GeometryViewerRef, GeometryViewerProps } from './geometry-viewer';
 
+// Geometry utilities
+export {
+	buildCaseGeometryData,
+	resolveGeometryVertex,
+} from './geometry-utils';
+
 // Balloon 3D utilities
 export {
 	SYMMETRY,

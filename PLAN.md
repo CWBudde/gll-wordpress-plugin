@@ -313,15 +313,15 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Add pointer capture for smooth dragging
 - [x] Implement auto-rotate feature (0.0035 rad/frame around Y-axis)
 
-### Task 6.7: Balloon Controls (InspectorControls)
-- [ ] Source selector dropdown
-- [ ] Frequency dropdown (populated from source's available frequencies)
-- [ ] Frequency slider (logarithmic mapping, syncs with dropdown)
-- [ ] dB Range slider (RangeControl 20-80 dB, affects mesh shape)
-- [ ] Scale slider (RangeControl 0.6-1.6×)
-- [ ] Wireframe toggle (ToggleControl, switches material mode)
-- [ ] Auto-rotate toggle (ToggleControl)
-- [ ] Canvas height slider (RangeControl 200-800px)
+### Task 6.7: Balloon Controls (InspectorControls) [COMPLETED]
+- [x] Source selector dropdown
+- [x] Frequency dropdown (populated from source's available frequencies)
+- [x] Frequency slider (logarithmic mapping, syncs with dropdown)
+- [x] dB Range slider (RangeControl 20-80 dB, affects mesh shape)
+- [x] Scale slider (RangeControl 0.6-1.6×)
+- [x] Wireframe toggle (ToggleControl, switches material mode)
+- [x] Auto-rotate toggle (ToggleControl)
+- [x] Canvas height slider (RangeControl 200-800px)
 
 ### Task 6.8: Balloon Metadata Display
 - [ ] Show selected frequency (formatted)
