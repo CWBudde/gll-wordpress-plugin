@@ -4,7 +4,7 @@
  * Outputs the block markup for frontend rendering.
  * The view.js script will hydrate this with the polar chart.
  *
- * @package GllInfo
+ * @package
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
@@ -64,9 +64,7 @@ export default function save( { attributes } ) {
 				</svg>
 				<div className="gll-polar-plot-header-text">
 					<h3>{ fileName }</h3>
-					<p className="gll-loading-text">
-						Loading polar plot...
-					</p>
+					<p className="gll-loading-text">Loading polar plot...</p>
 				</div>
 			</div>
 			<div className="gll-polar-plot-loading">

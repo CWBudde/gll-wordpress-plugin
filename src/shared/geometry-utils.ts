@@ -1,7 +1,7 @@
 /**
  * Geometry utilities for GLL case geometry.
  *
- * @package GllInfo
+ * @package
  */
 
 export interface GeometryVertex {
@@ -46,6 +46,43 @@ export interface GeometryBounds {
 	center: GeometryVertex;
 }
 
+export type GeometryMarkerKey = 'ref' | 'com' | 'pivot';
+
+export interface GeometryMarkerVisibility {
+	ref?: boolean;
+	com?: boolean;
+	pivot?: boolean;
+}
+
+export interface GeometryMarker {
+	key: GeometryMarkerKey;
+	label: string;
+	color: string;
+	radius: number;
+	position: GeometryVertex;
+}
+
+export interface GeometryMarkerBuildOptions {
+	center: GeometryVertex;
+	scale: number;
+	visibility?: GeometryMarkerVisibility;
+}
+
+export interface GeometryEulerHvr {
+	heading: number;
+	vertical: number;
+	roll: number;
+}
+
+export interface GeometryQuaternion {
+	x: number;
+	y: number;
+	z: number;
+	w: number;
+}
+
+const GEOMETRY_MARKER_RADIUS = 0.01;
+
 export function buildCaseGeometryData(
 	geometry: any,
 	options: GeometryBuildOptions = {}
@@ -87,7 +124,11 @@ export function buildCaseGeometryData(
 		} );
 
 		if ( faceIndices.length === 3 ) {
-			indices.push( faceIndices[ 0 ], faceIndices[ 1 ], faceIndices[ 2 ] );
+			indices.push(
+				faceIndices[ 0 ],
+				faceIndices[ 1 ],
+				faceIndices[ 2 ]
+			);
 			return;
 		}
 
@@ -114,12 +155,7 @@ export function buildCaseGeometryData(
 
 	edges.forEach( ( edge ) => {
 		const [ a, b ] = edge.indices;
-		if (
-			a < 0 ||
-			b < 0 ||
-			a >= vertices.length ||
-			b >= vertices.length
-		) {
+		if ( a < 0 || b < 0 || a >= vertices.length || b >= vertices.length ) {
 			return;
 		}
 
@@ -185,8 +221,189 @@ export function getReferencePoint( geometry: any ): GeometryVertex | null {
 	] );
 }
 
+export function getCenterOfMassPoint( geometry: any ): GeometryVertex | null {
+	return resolveGeometryPoint( geometry, [
+		'CenterOfMass',
+		'CentreOfMass',
+		'CenterOfGravity',
+		'CentreOfGravity',
+		'MassCenter',
+		'MassCentre',
+		'COM',
+		'CenterMass',
+		'CentreMass',
+	] );
+}
+
+export function getNextPivotPoint( geometry: any ): GeometryVertex | null {
+	return resolveGeometryPoint( geometry, [
+		'NextPivot',
+		'NextPivotPoint',
+		'Pivot',
+		'PivotPoint',
+		'PivotPosition',
+		'NextPivotPosition',
+		'NextRotationPoint',
+	] );
+}
+
 export function toViewPoint( point: GeometryVertex ): GeometryVertex {
 	return { x: point.x, y: point.z, z: point.y };
+}
+
+export function transformGeometryPoint(
+	point: GeometryVertex,
+	center: GeometryVertex,
+	scale: number
+): GeometryVertex {
+	const viewPoint = toViewPoint( point );
+	return {
+		x: ( viewPoint.x - center.x ) * scale,
+		y: ( viewPoint.y - center.y ) * scale,
+		z: ( viewPoint.z - center.z ) * scale,
+	};
+}
+
+export function getEulerHvr( rotation: any ): GeometryEulerHvr | null {
+	if ( ! rotation ) {
+		return null;
+	}
+
+	const candidates = [
+		rotation,
+		rotation.HVR,
+		rotation.Hvr,
+		rotation.hvr,
+		rotation.Euler,
+		rotation.euler,
+	];
+
+	for ( const candidate of candidates ) {
+		if ( ! candidate ) {
+			continue;
+		}
+
+		if ( Array.isArray( candidate ) && candidate.length >= 3 ) {
+			return {
+				heading: Number( candidate[ 0 ] ) || 0,
+				vertical: Number( candidate[ 1 ] ) || 0,
+				roll: Number( candidate[ 2 ] ) || 0,
+			};
+		}
+
+		const heading = pickNumber( candidate, [
+			'Heading',
+			'heading',
+			'H',
+			'h',
+			'Yaw',
+			'yaw',
+			'Azimuth',
+			'azimuth',
+		] );
+		const vertical = pickNumber( candidate, [
+			'Vertical',
+			'vertical',
+			'V',
+			'v',
+			'Pitch',
+			'pitch',
+			'Elevation',
+			'elevation',
+		] );
+		const roll = pickNumber( candidate, [
+			'Roll',
+			'roll',
+			'R',
+			'r',
+		] );
+
+		if ( heading !== null || vertical !== null || roll !== null ) {
+			return {
+				heading: heading || 0,
+				vertical: vertical || 0,
+				roll: roll || 0,
+			};
+		}
+	}
+
+	return null;
+}
+
+export function eulerHvrToQuaternion(
+	rotation: any
+): GeometryQuaternion | null {
+	const hvr = getEulerHvr( rotation );
+	if ( ! hvr ) {
+		return null;
+	}
+
+	const heading = axisAngleToQuaternion(
+		{ x: 0, y: 1, z: 0 },
+		degreesToRadians( -hvr.heading )
+	);
+	const vertical = axisAngleToQuaternion(
+		{ x: 0, y: 0, z: 1 },
+		degreesToRadians( -hvr.vertical )
+	);
+	const roll = axisAngleToQuaternion(
+		{ x: 1, y: 0, z: 0 },
+		degreesToRadians( -hvr.roll )
+	);
+
+	return normalizeQuaternion(
+		multiplyQuaternions( multiplyQuaternions( heading, vertical ), roll )
+	);
+}
+
+export function buildGeometryMarkers(
+	geometry: any,
+	options: GeometryMarkerBuildOptions
+): GeometryMarker[] {
+	const visibility = options.visibility || {};
+	const markerDefinitions: Array< {
+		key: GeometryMarkerKey;
+		label: string;
+		color: string;
+		point: GeometryVertex | null;
+	} > = [
+		{
+			key: 'ref',
+			label: 'Reference Point',
+			color: '#ef4444',
+			point: getReferencePoint( geometry ),
+		},
+		{
+			key: 'com',
+			label: 'Center of Mass',
+			color: '#22c55e',
+			point: getCenterOfMassPoint( geometry ),
+		},
+		{
+			key: 'pivot',
+			label: 'Next Pivot',
+			color: '#f59e0b',
+			point: getNextPivotPoint( geometry ),
+		},
+	];
+
+	return markerDefinitions
+		.filter( ( marker ) => visibility[ marker.key ] !== false )
+		.filter(
+			( marker ): marker is typeof marker & { point: GeometryVertex } =>
+				marker.point !== null
+		)
+		.map( ( marker ) => ( {
+			key: marker.key,
+			label: marker.label,
+			color: marker.color,
+			radius: GEOMETRY_MARKER_RADIUS,
+			position: transformGeometryPoint(
+				marker.point,
+				options.center,
+				options.scale
+			),
+		} ) );
 }
 
 export function computeBounds( vertices: GeometryVertex[] ): GeometryBounds {
@@ -298,6 +515,60 @@ function pickNumber( obj: any, keys: string[] ): number | null {
 		}
 	}
 	return null;
+}
+
+function degreesToRadians( degrees: number ): number {
+	return ( degrees * Math.PI ) / 180;
+}
+
+function axisAngleToQuaternion(
+	axis: GeometryVertex,
+	angleRadians: number
+): GeometryQuaternion {
+	const halfAngle = angleRadians / 2;
+	const sin = Math.sin( halfAngle );
+	return {
+		x: axis.x * sin,
+		y: axis.y * sin,
+		z: axis.z * sin,
+		w: Math.cos( halfAngle ),
+	};
+}
+
+function multiplyQuaternions(
+	a: GeometryQuaternion,
+	b: GeometryQuaternion
+): GeometryQuaternion {
+	return {
+		x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+		y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+		z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+		w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+	};
+}
+
+function normalizeQuaternion(
+	quaternion: GeometryQuaternion
+): GeometryQuaternion {
+	const length = Math.hypot(
+		quaternion.x,
+		quaternion.y,
+		quaternion.z,
+		quaternion.w
+	);
+	if ( length === 0 ) {
+		return { x: 0, y: 0, z: 0, w: 1 };
+	}
+	return {
+		x: roundNearZero( quaternion.x / length ),
+		y: roundNearZero( quaternion.y / length ),
+		z: roundNearZero( quaternion.z / length ),
+		w: roundNearZero( quaternion.w / length ),
+	};
+}
+
+function roundNearZero( value: number ): number {
+	return Math.abs( value ) < 1e-12 ? 0 : value;
 }
 
 function extractFaces( geometry: any ): GeometryFace[] {
@@ -438,10 +709,7 @@ function parseEdge( edge: any ): GeometryEdge | null {
 	}
 
 	const indices =
-		edge.Indices ||
-		edge.VertexIndices ||
-		edge.Vertices ||
-		edge.VertexList;
+		edge.Indices || edge.VertexIndices || edge.Vertices || edge.VertexList;
 
 	if ( Array.isArray( indices ) && indices.length >= 2 ) {
 		return {

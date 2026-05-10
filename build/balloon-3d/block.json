@@ -66,6 +66,15 @@
     "canvasHeight": {
       "type": "number",
       "default": 500
+    },
+    "qualityPreset": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
     }
   },
   "example": {

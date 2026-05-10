@@ -1,7 +1,7 @@
 /**
  * Geometry Viewer Block - Frontend Script
  *
- * @package GllInfo
+ * @package
  */
 
 import * as THREE from 'three';
@@ -9,6 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import {
 	buildCaseGeometryData,
+	buildGeometryMarkers,
 	getCaseGeometryVertices,
 	getReferencePoint,
 	toViewPoint,
@@ -16,6 +17,10 @@ import {
 	computeScaleFactor,
 } from '../shared/geometry-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
+import {
+	attachManualOrbitControls,
+	type ManualOrbitControls,
+} from '../shared/manual-orbit-controls';
 
 document.addEventListener( 'DOMContentLoaded', () => {
 	const blocks = document.querySelectorAll( '.gll-geometry-block' );
@@ -68,6 +73,11 @@ async function initializeBlock( block: HTMLElement ) {
 	const geometryIndex = parseInt( block.dataset.geometryIndex || '0', 10 );
 	const showFaces = block.dataset.showFaces !== 'false';
 	const showEdges = block.dataset.showEdges !== 'false';
+	const showMarkers = {
+		ref: block.dataset.showMarkersRef !== 'false',
+		com: block.dataset.showMarkersCom !== 'false',
+		pivot: block.dataset.showMarkersPivot === 'true',
+	};
 	const centerReference = block.dataset.centerReference === 'true';
 
 	const loadingEl = block.querySelector( '.gll-geometry-loading' );
@@ -84,8 +94,10 @@ async function initializeBlock( block: HTMLElement ) {
 		const arrayBuffer = await response.arrayBuffer();
 		const data = await parseGLL( arrayBuffer );
 		const geometries = data?.Database?.CaseGeometries || [];
-		const geometry = geometries[ Math.min( geometryIndex, geometries.length - 1 ) ];
+		const geometry =
+			geometries[ Math.min( geometryIndex, geometries.length - 1 ) ];
 		let geometryData = null;
+		let markerData: ReturnType< typeof buildGeometryMarkers > = [];
 		if ( geometry ) {
 			const vertices = getCaseGeometryVertices( geometry );
 			if ( vertices.length > 0 ) {
@@ -94,7 +106,9 @@ async function initializeBlock( block: HTMLElement ) {
 				const reference = centerReference
 					? getReferencePoint( geometry )
 					: null;
-				const center = reference ? toViewPoint( reference ) : bounds.center;
+				const center = reference
+					? toViewPoint( reference )
+					: bounds.center;
 				const scale = computeScaleFactor( bounds, 1.2 );
 				geometryData = buildCaseGeometryData( geometry, {
 					transform: ( vertex ) => {
@@ -105,6 +119,11 @@ async function initializeBlock( block: HTMLElement ) {
 							z: ( viewPoint.z - center.z ) * scale,
 						};
 					},
+				} );
+				markerData = buildGeometryMarkers( geometry, {
+					center,
+					scale,
+					visibility: showMarkers,
 				} );
 			}
 		}
@@ -124,6 +143,7 @@ async function initializeBlock( block: HTMLElement ) {
 			autoRotate,
 			showFaces,
 			showEdges,
+			markerData,
 			geometryData,
 		} );
 	} catch ( error ) {
@@ -139,6 +159,7 @@ function initThreeScene(
 		autoRotate: boolean;
 		showFaces: boolean;
 		showEdges: boolean;
+		markerData: ReturnType< typeof buildGeometryMarkers >;
 		geometryData: ReturnType< typeof buildCaseGeometryData >;
 	}
 ) {
@@ -185,14 +206,15 @@ function initThreeScene(
 	const geometryGroup = buildGeometryGroup(
 		options.geometryData,
 		options.showFaces,
-		options.showEdges
+		options.showEdges,
+		options.markerData
 	);
 	if ( geometryGroup ) {
 		scene.add( geometryGroup );
 	}
 
 	let controls: OrbitControls | null = null;
-	let fallbackCleanup: ( () => void ) | null = null;
+	let fallbackControls: ManualOrbitControls | null = null;
 	try {
 		controls = new OrbitControls( camera, renderer.domElement );
 		controls.enableDamping = true;
@@ -213,8 +235,21 @@ function initThreeScene(
 			RIGHT: THREE.MOUSE.PAN,
 		};
 	} catch ( error ) {
-		console.warn( 'OrbitControls unavailable, using fallback controls.' );
-		fallbackCleanup = attachFallbackControls( renderer.domElement, scene );
+		console.warn(
+			'OrbitControls unavailable, using manual orbit fallback.'
+		);
+		fallbackControls = attachManualOrbitControls(
+			camera,
+			renderer.domElement,
+			{
+				minDistance: 0.25,
+				maxDistance: 25,
+				rotateSpeed: 0.6,
+				panSpeed: 0.9,
+				dampingFactor: 0.08,
+				autoRotate: options.autoRotate,
+			}
+		);
 	}
 
 	const resizeObserver = new ResizeObserver( () => {
@@ -226,14 +261,20 @@ function initThreeScene(
 	resizeObserver.observe( container );
 
 	let animationId: number;
+	let lastFrameTime = performance.now();
 	const animate = () => {
 		animationId = requestAnimationFrame( animate );
+
+		const now = performance.now();
+		const deltaTime = ( now - lastFrameTime ) / 1000;
+		lastFrameTime = now;
 
 		if ( controls ) {
 			controls.autoRotate = options.autoRotate;
 			controls.update();
-		} else if ( options.autoRotate ) {
-			scene.rotation.y += 0.0035;
+		} else if ( fallbackControls ) {
+			fallbackControls.autoRotate = options.autoRotate;
+			fallbackControls.update( deltaTime );
 		}
 
 		renderer.render( scene, camera );
@@ -247,9 +288,9 @@ function initThreeScene(
 			controls.dispose();
 			controls = null;
 		}
-		if ( fallbackCleanup ) {
-			fallbackCleanup();
-			fallbackCleanup = null;
+		if ( fallbackControls ) {
+			fallbackControls.dispose();
+			fallbackControls = null;
 		}
 		if ( geometryGroup ) {
 			disposeSceneObject( geometryGroup );
@@ -273,7 +314,8 @@ function disposeMaterial( material: THREE.Material | THREE.Material[] ) {
 function buildGeometryGroup(
 	geometryData: ReturnType< typeof buildCaseGeometryData >,
 	showFaces: boolean,
-	showEdges: boolean
+	showEdges: boolean,
+	markerData: ReturnType< typeof buildGeometryMarkers >
 ) {
 	if ( ! geometryData ) {
 		return null;
@@ -327,6 +369,29 @@ function buildGeometryGroup(
 		group.add( edges );
 	}
 
+	markerData.forEach( ( marker ) => {
+		const markerGeometry = new THREE.SphereGeometry(
+			marker.radius,
+			16,
+			12
+		);
+		const markerMaterial = new THREE.MeshBasicMaterial( {
+			color: marker.color,
+		} );
+		const markerMesh = new THREE.Mesh( markerGeometry, markerMaterial );
+		markerMesh.name = `gll-marker-${ marker.key }`;
+		markerMesh.userData = {
+			gllMarkerKey: marker.key,
+			gllMarkerLabel: marker.label,
+		};
+		markerMesh.position.set(
+			marker.position.x,
+			marker.position.y,
+			marker.position.z
+		);
+		group.add( markerMesh );
+	} );
+
 	return group;
 }
 
@@ -344,52 +409,6 @@ function disposeSceneObject( object: THREE.Object3D ) {
 	if ( object.parent ) {
 		object.parent.remove( object );
 	}
-}
-
-function attachFallbackControls(
-	element: HTMLElement,
-	scene: THREE.Scene
-): () => void {
-	let isDragging = false;
-	let lastX = 0;
-	let lastY = 0;
-
-	const onPointerDown = ( event: PointerEvent ) => {
-		isDragging = true;
-		lastX = event.clientX;
-		lastY = event.clientY;
-		element.setPointerCapture( event.pointerId );
-	};
-
-	const onPointerMove = ( event: PointerEvent ) => {
-		if ( ! isDragging ) {
-			return;
-		}
-		const deltaX = event.clientX - lastX;
-		const deltaY = event.clientY - lastY;
-		lastX = event.clientX;
-		lastY = event.clientY;
-
-		scene.rotation.y += deltaX * 0.005;
-		scene.rotation.x += deltaY * 0.005;
-	};
-
-	const onPointerUp = ( event: PointerEvent ) => {
-		isDragging = false;
-		element.releasePointerCapture( event.pointerId );
-	};
-
-	element.addEventListener( 'pointerdown', onPointerDown );
-	element.addEventListener( 'pointermove', onPointerMove );
-	element.addEventListener( 'pointerup', onPointerUp );
-	element.addEventListener( 'pointerleave', onPointerUp );
-
-	return () => {
-		element.removeEventListener( 'pointerdown', onPointerDown );
-		element.removeEventListener( 'pointermove', onPointerMove );
-		element.removeEventListener( 'pointerup', onPointerUp );
-		element.removeEventListener( 'pointerleave', onPointerUp );
-	};
 }
 
 function showError( block: HTMLElement, message: string ) {

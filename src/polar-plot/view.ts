@@ -3,7 +3,7 @@
  *
  * Handles WASM loading, GLL parsing, and Chart.js radar rendering on the frontend.
  *
- * @package GllInfo
+ * @package
  */
 
 /* global Chart */
@@ -107,8 +107,9 @@ function renderChart( block, data, options ) {
 	}
 
 	// Get sources with responses
-	const sources = ( data?.Database?.SourceDefinitions || [] )
-		.filter( ( s ) => ( s.Responses || [] ).length > 0 );
+	const sources = ( data?.Database?.SourceDefinitions || [] ).filter(
+		( s ) => ( s.Responses || [] ).length > 0
+	);
 
 	const source = sources[ options.sourceIndex ];
 	if ( ! source ) {
@@ -155,8 +156,10 @@ function renderChart( block, data, options ) {
 		...( options.showVertical ? verticalLevels : [] ),
 	];
 	const levelRange = computeLevelRange( allLevels );
-	const suggestedMax = levelRange.max !== null ? levelRange.max + 3 : undefined;
-	const suggestedMin = levelRange.max !== null ? levelRange.max - 40 : undefined;
+	const suggestedMax =
+		levelRange.max !== null ? levelRange.max + 3 : undefined;
+	const suggestedMin =
+		levelRange.max !== null ? levelRange.max - 40 : undefined;
 
 	const freqLabel = formatFrequency( frequency );
 	const normSuffix = options.normalized ? ' (normalized)' : '';
@@ -190,11 +193,19 @@ function renderChart( block, data, options ) {
 
 	// Build metadata HTML
 	const badges = [];
-	badges.push( `<span class="gll-meta-badge"><strong>Frequency:</strong> ${ freqLabel }</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ slices.meta.symmetryName }</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Resolution:</strong> ${ slices.meta.stepDeg }\u00b0</span>` );
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Frequency:</strong> ${ freqLabel }</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ slices.meta.symmetryName }</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Resolution:</strong> ${ slices.meta.meridianStep }\u00b0 \u00d7 ${ slices.meta.parallelStep }\u00b0</span>`
+	);
 	if ( options.normalized ) {
-		badges.push( '<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>' );
+		badges.push(
+			'<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>'
+		);
 	}
 	if ( slices.meta.usesOnAxis ) {
 		badges.push( '<span class="gll-meta-badge">Uses on-axis</span>' );
@@ -204,10 +215,14 @@ function renderChart( block, data, options ) {
 	}
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
-		badges.push( `<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>` );
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+		);
 	}
 
-	const metadataHtml = `<div class="gll-polar-plot-metadata">${ badges.join( '' ) }</div>`;
+	const metadataHtml = `<div class="gll-polar-plot-metadata">${ badges.join(
+		''
+	) }</div>`;
 
 	// Create canvas
 	const canvas = document.createElement( 'canvas' );
@@ -247,10 +262,15 @@ function renderChart( block, data, options ) {
 							return label ? `Angle ${ label }` : '';
 						},
 						label: ( item ) => {
-							if ( item?.raw === null || item?.raw === undefined ) {
+							if (
+								item?.raw === null ||
+								item?.raw === undefined
+							) {
 								return `${ item.dataset?.label || 'Level' }: -`;
 							}
-							return `${ item.dataset?.label || 'Level' }: ${ ( item.raw as number ).toFixed( 1 ) } dB`;
+							return `${ item.dataset?.label || 'Level' }: ${ (
+								item.raw as number
+							 ).toFixed( 1 ) } dB`;
 						},
 					},
 				},

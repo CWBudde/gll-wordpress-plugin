@@ -3,7 +3,7 @@
  *
  * React context for sharing parsed GLL data between blocks.
  *
- * @package GllInfo
+ * @package
  */
 
 import {
@@ -25,15 +25,15 @@ import {
  * GLL Context value shape.
  *
  * @typedef {Object} GLLContextValue
- * @property {Object|null}   data         Parsed GLL data.
- * @property {boolean}       isLoading    Whether a file is being loaded/parsed.
- * @property {Error|null}    error        Any error that occurred.
- * @property {boolean}       wasmReady    Whether WASM is initialized.
- * @property {Function}      loadFile     Function to load a GLL file.
- * @property {Function}      loadFromUrl  Function to load a GLL file from URL.
- * @property {Function}      clearData    Function to clear loaded data.
- * @property {string|null}   fileName     Name of the loaded file.
- * @property {number|null}   fileId       WordPress attachment ID if applicable.
+ * @property {Object|null} data        Parsed GLL data.
+ * @property {boolean}     isLoading   Whether a file is being loaded/parsed.
+ * @property {Error|null}  error       Any error that occurred.
+ * @property {boolean}     wasmReady   Whether WASM is initialized.
+ * @property {Function}    loadFile    Function to load a GLL file.
+ * @property {Function}    loadFromUrl Function to load a GLL file from URL.
+ * @property {Function}    clearData   Function to clear loaded data.
+ * @property {string|null} fileName    Name of the loaded file.
+ * @property {number|null} fileId      WordPress attachment ID if applicable.
  */
 
 /**
@@ -93,8 +93,8 @@ export function GLLProvider( { children } ) {
 	/**
 	 * Load and parse a GLL file from a File object.
 	 *
-	 * @param {File}        file          The GLL file.
-	 * @param {number|null} attachmentId  Optional WordPress attachment ID.
+	 * @param {File}        file         The GLL file.
+	 * @param {number|null} attachmentId Optional WordPress attachment ID.
 	 * @return {Promise<Object|null>} Parsed data or null on error.
 	 */
 	const loadFile = useCallback(
@@ -129,9 +129,9 @@ export function GLLProvider( { children } ) {
 	/**
 	 * Load and parse a GLL file from a URL.
 	 *
-	 * @param {string}      url           The URL to the GLL file.
-	 * @param {string|null} name          Optional file name.
-	 * @param {number|null} attachmentId  Optional WordPress attachment ID.
+	 * @param {string}      url          The URL to the GLL file.
+	 * @param {string|null} name         Optional file name.
+	 * @param {number|null} attachmentId Optional WordPress attachment ID.
 	 * @return {Promise<Object|null>} Parsed data or null on error.
 	 */
 	const loadFromUrl = useCallback(

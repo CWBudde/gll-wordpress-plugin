@@ -373,7 +373,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ isLoading && (
 						<div className="gll-frequency-response-loading">
 							<Spinner />
-							<p>{ __( 'Loading GLL data...', 'gll-info' ) }</p>
+							<p>{ __( 'Loading GLL data…', 'gll-info' ) }</p>
 						</div>
 					) }
 

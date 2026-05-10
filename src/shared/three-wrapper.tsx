@@ -4,7 +4,7 @@
  * Provides a React component that manages Three.js scene lifecycle,
  * WebGL context, and animation loop with proper cleanup.
  *
- * @package GllInfo
+ * @package
  */
 
 import {
@@ -25,7 +25,7 @@ import './three.scss';
 export function isWebGLSupported(): boolean {
 	try {
 		const canvas = document.createElement( 'canvas' );
-		return !!(
+		return !! (
 			window.WebGLRenderingContext &&
 			( canvas.getContext( 'webgl' ) ||
 				canvas.getContext( 'experimental-webgl' ) )
@@ -41,7 +41,9 @@ export function isWebGLSupported(): boolean {
 export function isWebGL2Supported(): boolean {
 	try {
 		const canvas = document.createElement( 'canvas' );
-		return !! ( window.WebGL2RenderingContext && canvas.getContext( 'webgl2' ) );
+		return !! (
+			window.WebGL2RenderingContext && canvas.getContext( 'webgl2' )
+		);
 	} catch ( e ) {
 		return false;
 	}
@@ -238,11 +240,13 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 		const referenceSphereRef = useRef< THREE.Mesh | null >( null );
 		const axesHelperRef = useRef< THREE.AxesHelper | null >( null );
 		const isInitializedRef = useRef< boolean >( false );
-		const initialCameraPositionRef = useRef< THREE.Vector3 >( new THREE.Vector3() );
-
-		const [ webGLSupported, setWebGLSupported ] = useState< boolean | null >(
-			null
+		const initialCameraPositionRef = useRef< THREE.Vector3 >(
+			new THREE.Vector3()
 		);
+
+		const [ webGLSupported, setWebGLSupported ] = useState<
+			boolean | null
+		>( null );
 
 		// Merge config with defaults
 		const mergedConfig: Required< ThreeSceneConfig > = {
@@ -254,7 +258,11 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 		 * Request a render frame.
 		 */
 		const requestRender = useCallback( () => {
-			if ( rendererRef.current && sceneRef.current && cameraRef.current ) {
+			if (
+				rendererRef.current &&
+				sceneRef.current &&
+				cameraRef.current
+			) {
 				rendererRef.current.render(
 					sceneRef.current,
 					cameraRef.current
@@ -280,7 +288,9 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 		 */
 		const resetCamera = useCallback( () => {
 			if ( cameraRef.current && controlsRef.current ) {
-				cameraRef.current.position.copy( initialCameraPositionRef.current );
+				cameraRef.current.position.copy(
+					initialCameraPositionRef.current
+				);
 				cameraRef.current.lookAt( 0, 0, 0 );
 				controlsRef.current.target.set( 0, 0, 0 );
 				controlsRef.current.update();
@@ -310,7 +320,11 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			const supported = isWebGLSupported();
 			setWebGLSupported( supported );
 
-			if ( ! supported || ! canvasRef.current || ! containerRef.current ) {
+			if (
+				! supported ||
+				! canvasRef.current ||
+				! containerRef.current
+			) {
 				return;
 			}
 
@@ -351,10 +365,7 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			} );
 			renderer.setSize( width, height_ );
 			renderer.setPixelRatio(
-				Math.min(
-					window.devicePixelRatio,
-					mergedConfig.maxPixelRatio
-				)
+				Math.min( window.devicePixelRatio, mergedConfig.maxPixelRatio )
 			);
 			renderer.setClearColor(
 				mergedConfig.clearColor,
@@ -496,7 +507,7 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 				cameraRef.current = null;
 				isInitializedRef.current = false;
 			};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, [] ); // Initialize only once on mount
 
 		/**
@@ -615,7 +626,8 @@ const ThreeWrapper = forwardRef< ThreeWrapperRef, ThreeWrapperProps >(
 			// Update controls properties
 			if ( controlsRef.current ) {
 				controlsRef.current.autoRotate = mergedConfig.autoRotate;
-				controlsRef.current.autoRotateSpeed = mergedConfig.autoRotateSpeed * 60;
+				controlsRef.current.autoRotateSpeed =
+					mergedConfig.autoRotateSpeed * 60;
 				controlsRef.current.enableRotate = mergedConfig.enableRotate;
 				controlsRef.current.enablePan = mergedConfig.enablePan;
 				controlsRef.current.enableZoom = mergedConfig.enableZoom;

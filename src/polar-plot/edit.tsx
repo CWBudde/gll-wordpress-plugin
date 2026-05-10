@@ -1,7 +1,7 @@
 /**
  * Polar Plot Block - Editor Component
  *
- * @package GllInfo
+ * @package
  */
 
 import { __ } from '@wordpress/i18n';
@@ -20,7 +20,13 @@ import {
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
-import { useEffect, useState, useMemo, useCallback, useRef } from '@wordpress/element';
+import {
+	useEffect,
+	useState,
+	useMemo,
+	useCallback,
+	useRef,
+} from '@wordpress/element';
 
 import { useGLLLoader, ChartWrapper } from '../shared';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
@@ -38,7 +44,13 @@ import './editor.scss';
  * @param {boolean} normalized     Normalize levels.
  * @return {Object} Chart.js configuration object.
  */
-function buildPolarChartConfig( slices, frequency, showHorizontal, showVertical, normalized ) {
+function buildPolarChartConfig(
+	slices,
+	frequency,
+	showHorizontal,
+	showVertical,
+	normalized
+) {
 	let horizontalLevels = slices.horizontal.levels;
 	let verticalLevels = slices.vertical.levels;
 
@@ -62,8 +74,10 @@ function buildPolarChartConfig( slices, frequency, showHorizontal, showVertical,
 		...( showVertical ? verticalLevels : [] ),
 	];
 	const levelRange = computeLevelRange( allLevels );
-	const suggestedMax = levelRange.max !== null ? levelRange.max + 3 : undefined;
-	const suggestedMin = levelRange.max !== null ? levelRange.max - 40 : undefined;
+	const suggestedMax =
+		levelRange.max !== null ? levelRange.max + 3 : undefined;
+	const suggestedMin =
+		levelRange.max !== null ? levelRange.max - 40 : undefined;
 
 	const freqLabel = formatFrequency( frequency );
 	const normSuffix = normalized ? ' (normalized)' : '';
@@ -119,10 +133,15 @@ function buildPolarChartConfig( slices, frequency, showHorizontal, showVertical,
 							return label ? `Angle ${ label }` : '';
 						},
 						label: ( item ) => {
-							if ( item?.raw === null || item?.raw === undefined ) {
+							if (
+								item?.raw === null ||
+								item?.raw === undefined
+							) {
 								return `${ item.dataset?.label || 'Level' }: -`;
 							}
-							return `${ item.dataset?.label || 'Level' }: ${ item.raw.toFixed( 1 ) } dB`;
+							return `${
+								item.dataset?.label || 'Level'
+							}: ${ item.raw.toFixed( 1 ) } dB`;
 						},
 					},
 				},
@@ -200,20 +219,26 @@ export default function Edit( { attributes, setAttributes } ) {
 	};
 
 	// Build source options
-	const sourceOptions = useMemo( () =>
-		( data?.Database?.SourceDefinitions || [] )
-			.filter( ( s ) => ( s.Responses || [] ).length > 0 )
-			.map( ( source, index ) => ( {
-				label: source.Definition?.Label || source.Label || `Source ${ index + 1 }`,
-				value: index,
-			} ) ),
+	const sourceOptions = useMemo(
+		() =>
+			( data?.Database?.SourceDefinitions || [] )
+				.filter( ( s ) => ( s.Responses || [] ).length > 0 )
+				.map( ( source, index ) => ( {
+					label:
+						source.Definition?.Label ||
+						source.Label ||
+						`Source ${ index + 1 }`,
+					value: index,
+				} ) ),
 		[ data ]
 	);
 
 	// Get current source (only sources with responses)
-	const sourcesWithResponses = useMemo( () =>
-		( data?.Database?.SourceDefinitions || [] )
-			.filter( ( s ) => ( s.Responses || [] ).length > 0 ),
+	const sourcesWithResponses = useMemo(
+		() =>
+			( data?.Database?.SourceDefinitions || [] ).filter(
+				( s ) => ( s.Responses || [] ).length > 0
+			),
 		[ data ]
 	);
 	const currentSource = sourcesWithResponses[ sourceIndex ];
@@ -225,11 +250,12 @@ export default function Edit( { attributes, setAttributes } ) {
 	}, [ currentSource ] );
 
 	// Build frequency options
-	const frequencyOptions = useMemo( () =>
-		frequencies.map( ( freq, index ) => ( {
-			label: formatFrequency( freq ),
-			value: index,
-		} ) ),
+	const frequencyOptions = useMemo(
+		() =>
+			frequencies.map( ( freq, index ) => ( {
+				label: formatFrequency( freq ),
+				value: index,
+			} ) ),
 		[ frequencies ]
 	);
 
@@ -255,7 +281,14 @@ export default function Edit( { attributes, setAttributes } ) {
 			showVertical,
 			normalized
 		);
-	}, [ slices, frequencyIndex, frequencies, showHorizontal, showVertical, normalized ] );
+	}, [
+		slices,
+		frequencyIndex,
+		frequencies,
+		showHorizontal,
+		showVertical,
+		normalized,
+	] );
 
 	if ( ! fileUrl ) {
 		return (
@@ -271,7 +304,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							render={ ( { open } ) => (
 								<Button variant="primary" onClick={ open }>
 									{ __( 'Select GLL File', 'gll-info' ) }
@@ -296,13 +332,19 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							value={ fileId }
 							render={ ( { open } ) => (
 								<Button
 									variant="secondary"
 									onClick={ open }
-									style={ { marginTop: '10px', marginRight: '10px' } }
+									style={ {
+										marginTop: '10px',
+										marginRight: '10px',
+									} }
 								>
 									{ __( 'Replace File', 'gll-info' ) }
 								</Button>
@@ -321,14 +363,22 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{ data && (
 					<>
-						<PanelBody title={ __( 'Source & Frequency', 'gll-info' ) } initialOpen={ true }>
+						<PanelBody
+							title={ __( 'Source & Frequency', 'gll-info' ) }
+							initialOpen={ true }
+						>
 							{ sourceOptions.length > 0 && (
 								<SelectControl
-									label={ __( 'Acoustic Source', 'gll-info' ) }
+									label={ __(
+										'Acoustic Source',
+										'gll-info'
+									) }
 									value={ sourceIndex }
 									options={ sourceOptions }
 									onChange={ ( value ) =>
-										setAttributes( { sourceIndex: parseInt( value, 10 ) } )
+										setAttributes( {
+											sourceIndex: parseInt( value, 10 ),
+										} )
 									}
 								/>
 							) }
@@ -339,38 +389,74 @@ export default function Edit( { attributes, setAttributes } ) {
 										value={ frequencyIndex }
 										options={ frequencyOptions }
 										onChange={ ( value ) =>
-											setAttributes( { frequencyIndex: parseInt( value, 10 ) } )
+											setAttributes( {
+												frequencyIndex: parseInt(
+													value,
+													10
+												),
+											} )
 										}
 									/>
 									<RangeControl
-										label={ __( 'Frequency Index', 'gll-info' ) }
+										label={ __(
+											'Frequency Slider',
+											'gll-info'
+										) }
+										help={ formatFrequency(
+											frequencies[
+												Math.min(
+													frequencyIndex,
+													frequencies.length - 1
+												)
+											]
+										) }
 										value={ frequencyIndex }
 										onChange={ ( value ) =>
-											setAttributes( { frequencyIndex: value } )
+											setAttributes( {
+												frequencyIndex: value,
+											} )
 										}
 										min={ 0 }
-										max={ Math.max( 0, frequencies.length - 1 ) }
+										max={ Math.max(
+											0,
+											frequencies.length - 1
+										) }
 									/>
 								</>
 							) }
 						</PanelBody>
 
-						<PanelBody title={ __( 'Display Options', 'gll-info' ) } initialOpen={ false }>
+						<PanelBody
+							title={ __( 'Display Options', 'gll-info' ) }
+							initialOpen={ false }
+						>
 							<ToggleControl
-								label={ __( 'Show Horizontal Slice', 'gll-info' ) }
+								label={ __(
+									'Show Horizontal Slice',
+									'gll-info'
+								) }
 								checked={ showHorizontal }
 								onChange={ ( value ) =>
 									setAttributes( { showHorizontal: value } )
 								}
-								help={ __( 'Front-Right-Back-Left plane (blue)', 'gll-info' ) }
+								help={ __(
+									'Front-Right-Back-Left plane (blue)',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
-								label={ __( 'Show Vertical Slice', 'gll-info' ) }
+								label={ __(
+									'Show Vertical Slice',
+									'gll-info'
+								) }
 								checked={ showVertical }
 								onChange={ ( value ) =>
 									setAttributes( { showVertical: value } )
 								}
-								help={ __( 'Front-Top-Back-Bottom plane (red)', 'gll-info' ) }
+								help={ __(
+									'Front-Top-Back-Bottom plane (red)',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
 								label={ __( 'Normalize', 'gll-info' ) }
@@ -378,7 +464,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								onChange={ ( value ) =>
 									setAttributes( { normalized: value } )
 								}
-								help={ __( 'Normalize each slice to its maximum level', 'gll-info' ) }
+								help={ __(
+									'Normalize each slice to its maximum level',
+									'gll-info'
+								) }
 							/>
 							<RangeControl
 								label={ __( 'Chart Height (px)', 'gll-info' ) }
@@ -402,7 +491,8 @@ export default function Edit( { attributes, setAttributes } ) {
 						{ currentSource && (
 							<p className="gll-source-label">
 								{ __( 'Source:', 'gll-info' ) }{ ' ' }
-								{ currentSource.Definition?.Label || currentSource.Label }
+								{ currentSource.Definition?.Label ||
+									currentSource.Label }
 							</p>
 						) }
 					</div>
@@ -410,7 +500,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ isLoading && (
 						<div className="gll-polar-plot-loading">
 							<Spinner />
-							<p>{ __( 'Loading GLL data...', 'gll-info' ) }</p>
+							<p>{ __( 'Loading GLL data…', 'gll-info' ) }</p>
 						</div>
 					) }
 
@@ -427,24 +517,50 @@ export default function Edit( { attributes, setAttributes } ) {
 						<>
 							<div className="gll-polar-plot-metadata">
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Frequency:', 'gll-info' ) }</strong>{ ' ' }
-									{ formatFrequency( frequencies[ Math.min( frequencyIndex, frequencies.length - 1 ) ] ) }
+									<strong>
+										{ __( 'Frequency:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ formatFrequency(
+										frequencies[
+											Math.min(
+												frequencyIndex,
+												frequencies.length - 1
+											)
+										]
+									) }
 								</span>
 								{ slices?.meta && (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Symmetry:', 'gll-info' ) }</strong>{ ' ' }
+										<strong>
+											{ __( 'Symmetry:', 'gll-info' ) }
+										</strong>{ ' ' }
 										{ slices.meta.symmetryName }
 									</span>
 								) }
 								{ slices?.meta && (
 									<span className="gll-meta-badge">
-										<strong>{ __( 'Resolution:', 'gll-info' ) }</strong>{ ' ' }
-										{ slices.meta.stepDeg }&deg;
+										<strong>
+											{ __( 'Resolution:', 'gll-info' ) }
+										</strong>{ ' ' }
+										{ slices.meta.meridianStep }&deg;
+										&times; { slices.meta.parallelStep }
+										&deg;
+									</span>
+								) }
+								{ currentSource && (
+									<span className="gll-meta-badge">
+										<strong>
+											{ __( 'Source:', 'gll-info' ) }
+										</strong>{ ' ' }
+										{ currentSource.Definition?.Label ||
+											currentSource.Label }
 									</span>
 								) }
 								{ normalized && (
 									<span className="gll-meta-badge gll-meta-badge-highlight">
-										<strong>{ __( 'Normalized', 'gll-info' ) }</strong>
+										<strong>
+											{ __( 'Normalized', 'gll-info' ) }
+										</strong>
 									</span>
 								) }
 								{ slices?.meta?.usesOnAxis && (

@@ -69,6 +69,15 @@ return array(
 			'canvasHeight' => array(
 				'type' => 'number',
 				'default' => 500
+			),
+			'qualityPreset' => array(
+				'type' => 'string',
+				'enum' => array(
+					'low',
+					'medium',
+					'high'
+				),
+				'default' => 'medium'
 			)
 		),
 		'example' => array(

@@ -1,7 +1,7 @@
 /**
  * Shared GLL Info exports.
  *
- * @package GllInfo
+ * @package
  */
 
 // WASM Loader
@@ -29,7 +29,10 @@ export {
 	unwrapPhase,
 	wrapPhase,
 	computeGroupDelayMs,
+	applyDelayToPhase,
 	buildLogTicks,
+	buildSourceResponseSeries,
+	buildSourceResponseChartConfig,
 	formatFrequency,
 } from './charting-utils';
 
@@ -41,6 +44,9 @@ export {
 	buildPolarAngles,
 	formatPolarLabel,
 	buildLogFrequencies,
+	frequenciesMatch,
+	computeResponseAngles,
+	responseIndexToBalloonIndices,
 } from './polar-utils';
 
 // Polar compass Chart.js plugin
@@ -62,16 +68,35 @@ export type {
 export { default as GeometryViewer } from './geometry-viewer';
 export type { GeometryViewerRef, GeometryViewerProps } from './geometry-viewer';
 
+// Manual orbit controls (fallback for OrbitControls addon)
+export { attachManualOrbitControls } from './manual-orbit-controls';
+export type {
+	ManualOrbitControls,
+	ManualOrbitControlsOptions,
+} from './manual-orbit-controls';
+
 // Geometry utilities
 export {
 	buildCaseGeometryData,
 	resolveGeometryVertex,
+	buildGeometryMarkers,
+	transformGeometryPoint,
+	eulerHvrToQuaternion,
 } from './geometry-utils';
-export type { GeometryBounds } from './geometry-utils';
+export type {
+	GeometryBounds,
+	GeometryEulerHvr,
+	GeometryMarker,
+	GeometryMarkerVisibility,
+	GeometryQuaternion,
+} from './geometry-utils';
 export {
 	getCaseGeometryVertices,
 	resolveGeometryPoint,
 	getReferencePoint,
+	getCenterOfMassPoint,
+	getNextPivotPoint,
+	getEulerHvr,
 	toViewPoint,
 	computeBounds,
 	computeScaleFactor,

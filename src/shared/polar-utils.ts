@@ -3,7 +3,7 @@
  *
  * Ported from gll-tools web demo (app.js computePolarSlices and helpers).
  *
- * @package GllInfo
+ * @package
  */
 
 /**
@@ -43,7 +43,7 @@ export function formatPolarLabel( angleDeg ) {
 /**
  * Build logarithmic frequency array from definition.
  *
- * @param {Object} definition     Frequency definition with bands_per_octave, start_freq, point_count.
+ * @param {Object} definition    Frequency definition with bands_per_octave, start_freq, point_count.
  * @param {number} countOverride Optional count override.
  * @return {Array<number>|null} Frequency array or null.
  */
@@ -78,7 +78,11 @@ export function buildLogFrequencies( definition, countOverride ) {
  * @return {boolean} True if arrays match.
  */
 export function frequenciesMatch( a, b ) {
-	if ( ! Array.isArray( a ) || ! Array.isArray( b ) || a.length !== b.length ) {
+	if (
+		! Array.isArray( a ) ||
+		! Array.isArray( b ) ||
+		a.length !== b.length
+	) {
 		return false;
 	}
 	const tol = 1e-3;
@@ -103,7 +107,8 @@ export function frequenciesMatch( a, b ) {
  * @return {Object|null} Grid info or null.
  */
 export function getBalloonGrid( source ) {
-	const balloon = source?.Definition?.BalloonData || source?.definition?.balloon_data;
+	const balloon =
+		source?.Definition?.BalloonData || source?.definition?.balloon_data;
 	const ang = balloon?.AngularResolution || balloon?.angular_resolution;
 	const meridianStep = ang?.MeridianStep || ang?.meridian_step;
 	const parallelStep = ang?.ParallelStep || ang?.parallel_step;
@@ -114,12 +119,22 @@ export function getBalloonGrid( source ) {
 
 	const symmetry = ang?.Symmetry ?? ang?.symmetry ?? 0;
 	const frontHalfOnly = !! ( ang?.FrontHalfOnly ?? ang?.front_half_only );
-	const symmetryNames = [ 'None', 'Vertical', 'Horizontal', 'Quarter', 'Axial' ];
+	const symmetryNames = [
+		'None',
+		'Vertical',
+		'Horizontal',
+		'Quarter',
+		'Axial',
+	];
 
 	const fullMeridianCount = Math.max( 1, Math.round( 360 / meridianStep ) );
-	const fullParallelCount = Math.max( 1, Math.round( 180 / parallelStep ) + 1 );
+	const fullParallelCount = Math.max(
+		1,
+		Math.round( 180 / parallelStep ) + 1
+	);
 
-	const responseCount = source?.Responses?.length || source?.responses?.length || 0;
+	const responseCount =
+		source?.Responses?.length || source?.responses?.length || 0;
 	let meridianCount;
 	switch ( symmetry ) {
 		case 4: // Axial
@@ -169,7 +184,13 @@ export function getBalloonGrid( source ) {
  * @param {boolean} frontHalfOnly Whether only front half is measured.
  * @return {number|null} Response index.
  */
-function balloonResponseIndex( meridianIdx, parallelIdx, meridianCount, parallelCount, frontHalfOnly ) {
+function balloonResponseIndex(
+	meridianIdx,
+	parallelIdx,
+	meridianCount,
+	parallelCount,
+	frontHalfOnly
+) {
 	const lastParIdx = parallelCount - 1;
 	const isFrontPole = parallelIdx === 0;
 	const isBackPole = parallelIdx === lastParIdx && ! frontHalfOnly;
@@ -185,7 +206,9 @@ function balloonResponseIndex( meridianIdx, parallelIdx, meridianCount, parallel
 	const skippedPerMer = frontHalfOnly ? 1 : 2;
 	const pointsPerMer = parallelCount - skippedPerMer;
 
-	return parallelCount + ( meridianIdx - 1 ) * pointsPerMer + ( parallelIdx - 1 );
+	return (
+		parallelCount + ( meridianIdx - 1 ) * pointsPerMer + ( parallelIdx - 1 )
+	);
 }
 
 /**
@@ -199,7 +222,8 @@ function balloonResponseIndex( meridianIdx, parallelIdx, meridianCount, parallel
  */
 function getResponseWithSymmetry( source, grid, azimuthDeg, parallelDeg ) {
 	const responses = source?.Responses || source?.responses || [];
-	const balloon = source?.Definition?.BalloonData || source?.definition?.balloon_data;
+	const balloon =
+		source?.Definition?.BalloonData || source?.definition?.balloon_data;
 	const ang = balloon?.AngularResolution || balloon?.angular_resolution;
 
 	if ( ! responses.length || ! ang || ! grid ) {
@@ -316,8 +340,11 @@ export function computePolarSlices( source, freqIndex ) {
 		onAxis?.level?.length || onAxis?.Level?.length
 	);
 	const onAxisLevel = onAxis?.level || onAxis?.Level || [];
-	const sampleResponse = ( source?.Responses || source?.responses || [] )[ 0 ];
-	const sampleFreqs = sampleResponse?.Frequencies || sampleResponse?.frequencies || [];
+	const sampleResponse = ( source?.Responses ||
+		source?.responses ||
+		[] )[ 0 ];
+	const sampleFreqs =
+		sampleResponse?.Frequencies || sampleResponse?.frequencies || [];
 	const canCombineOnAxis =
 		onAxis &&
 		Array.isArray( onAxisLevel ) &&
@@ -339,11 +366,13 @@ export function computePolarSlices( source, freqIndex ) {
 			hMeridianDeg,
 			hParallelDeg
 		);
-		const hLevel = ( horizontalResponse?.Level || horizontalResponse?.level || [] )[ freqIndex ];
+		const hLevel = ( horizontalResponse?.Level ||
+			horizontalResponse?.level ||
+			[] )[ freqIndex ];
 		horizontalLevels.push(
 			canCombineOnAxis && Number.isFinite( hLevel )
 				? hLevel + onAxisLevel[ freqIndex ]
-				: ( hLevel ?? null )
+				: hLevel ?? null
 		);
 
 		// Vertical slice: front-top-back-bottom (meridian 0°/180°)
@@ -356,11 +385,13 @@ export function computePolarSlices( source, freqIndex ) {
 			vMeridianDeg,
 			vParallelDeg
 		);
-		const vLevel = ( verticalResponse?.Level || verticalResponse?.level || [] )[ freqIndex ];
+		const vLevel = ( verticalResponse?.Level ||
+			verticalResponse?.level ||
+			[] )[ freqIndex ];
 		verticalLevels.push(
 			canCombineOnAxis && Number.isFinite( vLevel )
 				? vLevel + onAxisLevel[ freqIndex ]
-				: ( vLevel ?? null )
+				: vLevel ?? null
 		);
 	} );
 
@@ -383,8 +414,111 @@ export function computePolarSlices( source, freqIndex ) {
 			frontHalfOnly: grid.frontHalfOnly,
 			measuredMeridianDeg: grid.measuredMeridianDeg,
 			measuredParallelDeg: grid.measuredParallelDeg,
+			meridianStep: grid.meridianStep,
+			parallelStep: grid.parallelStep,
 			stepDeg,
 		},
+	};
+}
+
+/**
+ * Map a response index back to balloon meridian/parallel indices.
+ *
+ * @param {number} responseIndex Index into the source's Responses array.
+ * @param {Object} grid          Grid info from getBalloonGrid.
+ * @return {Object|null} Object with meridianIdx and parallelIdx, or null.
+ */
+export function responseIndexToBalloonIndices( responseIndex, grid ) {
+	if ( ! grid || ! grid.meridianCount || ! grid.parallelCount ) {
+		return null;
+	}
+	if ( ! Number.isFinite( responseIndex ) || responseIndex < 0 ) {
+		return null;
+	}
+
+	const meridianCount = grid.meridianCount;
+	const parallelCount = grid.parallelCount;
+	const responseCount =
+		grid.responseCount || meridianCount * parallelCount;
+
+	if ( responseIndex >= responseCount ) {
+		return null;
+	}
+
+	if ( responseIndex < parallelCount ) {
+		// First meridian includes poles and all parallels
+		return {
+			meridianIdx: 0,
+			parallelIdx: responseIndex,
+		};
+	}
+
+	const pointsPerMer = parallelCount - ( grid.frontHalfOnly ? 1 : 2 );
+	if ( pointsPerMer <= 0 ) {
+		return null;
+	}
+
+	const offset = responseIndex - parallelCount;
+	const meridianIdx = Math.floor( offset / pointsPerMer ) + 1;
+	const parallelIdx = ( offset % pointsPerMer ) + 1;
+
+	if (
+		meridianIdx < 0 ||
+		meridianIdx >= meridianCount ||
+		parallelIdx < 0 ||
+		parallelIdx >= parallelCount
+	) {
+		return null;
+	}
+
+	return { meridianIdx, parallelIdx };
+}
+
+/**
+ * Compute the meridian (azimuth) and parallel (off-axis) angles for a response index.
+ *
+ * @param {Object} source        Source definition with Responses and BalloonData.
+ * @param {number} responseIndex Index into the source's Responses array.
+ * @return {Object|null} Object with meridianDeg, parallelDeg, indices and counts.
+ */
+export function computeResponseAngles( source, responseIndex ) {
+	const balloon =
+		source?.Definition?.BalloonData || source?.definition?.balloon_data;
+	const ang = balloon?.AngularResolution || balloon?.angular_resolution;
+	const meridianStep = ang?.MeridianStep || ang?.meridian_step;
+	const parallelStep = ang?.ParallelStep || ang?.parallel_step;
+	if ( ! ang || ! meridianStep || ! parallelStep ) {
+		return null;
+	}
+
+	const grid = getBalloonGrid( source );
+	if ( ! grid || ! grid.meridianCount || ! grid.parallelCount ) {
+		return null;
+	}
+
+	const indices = responseIndexToBalloonIndices( responseIndex, grid );
+	if ( ! indices ) {
+		return null;
+	}
+	const { meridianIdx, parallelIdx } = indices;
+
+	if ( parallelIdx >= grid.parallelCount ) {
+		return null;
+	}
+
+	const symmetry = ang?.Symmetry ?? ang?.symmetry ?? 0;
+	let meridianDeg = meridianIdx * meridianStep;
+	if ( symmetry === 2 ) {
+		meridianDeg = ( meridianDeg + 90 ) % 360;
+	}
+
+	return {
+		meridianDeg,
+		parallelDeg: parallelIdx * parallelStep,
+		meridianIdx,
+		parallelIdx,
+		meridianCount: grid.meridianCount,
+		parallelCount: grid.parallelCount,
 	};
 }
 

@@ -1,7 +1,7 @@
 /**
  * Registers the 3D Balloon block.
  *
- * @package GllInfo
+ * @package
  */
 
 import { registerBlockType } from '@wordpress/blocks';

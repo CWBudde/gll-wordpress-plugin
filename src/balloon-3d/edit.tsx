@@ -1,7 +1,7 @@
 /**
  * 3D Balloon Block - Editor Component
  *
- * @package GllInfo
+ * @package
  */
 
 import { __ } from '@wordpress/i18n';
@@ -20,7 +20,13 @@ import {
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
-import { useEffect, useState, useMemo, useCallback, useRef } from '@wordpress/element';
+import {
+	useEffect,
+	useState,
+	useMemo,
+	useCallback,
+	useRef,
+} from '@wordpress/element';
 import * as THREE from 'three';
 
 import { useGLLLoader, ThreeWrapper, isWebGLSupported } from '../shared';
@@ -56,6 +62,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		showReferenceSphere,
 		showAxesHelper,
 		canvasHeight,
+		qualityPreset,
 	} = attributes;
 
 	const blockProps = useBlockProps();
@@ -63,9 +70,43 @@ export default function Edit( { attributes, setAttributes } ) {
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const threeRef = useRef< ThreeWrapperRef >( null );
 	const balloonMeshRef = useRef< THREE.Mesh | null >( null );
+	const visibilityRef = useRef< HTMLDivElement | null >( null );
+	const fillLightRef = useRef< THREE.DirectionalLight | null >( null );
+	const [ paused, setPaused ] = useState( false );
 
 	// Check WebGL support
 	const webGLSupported = useMemo( () => isWebGLSupported(), [] );
+
+	// Map quality preset to render parameters.
+	const presetSettings = useMemo( () => {
+		switch ( qualityPreset ) {
+			case 'low':
+				return {
+					subsampleStride: 2,
+					maxPixelRatio: 1,
+					antialias: false,
+					directionalLightIntensity: 0,
+					fillLight: false,
+				};
+			case 'high':
+				return {
+					subsampleStride: 1,
+					maxPixelRatio: 2,
+					antialias: true,
+					directionalLightIntensity: 0.85,
+					fillLight: true,
+				};
+			case 'medium':
+			default:
+				return {
+					subsampleStride: 1,
+					maxPixelRatio: 2,
+					antialias: true,
+					directionalLightIntensity: 0.85,
+					fillLight: false,
+				};
+		}
+	}, [ qualityPreset ] );
 
 	useEffect( () => {
 		if ( fileUrl && ! loadAttempted ) {
@@ -90,20 +131,26 @@ export default function Edit( { attributes, setAttributes } ) {
 	};
 
 	// Build source options
-	const sourceOptions = useMemo( () =>
-		( data?.Database?.SourceDefinitions || [] )
-			.filter( ( s ) => ( s.Responses || [] ).length > 0 )
-			.map( ( source, index ) => ( {
-				label: source.Definition?.Label || source.Label || `Source ${ index + 1 }`,
-				value: index,
-			} ) ),
+	const sourceOptions = useMemo(
+		() =>
+			( data?.Database?.SourceDefinitions || [] )
+				.filter( ( s ) => ( s.Responses || [] ).length > 0 )
+				.map( ( source, index ) => ( {
+					label:
+						source.Definition?.Label ||
+						source.Label ||
+						`Source ${ index + 1 }`,
+					value: index,
+				} ) ),
 		[ data ]
 	);
 
 	// Get current source (only sources with responses)
-	const sourcesWithResponses = useMemo( () =>
-		( data?.Database?.SourceDefinitions || [] )
-			.filter( ( s ) => ( s.Responses || [] ).length > 0 ),
+	const sourcesWithResponses = useMemo(
+		() =>
+			( data?.Database?.SourceDefinitions || [] ).filter(
+				( s ) => ( s.Responses || [] ).length > 0
+			),
 		[ data ]
 	);
 	const currentSource = sourcesWithResponses[ sourceIndex ];
@@ -115,11 +162,12 @@ export default function Edit( { attributes, setAttributes } ) {
 	}, [ currentSource ] );
 
 	// Build frequency options
-	const frequencyOptions = useMemo( () =>
-		frequencies.map( ( freq, index ) => ( {
-			label: formatFrequency( freq ),
-			value: index,
-		} ) ),
+	const frequencyOptions = useMemo(
+		() =>
+			frequencies.map( ( freq, index ) => ( {
+				label: formatFrequency( freq ),
+				value: index,
+			} ) ),
 		[ frequencies ]
 	);
 
@@ -147,7 +195,12 @@ export default function Edit( { attributes, setAttributes } ) {
 	 * Build the balloon mesh geometry using new utilities with symmetry handling.
 	 */
 	const buildBalloonMesh = useCallback( () => {
-		if ( ! threeRef.current?.scene || ! balloonGrid || frequencies.length === 0 || ! currentSource ) {
+		if (
+			! threeRef.current?.scene ||
+			! balloonGrid ||
+			frequencies.length === 0 ||
+			! currentSource
+		) {
 			return;
 		}
 
@@ -170,6 +223,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			frequencyIndex: freqIdx,
 			dbRange,
 			scale,
+			subsampleStride: presetSettings.subsampleStride,
 		} );
 
 		if ( ! geometryData ) {
@@ -202,18 +256,90 @@ export default function Edit( { attributes, setAttributes } ) {
 		const mesh = new THREE.Mesh( geometry, material );
 		scene.add( mesh );
 		balloonMeshRef.current = mesh;
-	}, [ balloonGrid, frequencies, frequencyIndex, currentSource, dbRange, scale, wireframe ] );
+	}, [
+		balloonGrid,
+		frequencies,
+		frequencyIndex,
+		currentSource,
+		dbRange,
+		scale,
+		wireframe,
+		presetSettings.subsampleStride,
+	] );
 
 	// Rebuild mesh when parameters change
 	useEffect( () => {
 		buildBalloonMesh();
 	}, [ buildBalloonMesh ] );
 
+	// Add/remove a fill light based on the current quality preset.
+	const syncFillLight = useCallback( () => {
+		const scene = threeRef.current?.scene;
+		if ( ! scene ) {
+			return;
+		}
+		if ( presetSettings.fillLight && ! fillLightRef.current ) {
+			const fill = new THREE.DirectionalLight( 0xffffff, 0.4 );
+			fill.position.set( -2, -1, -2 );
+			scene.add( fill );
+			fillLightRef.current = fill;
+		} else if ( ! presetSettings.fillLight && fillLightRef.current ) {
+			scene.remove( fillLightRef.current );
+			fillLightRef.current.dispose();
+			fillLightRef.current = null;
+		}
+	}, [ presetSettings.fillLight ] );
+
+	useEffect( () => {
+		syncFillLight();
+	}, [ syncFillLight, data ] );
+
 	// Handle scene ready
-	const handleSceneReady = useCallback( ( scene: THREE.Scene ) => {
+	const handleSceneReady = useCallback( () => {
+		syncFillLight();
 		// Build initial mesh
 		buildBalloonMesh();
-	}, [ buildBalloonMesh ] );
+	}, [ buildBalloonMesh, syncFillLight ] );
+
+	// Pause animation when the block is scrolled offscreen in the editor.
+	useEffect( () => {
+		if ( typeof IntersectionObserver === 'undefined' ) {
+			return undefined;
+		}
+		const el = visibilityRef.current;
+		if ( ! el ) {
+			return undefined;
+		}
+		const observer = new IntersectionObserver(
+			( entries ) => {
+				for ( const entry of entries ) {
+					setPaused( ! entry.isIntersecting );
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe( el );
+		return () => observer.disconnect();
+	}, [] );
+
+	// Dispose mesh and fill light on unmount (rebuild path is handled inline).
+	useEffect( () => {
+		return () => {
+			const mesh = balloonMeshRef.current;
+			if ( mesh ) {
+				mesh.geometry.dispose();
+				if ( mesh.material instanceof THREE.Material ) {
+					mesh.material.dispose();
+				}
+				balloonMeshRef.current = null;
+			}
+			const fill = fillLightRef.current;
+			if ( fill ) {
+				fill.dispose();
+				fillLightRef.current = null;
+			}
+		};
+	}, [] );
 
 	if ( ! fileUrl ) {
 		return (
@@ -229,7 +355,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							render={ ( { open } ) => (
 								<Button variant="primary" onClick={ open }>
 									{ __( 'Select GLL File', 'gll-info' ) }
@@ -254,13 +383,19 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							value={ fileId }
 							render={ ( { open } ) => (
 								<Button
 									variant="secondary"
 									onClick={ open }
-									style={ { marginTop: '10px', marginRight: '10px' } }
+									style={ {
+										marginTop: '10px',
+										marginRight: '10px',
+									} }
 								>
 									{ __( 'Replace File', 'gll-info' ) }
 								</Button>
@@ -279,14 +414,22 @@ export default function Edit( { attributes, setAttributes } ) {
 
 				{ data && (
 					<>
-						<PanelBody title={ __( 'Source & Frequency', 'gll-info' ) } initialOpen={ true }>
+						<PanelBody
+							title={ __( 'Source & Frequency', 'gll-info' ) }
+							initialOpen={ true }
+						>
 							{ sourceOptions.length > 0 && (
 								<SelectControl
-									label={ __( 'Acoustic Source', 'gll-info' ) }
+									label={ __(
+										'Acoustic Source',
+										'gll-info'
+									) }
 									value={ sourceIndex }
 									options={ sourceOptions }
 									onChange={ ( value ) =>
-										setAttributes( { sourceIndex: parseInt( value, 10 ) } )
+										setAttributes( {
+											sourceIndex: parseInt( value, 10 ),
+										} )
 									}
 								/>
 							) }
@@ -297,23 +440,39 @@ export default function Edit( { attributes, setAttributes } ) {
 										value={ frequencyIndex }
 										options={ frequencyOptions }
 										onChange={ ( value ) =>
-											setAttributes( { frequencyIndex: parseInt( value, 10 ) } )
+											setAttributes( {
+												frequencyIndex: parseInt(
+													value,
+													10
+												),
+											} )
 										}
 									/>
 									<RangeControl
-										label={ __( 'Frequency Index', 'gll-info' ) }
+										label={ __(
+											'Frequency Index',
+											'gll-info'
+										) }
 										value={ frequencyIndex }
 										onChange={ ( value ) =>
-											setAttributes( { frequencyIndex: value } )
+											setAttributes( {
+												frequencyIndex: value,
+											} )
 										}
 										min={ 0 }
-										max={ Math.max( 0, frequencies.length - 1 ) }
+										max={ Math.max(
+											0,
+											frequencies.length - 1
+										) }
 									/>
 								</>
 							) }
 						</PanelBody>
 
-						<PanelBody title={ __( 'Display Options', 'gll-info' ) } initialOpen={ false }>
+						<PanelBody
+							title={ __( 'Display Options', 'gll-info' ) }
+							initialOpen={ false }
+						>
 							<RangeControl
 								label={ __( 'dB Range', 'gll-info' ) }
 								value={ dbRange }
@@ -323,7 +482,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								min={ 20 }
 								max={ 80 }
 								step={ 5 }
-								help={ __( 'Dynamic range for level display (dB)', 'gll-info' ) }
+								help={ __(
+									'Dynamic range for level display (dB)',
+									'gll-info'
+								) }
 							/>
 							<RangeControl
 								label={ __( 'Scale', 'gll-info' ) }
@@ -334,7 +496,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								min={ 0.6 }
 								max={ 1.6 }
 								step={ 0.1 }
-								help={ __( 'Size multiplier for the balloon', 'gll-info' ) }
+								help={ __(
+									'Size multiplier for the balloon',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
 								label={ __( 'Wireframe', 'gll-info' ) }
@@ -342,7 +507,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								onChange={ ( value ) =>
 									setAttributes( { wireframe: value } )
 								}
-								help={ __( 'Show mesh as wireframe', 'gll-info' ) }
+								help={ __(
+									'Show mesh as wireframe',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
 								label={ __( 'Auto-Rotate', 'gll-info' ) }
@@ -350,15 +518,26 @@ export default function Edit( { attributes, setAttributes } ) {
 								onChange={ ( value ) =>
 									setAttributes( { autoRotate: value } )
 								}
-								help={ __( 'Automatically rotate the balloon', 'gll-info' ) }
+								help={ __(
+									'Automatically rotate the balloon',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
-								label={ __( 'Show Reference Sphere', 'gll-info' ) }
+								label={ __(
+									'Show Reference Sphere',
+									'gll-info'
+								) }
 								checked={ showReferenceSphere }
 								onChange={ ( value ) =>
-									setAttributes( { showReferenceSphere: value } )
+									setAttributes( {
+										showReferenceSphere: value,
+									} )
 								}
-								help={ __( 'Show wireframe unit sphere for reference', 'gll-info' ) }
+								help={ __(
+									'Show wireframe unit sphere for reference',
+									'gll-info'
+								) }
 							/>
 							<ToggleControl
 								label={ __( 'Show Axes', 'gll-info' ) }
@@ -366,7 +545,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								onChange={ ( value ) =>
 									setAttributes( { showAxesHelper: value } )
 								}
-								help={ __( 'Show X/Y/Z axes helper', 'gll-info' ) }
+								help={ __(
+									'Show X/Y/Z axes helper',
+									'gll-info'
+								) }
 							/>
 							<RangeControl
 								label={ __( 'Canvas Height (px)', 'gll-info' ) }
@@ -378,19 +560,51 @@ export default function Edit( { attributes, setAttributes } ) {
 								max={ 800 }
 								step={ 50 }
 							/>
+							<SelectControl
+								label={ __( 'Quality Preset', 'gll-info' ) }
+								value={ qualityPreset || 'medium' }
+								options={ [
+									{
+										label: __( 'Low (faster)', 'gll-info' ),
+										value: 'low',
+									},
+									{
+										label: __(
+											'Medium (default)',
+											'gll-info'
+										),
+										value: 'medium',
+									},
+									{
+										label: __(
+											'High (best lighting)',
+											'gll-info'
+										),
+										value: 'high',
+									},
+								] }
+								onChange={ ( value ) =>
+									setAttributes( { qualityPreset: value } )
+								}
+								help={ __(
+									'Low subsamples the angular grid and disables antialiasing. High adds a fill light.',
+									'gll-info'
+								) }
+							/>
 						</PanelBody>
 					</>
 				) }
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<div className="gll-balloon-3d-block">
+				<div ref={ visibilityRef } className="gll-balloon-3d-block">
 					<div className="gll-balloon-3d-header">
 						<h3>{ fileName }</h3>
 						{ currentSource && (
 							<p className="gll-source-label">
 								{ __( 'Source:', 'gll-info' ) }{ ' ' }
-								{ currentSource.Definition?.Label || currentSource.Label }
+								{ currentSource.Definition?.Label ||
+									currentSource.Label }
 							</p>
 						) }
 					</div>
@@ -398,7 +612,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ isLoading && (
 						<div className="gll-balloon-3d-loading">
 							<Spinner />
-							<p>{ __( 'Loading GLL data...', 'gll-info' ) }</p>
+							<p>{ __( 'Loading GLL data…', 'gll-info' ) }</p>
 						</div>
 					) }
 
@@ -414,7 +628,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ ! webGLSupported && (
 						<div className="gll-balloon-3d-error">
 							<p>
-								{ __( 'WebGL is not supported in your browser. Please use a modern browser to view 3D content.', 'gll-info' ) }
+								{ __(
+									'WebGL is not supported in your browser. Please use a modern browser to view 3D content.',
+									'gll-info'
+								) }
 							</p>
 						</div>
 					) }
@@ -423,23 +640,43 @@ export default function Edit( { attributes, setAttributes } ) {
 						<>
 							<div className="gll-balloon-3d-metadata">
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Frequency:', 'gll-info' ) }</strong>{ ' ' }
-									{ formatFrequency( frequencies[ Math.min( frequencyIndex, frequencies.length - 1 ) ] ) }
+									<strong>
+										{ __( 'Frequency:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ formatFrequency(
+										frequencies[
+											Math.min(
+												frequencyIndex,
+												frequencies.length - 1
+											)
+										]
+									) }
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Display Range:', 'gll-info' ) }</strong>{ ' ' }
-									{ displayMin.toFixed( 1 ) } &ndash; { displayMax.toFixed( 1 ) } dB
+									<strong>
+										{ __( 'Display Range:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ displayMin.toFixed( 1 ) } &ndash;{ ' ' }
+									{ displayMax.toFixed( 1 ) } dB
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Grid:', 'gll-info' ) }</strong>{ ' ' }
-									{ balloonGrid.fullMeridianCount } &times; { balloonGrid.fullParallelCount }
+									<strong>
+										{ __( 'Grid:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ balloonGrid.fullMeridianCount } &times;{ ' ' }
+									{ balloonGrid.fullParallelCount }
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Resolution:', 'gll-info' ) }</strong>{ ' ' }
-									{ balloonGrid.meridianStep }&deg; &times; { balloonGrid.parallelStep }&deg;
+									<strong>
+										{ __( 'Resolution:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ balloonGrid.meridianStep }&deg; &times;{ ' ' }
+									{ balloonGrid.parallelStep }&deg;
 								</span>
 								<span className="gll-meta-badge">
-									<strong>{ __( 'Symmetry:', 'gll-info' ) }</strong>{ ' ' }
+									<strong>
+										{ __( 'Symmetry:', 'gll-info' ) }
+									</strong>{ ' ' }
 									{ balloonGrid.symmetryName }
 								</span>
 								{ wireframe && (
@@ -457,7 +694,13 @@ export default function Edit( { attributes, setAttributes } ) {
 								<div className="gll-colorbar-gradient" />
 								<div className="gll-colorbar-labels">
 									<span>{ displayMin.toFixed( 0 ) } dB</span>
-									<span>{ ( ( displayMin + displayMax ) / 2 ).toFixed( 0 ) } dB</span>
+									<span>
+										{ (
+											( displayMin + displayMax ) /
+											2
+										).toFixed( 0 ) }{ ' ' }
+										dB
+									</span>
 									<span>{ displayMax.toFixed( 0 ) } dB</span>
 								</div>
 							</div>
@@ -465,10 +708,16 @@ export default function Edit( { attributes, setAttributes } ) {
 								<ThreeWrapper
 									ref={ threeRef }
 									height={ canvasHeight }
+									paused={ paused }
 									config={ {
 										showReferenceSphere,
 										showAxesHelper,
 										autoRotate,
+										antialias: presetSettings.antialias,
+										maxPixelRatio:
+											presetSettings.maxPixelRatio,
+										directionalLightIntensity:
+											presetSettings.directionalLightIntensity,
 									} }
 									onSceneReady={ handleSceneReady }
 								/>

@@ -4,7 +4,7 @@
  * Outputs the block markup for frontend rendering.
  * The view.js script will hydrate this with the frequency response chart.
  *
- * @package GllInfo
+ * @package
  */
 
 import { useBlockProps } from '@wordpress/block-editor';

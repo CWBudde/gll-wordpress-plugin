@@ -3,7 +3,7 @@
  *
  * Handles WASM loading, GLL parsing, and Three.js rendering on the frontend.
  *
- * @package GllInfo
+ * @package
  */
 
 import * as THREE from 'three';
@@ -18,6 +18,16 @@ import {
 } from '../shared/balloon-utils';
 import type { BalloonGridInfo } from '../shared/balloon-utils';
 
+type QualityPreset = 'low' | 'medium' | 'high';
+
+interface QualitySettings {
+	subsampleStride: number;
+	maxPixelRatio: number;
+	antialias: boolean;
+	directionalLightIntensity: number;
+	fillLight: boolean;
+}
+
 interface BlockOptions {
 	fileName: string;
 	sourceIndex: number;
@@ -29,13 +39,58 @@ interface BlockOptions {
 	showReferenceSphere: boolean;
 	showAxesHelper: boolean;
 	canvasHeight: number;
+	qualityPreset: QualityPreset;
 }
 
 /**
- * Initialize all 3D balloon blocks on the page.
+ * Per-block teardown callbacks, keyed by the block element. Used so that
+ * single-page-app navigations and `beforeunload` can release every Three.js
+ * scene that was lazily initialized.
+ */
+const blockCleanups = new WeakMap< HTMLElement, () => void >();
+const liveBlocks = new Set< HTMLElement >();
+
+/**
+ * Resolve a quality preset string to its render parameters.
+ * @param preset
+ */
+function resolveQuality( preset: QualityPreset ): QualitySettings {
+	switch ( preset ) {
+		case 'low':
+			return {
+				subsampleStride: 2,
+				maxPixelRatio: 1,
+				antialias: false,
+				directionalLightIntensity: 0,
+				fillLight: false,
+			};
+		case 'high':
+			return {
+				subsampleStride: 1,
+				maxPixelRatio: 2,
+				antialias: true,
+				directionalLightIntensity: 0.85,
+				fillLight: true,
+			};
+		case 'medium':
+		default:
+			return {
+				subsampleStride: 1,
+				maxPixelRatio: 2,
+				antialias: true,
+				directionalLightIntensity: 0.85,
+				fillLight: false,
+			};
+	}
+}
+
+/**
+ * Initialize all 3D balloon blocks on the page (lazily).
  */
 document.addEventListener( 'DOMContentLoaded', async () => {
-	const blocks = document.querySelectorAll( '.gll-balloon-3d-block' );
+	const blocks = document.querySelectorAll< HTMLElement >(
+		'.gll-balloon-3d-block'
+	);
 
 	if ( blocks.length === 0 ) {
 		return;
@@ -44,28 +99,73 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	// Check WebGL support
 	if ( ! isWebGLSupported() ) {
 		blocks.forEach( ( block ) => {
-			showError( block as HTMLElement, 'WebGL is not supported in your browser. Please use a modern browser to view 3D content.' );
+			showError(
+				block,
+				'WebGL is not supported in your browser. Please use a modern browser to view 3D content.'
+			);
 		} );
 		return;
 	}
 
-	try {
-		await ensureWasmReady();
-	} catch ( error ) {
-		console.error( 'Failed to initialize WASM:', error );
+	const initializedBlocks = new WeakSet< HTMLElement >();
+
+	const initOnce = async ( block: HTMLElement ) => {
+		if ( initializedBlocks.has( block ) ) {
+			return;
+		}
+		initializedBlocks.add( block );
+
+		try {
+			await ensureWasmReady();
+		} catch ( error ) {
+			console.error( 'Failed to initialize WASM:', error );
+			showError( block, 'Failed to initialize WASM parser' );
+			return;
+		}
+
+		await initializeBlock( block );
+	};
+
+	if ( typeof IntersectionObserver === 'undefined' ) {
+		// Fallback: initialize eagerly when IntersectionObserver isn't available.
 		blocks.forEach( ( block ) => {
-			showError( block as HTMLElement, 'Failed to initialize WASM parser' );
+			liveBlocks.add( block );
+			void initOnce( block );
 		} );
-		return;
+	} else {
+		const observer = new IntersectionObserver(
+			( entries ) => {
+				for ( const entry of entries ) {
+					if ( entry.isIntersecting ) {
+						const target = entry.target as HTMLElement;
+						observer.unobserve( target );
+						void initOnce( target );
+					}
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		blocks.forEach( ( block ) => {
+			liveBlocks.add( block );
+			observer.observe( block );
+		} );
 	}
 
-	blocks.forEach( ( block ) => {
-		initializeBlock( block as HTMLElement );
+	// Tear down every initialized scene on page unload so that a back/forward
+	// navigation does not leak detached canvases.
+	window.addEventListener( 'beforeunload', () => {
+		for ( const block of liveBlocks ) {
+			const cleanup = blockCleanups.get( block );
+			if ( cleanup ) {
+				cleanup();
+			}
+		}
 	} );
 } );
 
 /**
  * Initialize a single 3D balloon block.
+ * @param block
  */
 async function initializeBlock( block: HTMLElement ) {
 	const fileUrl = block.dataset.fileUrl;
@@ -79,6 +179,9 @@ async function initializeBlock( block: HTMLElement ) {
 	const showReferenceSphere = block.dataset.showReferenceSphere !== 'false';
 	const showAxesHelper = block.dataset.showAxesHelper !== 'false';
 	const canvasHeight = parseInt( block.dataset.canvasHeight || '500', 10 );
+	const presetRaw = block.dataset.qualityPreset;
+	const qualityPreset: QualityPreset =
+		presetRaw === 'low' || presetRaw === 'high' ? presetRaw : 'medium';
 
 	if ( ! fileUrl ) {
 		showError( block, 'No file URL specified' );
@@ -111,6 +214,7 @@ async function initializeBlock( block: HTMLElement ) {
 			showReferenceSphere,
 			showAxesHelper,
 			canvasHeight,
+			qualityPreset,
 		} );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
@@ -120,16 +224,24 @@ async function initializeBlock( block: HTMLElement ) {
 
 /**
  * Render 3D balloon visualization.
+ * @param block
+ * @param data
+ * @param options
  */
-function render3DBalloon( block: HTMLElement, data: any, options: BlockOptions ) {
+function render3DBalloon(
+	block: HTMLElement,
+	data: any,
+	options: BlockOptions
+) {
 	const canvasContainer = block.querySelector( '.gll-balloon-3d-canvas' );
 	if ( ! canvasContainer ) {
 		return;
 	}
 
 	// Get sources with responses
-	const sources = ( data?.Database?.SourceDefinitions || [] )
-		.filter( ( s: any ) => ( s.Responses || [] ).length > 0 );
+	const sources = ( data?.Database?.SourceDefinitions || [] ).filter(
+		( s: any ) => ( s.Responses || [] ).length > 0
+	);
 
 	const source = sources[ options.sourceIndex ];
 	if ( ! source ) {
@@ -160,23 +272,48 @@ function render3DBalloon( block: HTMLElement, data: any, options: BlockOptions )
 
 	// Build metadata HTML
 	const badges = [];
-	badges.push( `<span class="gll-meta-badge"><strong>Frequency:</strong> ${ formatFrequency( frequency ) }</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Display Range:</strong> ${ displayMin.toFixed( 1 ) } &ndash; ${ displayMax.toFixed( 1 ) } dB</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Grid:</strong> ${ balloonGrid.fullMeridianCount } &times; ${ balloonGrid.fullParallelCount }</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Resolution:</strong> ${ balloonGrid.meridianStep }\u00b0 \u00d7 ${ balloonGrid.parallelStep }\u00b0</span>` );
-	badges.push( `<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>` );
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Frequency:</strong> ${ formatFrequency(
+			frequency
+		) }</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Display Range:</strong> ${ displayMin.toFixed(
+			1
+		) } &ndash; ${ displayMax.toFixed( 1 ) } dB</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Grid:</strong> ${ balloonGrid.fullMeridianCount } &times; ${ balloonGrid.fullParallelCount }</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Resolution:</strong> ${ balloonGrid.meridianStep }° × ${ balloonGrid.parallelStep }°</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>`
+	);
+	badges.push(
+		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ options.qualityPreset }</span>`
+	);
 	if ( options.wireframe ) {
-		badges.push( '<span class="gll-meta-badge gll-meta-badge-highlight">Wireframe</span>' );
+		badges.push(
+			'<span class="gll-meta-badge gll-meta-badge-highlight">Wireframe</span>'
+		);
 	}
 	if ( options.autoRotate ) {
-		badges.push( '<span class="gll-meta-badge gll-meta-badge-highlight">Auto-Rotate</span>' );
+		badges.push(
+			'<span class="gll-meta-badge gll-meta-badge-highlight">Auto-Rotate</span>'
+		);
 	}
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
-		badges.push( `<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>` );
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+		);
 	}
 
-	const metadataHtml = `<div class="gll-balloon-3d-metadata">${ badges.join( '' ) }</div>`;
+	const metadataHtml = `<div class="gll-balloon-3d-metadata">${ badges.join(
+		''
+	) }</div>`;
 
 	// Build color bar legend HTML
 	const colorbarHtml = `
@@ -200,19 +337,34 @@ function render3DBalloon( block: HTMLElement, data: any, options: BlockOptions )
 	( canvasContainer as HTMLElement ).style.display = 'block';
 
 	// Initialize Three.js scene
-	initThreeScene( threeContainer, source, balloonGrid, frequencies, options );
+	initThreeScene(
+		block,
+		threeContainer,
+		source,
+		balloonGrid,
+		frequencies,
+		options
+	);
 }
 
 /**
  * Initialize Three.js scene with balloon mesh.
+ * @param block
+ * @param container
+ * @param source
+ * @param balloonGrid
+ * @param frequencies
+ * @param options
  */
 function initThreeScene(
+	block: HTMLElement,
 	container: HTMLElement,
 	source: any,
 	balloonGrid: BalloonGridInfo,
 	frequencies: number[],
 	options: BlockOptions
 ) {
+	const quality = resolveQuality( options.qualityPreset );
 	const width = container.clientWidth;
 	const height = options.canvasHeight;
 
@@ -226,11 +378,13 @@ function initThreeScene(
 
 	// Create renderer
 	const renderer = new THREE.WebGLRenderer( {
-		antialias: true,
+		antialias: quality.antialias,
 		alpha: true,
 	} );
 	renderer.setSize( width, height );
-	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
+	renderer.setPixelRatio(
+		Math.min( window.devicePixelRatio, quality.maxPixelRatio )
+	);
 	renderer.setClearColor( 0x000000, 0 );
 	container.appendChild( renderer.domElement );
 
@@ -280,11 +434,25 @@ function initThreeScene(
 	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.65 );
 	scene.add( ambientLight );
 
-	const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.85 );
-	directionalLight.position.set( 2.5, 2.5, 2 );
-	scene.add( directionalLight );
+	let directionalLight: THREE.DirectionalLight | null = null;
+	if ( quality.directionalLightIntensity > 0 ) {
+		directionalLight = new THREE.DirectionalLight(
+			0xffffff,
+			quality.directionalLightIntensity
+		);
+		directionalLight.position.set( 2.5, 2.5, 2 );
+		scene.add( directionalLight );
+	}
+
+	let fillLight: THREE.DirectionalLight | null = null;
+	if ( quality.fillLight ) {
+		fillLight = new THREE.DirectionalLight( 0xffffff, 0.4 );
+		fillLight.position.set( -2, -1, -2 );
+		scene.add( fillLight );
+	}
 
 	// Add reference sphere if enabled
+	let referenceSphere: THREE.Mesh | null = null;
 	if ( options.showReferenceSphere ) {
 		const sphereGeometry = new THREE.SphereGeometry( 1, 32, 32 );
 		const sphereMaterial = new THREE.MeshBasicMaterial( {
@@ -293,18 +461,24 @@ function initThreeScene(
 			transparent: true,
 			opacity: 0.28,
 		} );
-		const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
-		scene.add( sphere );
+		referenceSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+		scene.add( referenceSphere );
 	}
 
 	// Add axes helper if enabled
+	let axesHelper: THREE.AxesHelper | null = null;
 	if ( options.showAxesHelper ) {
-		const axesHelper = new THREE.AxesHelper( 1 );
+		axesHelper = new THREE.AxesHelper( 1 );
 		scene.add( axesHelper );
 	}
 
 	// Build balloon mesh using new utilities with symmetry handling
-	const balloonMesh = buildBalloonMesh( source, frequencies, options );
+	const balloonMesh = buildBalloonMesh(
+		source,
+		frequencies,
+		options,
+		quality
+	);
 	if ( balloonMesh ) {
 		scene.add( balloonMesh );
 	}
@@ -318,10 +492,29 @@ function initThreeScene(
 	} );
 	resizeObserver.observe( container );
 
+	// Visibility tracking: pause animation work when the block is offscreen.
+	let isVisible = true;
+	let visibilityObserver: IntersectionObserver | null = null;
+	if ( typeof IntersectionObserver !== 'undefined' ) {
+		visibilityObserver = new IntersectionObserver(
+			( entries ) => {
+				for ( const entry of entries ) {
+					isVisible = entry.isIntersecting;
+				}
+			},
+			{ rootMargin: '0px' }
+		);
+		visibilityObserver.observe( block );
+	}
+
 	// Animation loop
-	let animationId: number;
+	let animationId = 0;
 	function animate() {
 		animationId = requestAnimationFrame( animate );
+
+		if ( ! isVisible ) {
+			return;
+		}
 
 		// Update controls (required for damping and auto-rotate)
 		controls.update();
@@ -330,10 +523,12 @@ function initThreeScene(
 	}
 	animate();
 
-	// Cleanup on page unload
-	window.addEventListener( 'beforeunload', () => {
+	const cleanup = () => {
 		cancelAnimationFrame( animationId );
 		resizeObserver.disconnect();
+		if ( visibilityObserver ) {
+			visibilityObserver.disconnect();
+		}
 		controls.dispose();
 		renderer.dispose();
 		if ( balloonMesh ) {
@@ -342,17 +537,39 @@ function initThreeScene(
 				balloonMesh.material.dispose();
 			}
 		}
-	} );
+		if ( referenceSphere ) {
+			referenceSphere.geometry.dispose();
+			if ( referenceSphere.material instanceof THREE.Material ) {
+				referenceSphere.material.dispose();
+			}
+		}
+		if ( axesHelper ) {
+			axesHelper.dispose();
+		}
+		if ( directionalLight ) {
+			directionalLight.dispose();
+		}
+		if ( fillLight ) {
+			fillLight.dispose();
+		}
+	};
+
+	blockCleanups.set( block, cleanup );
 }
 
 /**
  * Build the balloon mesh geometry using the new balloon utilities.
  * Handles symmetry-based data mirroring and uses cached global max levels.
+ * @param source
+ * @param frequencies
+ * @param options
+ * @param quality
  */
 function buildBalloonMesh(
 	source: any,
 	frequencies: number[],
-	options: BlockOptions
+	options: BlockOptions,
+	quality: QualitySettings
 ): THREE.Mesh | null {
 	const freqIdx = Math.min( options.frequencyIndex, frequencies.length - 1 );
 
@@ -361,6 +578,7 @@ function buildBalloonMesh(
 		frequencyIndex: freqIdx,
 		dbRange: options.dbRange,
 		scale: options.scale,
+		subsampleStride: quality.subsampleStride,
 	} );
 
 	if ( ! geometryData ) {
@@ -395,6 +613,8 @@ function buildBalloonMesh(
 
 /**
  * Show error message in block.
+ * @param block
+ * @param message
  */
 function showError( block: HTMLElement, message: string ) {
 	const loadingEl = block.querySelector( '.gll-balloon-3d-loading' );

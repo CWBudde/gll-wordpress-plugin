@@ -4,7 +4,7 @@
  * Provides functions for building balloon geometry with proper symmetry handling
  * and global max SPL caching, ported from gll-tools visualization.js.
  *
- * @package GllInfo
+ * @package
  */
 
 import { getBalloonGrid } from './polar-utils';
@@ -20,10 +20,10 @@ const globalMaxCache = new WeakMap< object, number >();
  */
 export const SYMMETRY = {
 	NONE: 0,
-	VERTICAL: 1,   // Mirror across vertical plane (left-right symmetric)
+	VERTICAL: 1, // Mirror across vertical plane (left-right symmetric)
 	HORIZONTAL: 2, // Mirror across horizontal plane (top-bottom symmetric)
-	QUARTER: 3,    // Quarter symmetry (both vertical and horizontal)
-	AXIAL: 4,      // Full axial symmetry (rotationally symmetric)
+	QUARTER: 3, // Quarter symmetry (both vertical and horizontal)
+	AXIAL: 4, // Full axial symmetry (rotationally symmetric)
 } as const;
 
 /**
@@ -51,6 +51,12 @@ export interface BalloonBuildOptions {
 	frequencyIndex: number;
 	dbRange: number;
 	scale: number;
+	/**
+	 * Subsample stride for the angular grid (default 1).
+	 * stride=2 uses every 2nd meridian/parallel index, halving vertex count.
+	 * Used by the "low" quality preset to reduce GPU cost.
+	 */
+	subsampleStride?: number;
 }
 
 /**
@@ -70,6 +76,11 @@ export interface BalloonGeometryData {
  *
  * Balloon data stores poles only once (not duplicated for each meridian),
  * so we need to account for this when indexing.
+ * @param meridianIdx
+ * @param parallelIdx
+ * @param meridianCount
+ * @param parallelCount
+ * @param frontHalfOnly
  */
 function balloonResponseIndex(
 	meridianIdx: number,
@@ -96,7 +107,9 @@ function balloonResponseIndex(
 	const skippedPerMer = frontHalfOnly ? 1 : 2;
 	const pointsPerMer = parallelCount - skippedPerMer;
 
-	return parallelCount + ( meridianIdx - 1 ) * pointsPerMer + ( parallelIdx - 1 );
+	return (
+		parallelCount + ( meridianIdx - 1 ) * pointsPerMer + ( parallelIdx - 1 )
+	);
 }
 
 /**
@@ -125,7 +138,8 @@ export function getResponseWithSymmetry(
 	let lookupParallel = parallelDeg;
 
 	const symmetry = grid.symmetry ?? 0;
-	const canMirrorParallel = symmetry === SYMMETRY.HORIZONTAL || symmetry === SYMMETRY.QUARTER;
+	const canMirrorParallel =
+		symmetry === SYMMETRY.HORIZONTAL || symmetry === SYMMETRY.QUARTER;
 
 	// Apply symmetry mapping to azimuth
 	if ( symmetry === SYMMETRY.AXIAL ) {
@@ -231,9 +245,14 @@ export function computeGlobalMaxLevel( source: any ): number {
 
 	// Iterate through all responses and all frequency levels
 	for ( const response of responses ) {
-		const levels = response?.Levels || response?.Level || response?.level || [];
+		const levels =
+			response?.Levels || response?.Level || response?.level || [];
 		for ( const level of levels ) {
-			if ( typeof level === 'number' && Number.isFinite( level ) && level > globalMax ) {
+			if (
+				typeof level === 'number' &&
+				Number.isFinite( level ) &&
+				level > globalMax
+			) {
 				globalMax = level;
 			}
 		}
@@ -253,6 +272,7 @@ export function computeGlobalMaxLevel( source: any ): number {
 /**
  * Clear the global max cache for a source.
  * Call this if the source data has been modified.
+ * @param source
  */
 export function clearGlobalMaxCache( source: any ): void {
 	globalMaxCache.delete( source );
@@ -275,7 +295,8 @@ export function buildFullSphereLevels(
 	grid: BalloonGridInfo,
 	frequencyIndex: number
 ): number[][] {
-	const { fullMeridianCount, fullParallelCount, meridianStep, parallelStep } = grid;
+	const { fullMeridianCount, fullParallelCount, meridianStep, parallelStep } =
+		grid;
 	const levels: number[][] = [];
 
 	// Build full sphere grid using symmetry-aware lookups
@@ -287,12 +308,22 @@ export function buildFullSphereLevels(
 			const azimuthDeg = mIdx * meridianStep;
 
 			// Get response using symmetry-aware lookup
-			const response = getResponseWithSymmetry( source, grid, azimuthDeg, parallelDeg );
-			const responseLevels = response?.Levels || response?.Level || response?.level || [];
+			const response = getResponseWithSymmetry(
+				source,
+				grid,
+				azimuthDeg,
+				parallelDeg
+			);
+			const responseLevels =
+				response?.Levels || response?.Level || response?.level || [];
 			const level = responseLevels[ frequencyIndex ];
 
 			// Use -100 as missing data placeholder
-			parallelLevels.push( typeof level === 'number' && Number.isFinite( level ) ? level : -100 );
+			parallelLevels.push(
+				typeof level === 'number' && Number.isFinite( level )
+					? level
+					: -100
+			);
 		}
 
 		levels.push( parallelLevels );
@@ -327,8 +358,8 @@ export function sphericalToCartesian(
 
 	return {
 		x: radius * sinPar * cosAz,
-		y: radius * cosPar,           // GLL Z -> Three.js Y
-		z: radius * sinPar * sinAz,   // GLL Y -> Three.js Z
+		y: radius * cosPar, // GLL Z -> Three.js Y
+		z: radius * sinPar * sinAz, // GLL Y -> Three.js Z
 	};
 }
 
@@ -356,7 +387,11 @@ export const MISSING_LEVEL_MARKER = -99;
  * @param normalized Normalized value 0-1 (0=min, 1=max).
  * @return Object with r, g, b values (0-1 range).
  */
-export function levelToColor( normalized: number ): { r: number; g: number; b: number } {
+export function levelToColor( normalized: number ): {
+	r: number;
+	g: number;
+	b: number;
+} {
 	// Hue: 0 (red) for max, 0.66 (blue) for min
 	const hue = ( 1 - normalized ) * 0.66;
 	const saturation = 0.75;
@@ -367,21 +402,35 @@ export function levelToColor( normalized: number ): { r: number; g: number; b: n
 	const x = c * ( 1 - Math.abs( ( ( hue * 6 ) % 2 ) - 1 ) );
 	const m = lightness - c / 2;
 
-	let r = 0, g = 0, b = 0;
+	let r = 0,
+		g = 0,
+		b = 0;
 	const h6 = hue * 6;
 
 	if ( h6 < 1 ) {
-		r = c; g = x; b = 0;
+		r = c;
+		g = x;
+		b = 0;
 	} else if ( h6 < 2 ) {
-		r = x; g = c; b = 0;
+		r = x;
+		g = c;
+		b = 0;
 	} else if ( h6 < 3 ) {
-		r = 0; g = c; b = x;
+		r = 0;
+		g = c;
+		b = x;
 	} else if ( h6 < 4 ) {
-		r = 0; g = x; b = c;
+		r = 0;
+		g = x;
+		b = c;
 	} else if ( h6 < 5 ) {
-		r = x; g = 0; b = c;
+		r = x;
+		g = 0;
+		b = c;
 	} else {
-		r = c; g = 0; b = x;
+		r = c;
+		g = 0;
+		b = x;
 	}
 
 	return {
@@ -413,7 +462,10 @@ export function levelToColorWithMissing(
 	}
 
 	// Calculate normalized value (clamped to 0-1)
-	const normalized = Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
+	const normalized = Math.max(
+		0,
+		Math.min( 1, ( level - displayMin ) / dbRange )
+	);
 
 	return levelToColor( normalized );
 }
@@ -435,7 +487,30 @@ export function buildBalloonGeometryData(
 	}
 
 	const { frequencyIndex, dbRange, scale } = options;
-	const { fullMeridianCount, fullParallelCount, parallelStep, meridianStep } = grid;
+	const { fullMeridianCount, fullParallelCount } = grid;
+
+	// Subsample stride: collapses the angular grid to reduce vertex count.
+	// stride=1 (default) keeps native resolution; stride=2 roughly halves it
+	// per axis (low-quality preset). Levels are still sampled from the full
+	// grid by nearest-index mapping so poles and symmetry are preserved.
+	const rawStride = options.subsampleStride;
+	const stride = Math.max(
+		1,
+		Math.floor(
+			typeof rawStride === 'number' && Number.isFinite( rawStride )
+				? rawStride
+				: 1
+		)
+	);
+
+	const meridianSegments = Math.max(
+		4,
+		Math.floor( fullMeridianCount / stride )
+	);
+	const parallelRings = Math.max(
+		2,
+		Math.floor( ( fullParallelCount - 1 ) / stride ) + 1
+	);
 
 	// Build full sphere levels with symmetry handling
 	const levels = buildFullSphereLevels( source, grid, frequencyIndex );
@@ -454,18 +529,28 @@ export function buildBalloonGeometryData(
 	const colors: number[] = [];
 	const indices: number[] = [];
 
-	// Create sphere vertices with radius based on level
-	// We need fullParallelCount + 1 rows and fullMeridianCount + 1 columns for proper UV wrapping
-	for ( let pIdx = 0; pIdx <= fullParallelCount - 1; pIdx++ ) {
-		const parallelRad = ( pIdx / ( fullParallelCount - 1 ) ) * Math.PI;
+	// Create sphere vertices with radius based on level.
+	// `parallelRings` rows × `meridianSegments + 1` columns (the +1 duplicates
+	// the seam vertex so UVs wrap cleanly around 360°).
+	for ( let pIdx = 0; pIdx < parallelRings; pIdx++ ) {
+		const parallelFrac = pIdx / ( parallelRings - 1 );
+		const parallelRad = parallelFrac * Math.PI;
 
-		for ( let mIdx = 0; mIdx <= fullMeridianCount; mIdx++ ) {
-			const azimuthRad = ( mIdx / fullMeridianCount ) * Math.PI * 2;
+		for ( let mIdx = 0; mIdx <= meridianSegments; mIdx++ ) {
+			const meridianFrac = mIdx / meridianSegments;
+			const azimuthRad = meridianFrac * Math.PI * 2;
 
-			// Get level for this point (wrap meridian index)
-			const levelPIdx = Math.min( pIdx, fullParallelCount - 1 );
-			const levelMIdx = mIdx % fullMeridianCount;
-			const level = levels[ levelPIdx ]?.[ levelMIdx ] ?? MISSING_LEVEL_MARKER - 1;
+			// Map iteration index to the underlying level grid index by
+			// nearest-neighbour. At stride=1 this is the identity mapping.
+			const levelPIdx = Math.min(
+				fullParallelCount - 1,
+				Math.round( parallelFrac * ( fullParallelCount - 1 ) )
+			);
+			const levelMIdx =
+				Math.round( meridianFrac * fullMeridianCount ) %
+				fullMeridianCount;
+			const level =
+				levels[ levelPIdx ]?.[ levelMIdx ] ?? MISSING_LEVEL_MARKER - 1;
 
 			// Check if this is missing data
 			const isMissing = level <= MISSING_LEVEL_MARKER;
@@ -474,7 +559,10 @@ export function buildBalloonGeometryData(
 			// Missing data uses 0 for radius calculation (minimum protrusion)
 			const normalized = isMissing
 				? 0
-				: Math.max( 0, Math.min( 1, ( level - displayMin ) / dbRange ) );
+				: Math.max(
+						0,
+						Math.min( 1, ( level - displayMin ) / dbRange )
+				  );
 
 			// Calculate radius based on level
 			const radius = baseRadius + amplitude * normalized;
@@ -490,9 +578,9 @@ export function buildBalloonGeometryData(
 	}
 
 	// Create triangle indices
-	const meridianVertCount = fullMeridianCount + 1;
-	for ( let pIdx = 0; pIdx < fullParallelCount - 1; pIdx++ ) {
-		for ( let mIdx = 0; mIdx < fullMeridianCount; mIdx++ ) {
+	const meridianVertCount = meridianSegments + 1;
+	for ( let pIdx = 0; pIdx < parallelRings - 1; pIdx++ ) {
+		for ( let mIdx = 0; mIdx < meridianSegments; mIdx++ ) {
 			const current = pIdx * meridianVertCount + mIdx;
 			const next = current + meridianVertCount;
 

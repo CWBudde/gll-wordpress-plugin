@@ -1,7 +1,7 @@
 /**
  * Chart.js wrapper for Gutenberg blocks.
  *
- * @package GllInfo
+ * @package
  */
 
 import { useEffect, useMemo, useRef } from '@wordpress/element';
@@ -18,6 +18,11 @@ interface ChartWrapperProps {
 
 /**
  * Chart wrapper component.
+ * @param root0
+ * @param root0.config
+ * @param root0.className
+ * @param root0.height
+ * @param root0.onChartReady
  */
 export default function ChartWrapper( {
 	config,
@@ -25,9 +30,9 @@ export default function ChartWrapper( {
 	height = 320,
 	onChartReady,
 }: ChartWrapperProps ) {
-	const canvasRef = useRef<HTMLCanvasElement>( null );
-	const chartRef = useRef<Chart | null>( null );
-	const containerRef = useRef<HTMLDivElement>( null );
+	const canvasRef = useRef< HTMLCanvasElement >( null );
+	const chartRef = useRef< Chart | null >( null );
+	const containerRef = useRef< HTMLDivElement >( null );
 
 	const mergedConfig = useMemo(
 		() => ( {

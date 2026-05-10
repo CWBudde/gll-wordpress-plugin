@@ -4,7 +4,7 @@
  * Outputs the block markup for frontend rendering.
  * The view.js script will hydrate this with the Three.js scene.
  *
- * @package GllInfo
+ * @package
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
@@ -30,6 +30,7 @@ export default function save( { attributes } ) {
 		showReferenceSphere,
 		showAxesHelper,
 		canvasHeight,
+		qualityPreset,
 	} = attributes;
 
 	if ( ! fileUrl ) {
@@ -50,6 +51,7 @@ export default function save( { attributes } ) {
 		'data-show-reference-sphere': showReferenceSphere ? 'true' : 'false',
 		'data-show-axes-helper': showAxesHelper ? 'true' : 'false',
 		'data-canvas-height': canvasHeight,
+		'data-quality-preset': qualityPreset || 'medium',
 	} );
 
 	return (
@@ -69,9 +71,7 @@ export default function save( { attributes } ) {
 				</svg>
 				<div className="gll-balloon-3d-header-text">
 					<h3>{ fileName }</h3>
-					<p className="gll-loading-text">
-						Loading 3D balloon...
-					</p>
+					<p className="gll-loading-text">Loading 3D balloon...</p>
 				</div>
 			</div>
 			<div className="gll-balloon-3d-loading">

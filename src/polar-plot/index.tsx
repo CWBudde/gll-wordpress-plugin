@@ -1,7 +1,7 @@
 /**
  * Registers the Polar Plot block.
  *
- * @package GllInfo
+ * @package
  */
 
 import { registerBlockType } from '@wordpress/blocks';

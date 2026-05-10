@@ -3,7 +3,7 @@
  *
  * Handles WASM loading, GLL parsing, and Chart.js rendering on the frontend.
  *
- * @package GllInfo
+ * @package
  */
 
 /* global Chart */
@@ -114,10 +114,10 @@ async function initializeBlock( block ) {
 /**
  * Extract frequency response data from GLL source.
  *
- * @param {Object} source        Source definition from GLL.
- * @param {number} responseIndex Response index to use.
- * @param {number} azimuth       Azimuth angle (degrees).
- * @param {number} elevation     Elevation angle (degrees).
+ * @param {Object}  source        Source definition from GLL.
+ * @param {number}  responseIndex Response index to use.
+ * @param {number}  azimuth       Azimuth angle (degrees).
+ * @param {number}  elevation     Elevation angle (degrees).
  * @param {boolean} normalized    Whether to normalize to on-axis.
  * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
  */
@@ -175,11 +175,11 @@ function extractResponseData(
 /**
  * Build metadata HTML for display above chart.
  *
- * @param {Object} params             Parameters object.
- * @param {Object} params.source      Source definition.
+ * @param {Object} params               Parameters object.
+ * @param {Object} params.source        Source definition.
  * @param {Object} params.frequencyData Frequency data with min/max.
- * @param {Object} params.options     Chart options.
- * @param {Object} params.phaseSeries Phase series data.
+ * @param {Object} params.options       Chart options.
+ * @param {Object} params.phaseSeries   Phase series data.
  * @return {string} HTML string for metadata display.
  */
 function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
@@ -351,7 +351,7 @@ function renderChart( block, data, options ) {
 	}
 
 	// Build scales configuration
-	const scales: Record<string, any> = {
+	const scales: Record< string, any > = {
 		x: buildLogFrequencyScale(
 			frequencyData.minFrequency,
 			frequencyData.maxFrequency,

@@ -713,7 +713,7 @@
 		_makeFuncWrapper( id ) {
 			const go = this;
 			return function () {
-				const event = { id: id, this: this, args: arguments };
+				const event = { id, this: this, args: arguments };
 				go._pendingEvent = event;
 				go._resume();
 				return event.result;

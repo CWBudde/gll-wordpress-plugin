@@ -223,20 +223,20 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Vertical-only: Top (top), Bottom (bottom)
 
 ### Task 5.5: Polar Controls
-- [ ] Source selector dropdown (InspectorControls)
-- [ ] Frequency dropdown (populated from source's available frequencies)
-- [ ] Frequency slider (logarithmic mapping, syncs with dropdown)
-- [ ] Plane visibility toggles (ToggleControl for horizontal/vertical)
-- [ ] Normalization checkbox (ToggleControl)
-- [ ] Chart height slider (RangeControl 200-800px)
+- [x] Source selector dropdown (InspectorControls)
+- [x] Frequency dropdown (populated from source's available frequencies)
+- [x] Frequency slider (logarithmic mapping, syncs with dropdown)
+- [x] Plane visibility toggles (ToggleControl for horizontal/vertical)
+- [x] Normalization checkbox (ToggleControl)
+- [x] Chart height slider (RangeControl 200-800px)
 
 ### Task 5.6: Polar Metadata Display
-- [ ] Show selected frequency (formatted: "1.0 kHz", "50 Hz")
-- [ ] Display symmetry type (if applicable from balloon_data)
-- [ ] Show angular resolution (meridian/parallel step sizes)
-- [ ] Show normalization status badge
-- [ ] Display measurement conditions (front-half only, uses on-axis, etc.)
-- [ ] Style badges with responsive flexbox layout
+- [x] Show selected frequency (formatted: "1.0 kHz", "50 Hz")
+- [x] Display symmetry type (if applicable from balloon_data)
+- [x] Show angular resolution (meridian/parallel step sizes)
+- [x] Show normalization status badge
+- [x] Display measurement conditions (front-half only, uses on-axis, etc.)
+- [x] Style badges with responsive flexbox layout
 
 ---
 
@@ -333,25 +333,17 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Create color bar legend (SPL scale visualization)
 - [x] Style badges and legend with responsive layout
 
-### Task 6.9: Performance Optimization
-- [ ] Implement lazy loading (only initialize when block in viewport)
-- [ ] Use IntersectionObserver for visibility detection
-- [ ] Cache global max levels in WeakMap (prevent recomputation)
-- [ ] Dispose mesh geometry/material before rebuilding
-- [ ] Pause animation loop when not visible
-- [ ] Add quality presets:
-  - Low: 10° angular resolution, simple shading
-  - Medium: 5° angular resolution (default)
-  - High: 2.5° angular resolution, enhanced lighting
-- [ ] Implement proper cleanup in useEffect return function:
-  ```javascript
-  return () => {
-    geometry.dispose();
-    material.dispose();
-    renderer.dispose();
-    cancelAnimationFrame(animationId);
-  }
-  ```
+### Task 6.9: Performance Optimization [COMPLETED]
+- [x] Implement lazy loading (only initialize when block in viewport)
+- [x] Use IntersectionObserver for visibility detection
+- [x] Cache global max levels in WeakMap (prevent recomputation)
+- [x] Dispose mesh geometry/material before rebuilding
+- [x] Pause animation loop when not visible
+- [x] Add quality presets:
+  - Low: stride=2 angular subsampling, no antialias, ambient-only lighting, pixelRatio cap 1
+  - Medium: native resolution (default), antialias, ambient + 1 directional
+  - High: native resolution, antialias, ambient + key + fill directional lights
+- [x] Implement proper cleanup in useEffect return function (geometry/material/renderer dispose, cancelAnimationFrame, observer disconnect)
 
 ---
 
@@ -391,31 +383,31 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Handle multiple placements per source definition
 - [x] Add collapsible placement list UI
 
-### Task 7.4: Per-Source Response Controls [NEW]
-- [ ] Add response selector dropdown (if source has responses)
-- [ ] Populate options with response indices
-- [ ] Display angle labels for each response (Azimuth/Elevation)
-- [ ] Add phase mode selector (unwrapped, wrapped, group-delay)
-- [ ] Add normalization checkbox toggle
-- [ ] Add azimuth slider (-180° to 180°, step 1°)
-- [ ] Add elevation slider (-90° to 90°, step 1°)
-- [ ] Display current angle values beside sliders
-- [ ] Sync sliders with response index selection
-- [ ] Handle sources without response data gracefully
+### Task 7.4: Per-Source Response Controls [COMPLETED]
+- [x] Add response selector dropdown (if source has responses)
+- [x] Populate options with response indices
+- [x] Display angle labels for each response (Azimuth/Elevation)
+- [x] Add phase mode selector (unwrapped, wrapped, group-delay)
+- [x] Add normalization checkbox toggle
+- [x] Add azimuth slider (-180° to 180°, step 1°)
+- [x] Add elevation slider (-90° to 90°, step 1°)
+- [x] Display current angle values beside sliders
+- [x] Sync sliders with response index selection
+- [x] Handle sources without response data gracefully
 
-### Task 7.5: Per-Source Response Charts [NEW]
-- [ ] Embed Chart.js frequency response chart per source
-- [ ] Reuse charting utilities from Phase 4
-- [ ] Create canvas element with unique ID per source
-- [ ] Render dual-axis chart (Level dB + Phase)
-- [ ] Update chart when controls change (response, phase, angles)
-- [ ] Display response metadata below chart
-- [ ] Handle chart lifecycle (create/update/destroy)
-- [ ] Add "No frequency response data" empty state
-- [ ] Optimize: lazy-load charts only when source expanded
+### Task 7.5: Per-Source Response Charts [COMPLETED]
+- [x] Embed Chart.js frequency response chart per source
+- [x] Reuse charting utilities from Phase 4
+- [x] Create canvas element with unique ID per source
+- [x] Render dual-axis chart (Level dB + Phase)
+- [x] Update chart when controls change (response, phase, normalize)
+- [x] Display response metadata below chart
+- [x] Handle chart lifecycle (create/update/destroy)
+- [x] Add "No frequency response data" empty state
+- [x] Optimize: lazy-load charts only when source expanded
 
 ### Task 7.6: Source Response Utilities [PARTIALLY COMPLETED]
-- [ ] Port `computeResponseAngles()` function (pending Task 7.4)
+- [x] Port `computeResponseAngles()` function
   - Calculate meridian/parallel degrees from response index
   - Use balloon_data angular resolution
   - Handle symmetry and grid wrapping
@@ -441,24 +433,24 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Add keyboard navigation (Enter/Space to toggle)
 - [x] Add ARIA attributes (aria-expanded, role="button")
 
-### Task 7.8: Styling Enhancements [PARTIALLY COMPLETED]
+### Task 7.8: Styling Enhancements [COMPLETED]
 - [x] Port source card styles from web demo
 - [x] Style collapsible header with hover effects
 - [x] Style source details section with proper spacing
-- [ ] Style placement list with nested indentation (pending Task 7.3)
-- [ ] Style response controls grid layout (pending Task 7.4)
-- [ ] Style slider labels and value displays (pending Task 7.4)
+- [x] Style placement list with nested indentation
+- [x] Style response controls grid layout
+- [x] Style slider labels and value displays
 - [x] Add responsive breakpoints for mobile
 - [x] Support WordPress theme color variables
-- [ ] Add loading skeleton for chart rendering (pending Task 7.5)
+- [x] Add loading skeleton for chart rendering
 
-### Task 7.9: Performance Optimization
-- [ ] Implement virtualization for long source lists (>20 sources)
-- [ ] Lazy-load response charts (render only when expanded)
-- [ ] Debounce slider input handlers
-- [ ] Memoize computed placements map
-- [ ] Cache formatted values (bandwidth, angles)
-- [ ] Dispose Chart.js instances on collapse/unmount
+### Task 7.9: Performance Optimization [COMPLETED]
+- [x] Implement virtualization for long source lists (>20 sources) — chunked IntersectionObserver-based reveal
+- [x] Lazy-load response charts (render only when expanded) — expandable mode unmounts `SourceResponseControls` when collapsed
+- [x] Debounce slider input handlers — rAF-batched `useRafState` for azimuth/elevation
+- [x] Memoize computed placements map — `useMemo` keyed on `data` in `GLLSources`
+- [x] Cache formatted values (bandwidth, angles) — per-card `useMemo` for bandwidth, resolution, and pre-formatted placements
+- [x] Dispose Chart.js instances on collapse/unmount — cleanup in `ChartWrapper` `useEffect` destroys the chart on unmount
 
 ---
 
@@ -505,7 +497,7 @@ Based on the web demo, these Gutenberg blocks will be created:
   - Set rotation/pan speeds (0.6, 0.9)
   - Enable auto-rotate option (controlled by attribute)
 - [x] Add fallback pointer controls when OrbitControls unavailable
-- [ ] Implement manual orbit calculation (theta, phi, radius, target)
+- [x] Implement manual orbit calculation (theta, phi, radius, target)
 
 ### Task 8.4: Geometry Mesh Building
 - [x] Extract case_geometry data from GLL via WASM
@@ -536,16 +528,16 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Center geometry group based on:
   - Reference point if `centerReference` is true
   - Bounding box center otherwise
-- [ ] Convert Euler angles (HVR) to quaternion for source orientations
+- [x] Convert Euler angles (HVR) to quaternion for source orientations
 
 ### Task 8.6: Marker System
-- [ ] Create sphere markers with radius 0.01 world units
-- [ ] Reference Point marker (red #ef4444 sphere)
-- [ ] Center of Mass marker (green #22c55e sphere)
-- [ ] Next Pivot marker (amber #f59e0b sphere)
-- [ ] Add marker visibility toggles in InspectorControls
-- [ ] Scale markers appropriately with geometry scale factor
-- [ ] Position markers in world space using toViewPoint conversion
+- [x] Create sphere markers with radius 0.01 world units
+- [x] Reference Point marker (red #ef4444 sphere)
+- [x] Center of Mass marker (green #22c55e sphere)
+- [x] Next Pivot marker (amber #f59e0b sphere)
+- [x] Add marker visibility toggles in InspectorControls
+- [x] Scale markers appropriately with geometry scale factor
+- [x] Position markers in world space using toViewPoint conversion
 
 ### Task 8.7: Acoustic Source Visualization
 - [ ] Create cone meshes for each acoustic source
@@ -738,7 +730,7 @@ gll-info/
 │   │   ├── view.js             # [DONE]
 │   │   ├── editor.scss         # [DONE]
 │   │   └── style.scss          # [DONE]
-│   ├── polar-plot/             # PARTIAL Phase 5 (5.1-5.4 done)
+│   ├── polar-plot/             # DONE Phase 5
 │   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.4 done)
 │   ├── geometry/               # TODO Phase 8
 │   ├── resources/              # TODO Phase 9
@@ -792,9 +784,9 @@ gll-info/
 | 2. Core File Block | 3 | Medium | DONE |
 | 3. Overview Block | 5 | Low | DONE (integrated) |
 | 4. Frequency Response | 5 | High | DONE |
-| 5. Polar Plot | 6 | Medium-High | TODO |
+| 5. Polar Plot | 6 | Medium-High | DONE |
 | 6. 3D Balloon | 9 | Very High | TODO |
-| 7. Sources List | 9 | Medium-High | PARTIAL (3/9 tasks complete, 2 partial) |
+| 7. Sources List | 9 | Medium-High | PARTIAL (5/9 tasks complete, 1 partial) |
 | 8. Geometry Viewer | 11 | Very High | TODO |
 | 9. Resources | 4 | Medium | TODO |
 | 10. Configuration | 4 | Medium | TODO |
@@ -802,9 +794,9 @@ gll-info/
 | 12. Testing | 5 | Medium | TODO |
 
 **Total: 70 tasks across 12 phases**
-**Completed: ~33 tasks (Phases 1-4, Phase 7: Tasks 7.1, 7.2, 7.7)**
+**Completed: ~35 tasks (Phases 1-5, Phase 7: Tasks 7.1, 7.2, 7.7)**
 **Partially Completed: ~2 tasks (Phase 7: Tasks 7.6, 7.8)**
-**Remaining: ~35 tasks (Phases 5-6, 8-12, Phase 7: Tasks 7.3-7.5, 7.9)**
+**Remaining: ~33 tasks (Phase 6, 8-12, Phase 7: Tasks 7.3-7.5, 7.9)**
 
 ---
 
@@ -813,7 +805,7 @@ gll-info/
 Begin with Phase 1 to establish the foundation, then proceed sequentially. The most complex phases requiring close reference to the web demo are:
 
 - **Phase 4** (Frequency Response) - COMPLETED
-- **Phase 5** (Polar Plot) - PARTIAL (4/6 tasks complete: 5.1-5.4 done, 5.5-5.6 remaining)
+- **Phase 5** (Polar Plot) - COMPLETED
 - **Phase 6** (3D Balloon) - Very High complexity, advanced Three.js mesh generation
 - **Phase 8** (Geometry Viewer) - Very High complexity, Three.js with OrbitControls
 

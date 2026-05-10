@@ -1,7 +1,7 @@
 /**
  * Registers the Geometry Viewer block.
  *
- * @package GllInfo
+ * @package
  */
 
 import { registerBlockType } from '@wordpress/blocks';

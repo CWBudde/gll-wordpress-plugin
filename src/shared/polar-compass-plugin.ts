@@ -7,7 +7,7 @@
  *
  * Ported from gll-tools web demo (visualization.js polarCompassPlugin).
  *
- * @package GllInfo
+ * @package
  */
 
 const polarCompassPlugin = {
@@ -37,16 +37,28 @@ const polarCompassPlugin = {
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'bottom';
 		ctx.fillStyle = '#2563eb';
-		ctx.fillText( 'Right', xCenter - 18, yCenter - drawingArea - vertOffset );
+		ctx.fillText(
+			'Right',
+			xCenter - 18,
+			yCenter - drawingArea - vertOffset
+		);
 		ctx.fillStyle = '#dc2626';
 		ctx.fillText( 'Top', xCenter + 18, yCenter - drawingArea - vertOffset );
 
 		// Bottom of chart: Left (horizontal, blue) / Bottom (vertical, red).
 		ctx.textBaseline = 'top';
 		ctx.fillStyle = '#2563eb';
-		ctx.fillText( 'Left', xCenter - 22, yCenter + drawingArea + vertOffset );
+		ctx.fillText(
+			'Left',
+			xCenter - 22,
+			yCenter + drawingArea + vertOffset
+		);
 		ctx.fillStyle = '#dc2626';
-		ctx.fillText( 'Bottom', xCenter + 22, yCenter + drawingArea + vertOffset );
+		ctx.fillText(
+			'Bottom',
+			xCenter + 22,
+			yCenter + drawingArea + vertOffset
+		);
 
 		ctx.restore();
 	},

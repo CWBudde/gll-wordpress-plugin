@@ -3,7 +3,7 @@
  *
  * Handles loading and displaying GLL data on the frontend.
  *
- * @package GllInfo
+ * @package
  */
 
 ( function () {
@@ -30,7 +30,7 @@
 	/**
 	 * Load the wasm_exec.js script.
 	 */
-	function loadWasmExec(): Promise<void> {
+	function loadWasmExec(): Promise< void > {
 		return new Promise( ( resolve, reject ) => {
 			if ( typeof window.Go !== 'undefined' ) {
 				resolve( undefined );
@@ -95,6 +95,7 @@
 
 	/**
 	 * Parse a GLL file from URL.
+	 * @param url
 	 */
 	async function parseGLLFromUrl( url ) {
 		await initWasm();
@@ -118,6 +119,7 @@
 
 	/**
 	 * Render overview section.
+	 * @param data
 	 */
 	function renderOverview( data ) {
 		const { GenSystem, Metadata } = data;
@@ -163,17 +165,21 @@
 
 	/**
 	 * Format a number with up to one decimal place.
+	 * @param value
 	 */
 	function formatNumber( value ) {
 		if ( typeof value !== 'number' || Number.isNaN( value ) ) {
 			return null;
 		}
 		const rounded = Math.round( value * 10 ) / 10;
-		return Number.isInteger( rounded ) ? `${ rounded }` : rounded.toFixed( 1 );
+		return Number.isInteger( rounded )
+			? `${ rounded }`
+			: rounded.toFixed( 1 );
 	}
 
 	/**
 	 * Format angle in degrees.
+	 * @param angle
 	 */
 	function formatAngleDegrees( angle ) {
 		const formatted = formatNumber( angle );
@@ -182,6 +188,7 @@
 
 	/**
 	 * Format position coordinates in mm.
+	 * @param position
 	 */
 	function formatPosition( position ) {
 		if ( ! position ) {
@@ -196,7 +203,11 @@
 		const formattedY = formatNumber( y );
 		const formattedZ = formatNumber( z );
 
-		if ( formattedX === null && formattedY === null && formattedZ === null ) {
+		if (
+			formattedX === null &&
+			formattedY === null &&
+			formattedZ === null
+		) {
 			return '-';
 		}
 
@@ -209,6 +220,7 @@
 
 	/**
 	 * Normalize value to array.
+	 * @param value
 	 */
 	function toArray( value ) {
 		if ( ! value ) {
@@ -225,6 +237,7 @@
 
 	/**
 	 * Build a map of source definition keys to placement instances.
+	 * @param data
 	 */
 	function buildSourcePlacementsMap( data ) {
 		const map = new Map();
@@ -232,10 +245,16 @@
 			return map;
 		}
 
-		const sourceDefinitions = Array.isArray( data.Database.SourceDefinitions )
+		const sourceDefinitions = Array.isArray(
+			data.Database.SourceDefinitions
+		)
 			? data.Database.SourceDefinitions
 			: [];
-		const boxTypes = toArray( data.Database.BoxTypes || data.Database.box_types || data.Database.Box_Types );
+		const boxTypes = toArray(
+			data.Database.BoxTypes ||
+				data.Database.box_types ||
+				data.Database.Box_Types
+		);
 
 		boxTypes.forEach( ( boxType ) => {
 			const placements = toArray(
@@ -250,7 +269,8 @@
 				return;
 			}
 
-			const boxLabel = boxType?.Label || boxType?.Name || boxType?.Key || 'Unknown';
+			const boxLabel =
+				boxType?.Label || boxType?.Name || boxType?.Key || 'Unknown';
 			const boxKey = boxType?.Key || boxType?.Id || boxType?.Name || '-';
 
 			placements.forEach( ( placement ) => {
@@ -272,7 +292,11 @@
 				const entry = {
 					boxLabel,
 					boxKey,
-					sourceLabel: placement?.Label || placement?.SourceLabel || placement?.Source?.Label || placement?.SourceName,
+					sourceLabel:
+						placement?.Label ||
+						placement?.SourceLabel ||
+						placement?.Source?.Label ||
+						placement?.SourceName,
 					sourceKey,
 					position:
 						placement?.Position ||
@@ -300,6 +324,7 @@
 
 	/**
 	 * Build placements HTML.
+	 * @param placements
 	 */
 	function buildPlacementsHtml( placements ) {
 		const placementCount = placements.length;
@@ -308,25 +333,44 @@
 		html += '<div class="gll-source-placements-list">';
 
 		if ( placementCount === 0 ) {
-			html += '<div class="gll-empty-state gll-source-placements-empty">No placements found</div>';
+			html +=
+				'<div class="gll-empty-state gll-source-placements-empty">No placements found</div>';
 		} else {
 			placements.forEach( ( placement ) => {
 				const rotation = placement.rotation || {};
-				const heading = rotation.Heading ?? rotation.H ?? rotation.Yaw ?? rotation.Azimuth;
-				const vertical = rotation.Vertical ?? rotation.V ?? rotation.Pitch ?? rotation.Elevation;
+				const heading =
+					rotation.Heading ??
+					rotation.H ??
+					rotation.Yaw ??
+					rotation.Azimuth;
+				const vertical =
+					rotation.Vertical ??
+					rotation.V ??
+					rotation.Pitch ??
+					rotation.Elevation;
 				const roll = rotation.Roll ?? rotation.R;
 
 				const boxLabel = escapeHtml( placement.boxLabel || 'Unknown' );
-				const boxKey = placement.boxKey ? ` (${ escapeHtml( placement.boxKey ) })` : '';
-				const sourceLabel = escapeHtml( placement.sourceLabel || placement.sourceKey || 'Unknown' );
+				const boxKey = placement.boxKey
+					? ` (${ escapeHtml( placement.boxKey ) })`
+					: '';
+				const sourceLabel = escapeHtml(
+					placement.sourceLabel || placement.sourceKey || 'Unknown'
+				);
 				const sourceKey = escapeHtml( placement.sourceKey || '-' );
-				const position = escapeHtml( formatPosition( placement.position ) );
+				const position = escapeHtml(
+					formatPosition( placement.position )
+				);
 
 				html += '<div class="gll-source-placement">';
 				html += `<div class="gll-source-placement-detail"><strong>Box:</strong> ${ boxLabel }${ boxKey }</div>`;
 				html += `<div class="gll-source-placement-detail"><strong>Source:</strong> ${ sourceLabel } (${ sourceKey })</div>`;
 				html += `<div class="gll-source-placement-detail"><strong>Position:</strong> ${ position }</div>`;
-				html += `<div class="gll-source-placement-detail"><strong>Rotation:</strong> H: ${ formatAngleDegrees( heading ) }, V: ${ formatAngleDegrees( vertical ) }, R: ${ formatAngleDegrees( roll ) }</div>`;
+				html += `<div class="gll-source-placement-detail"><strong>Rotation:</strong> H: ${ formatAngleDegrees(
+					heading
+				) }, V: ${ formatAngleDegrees(
+					vertical
+				) }, R: ${ formatAngleDegrees( roll ) }</div>`;
 				html += '</div>';
 			} );
 		}
@@ -337,6 +381,7 @@
 
 	/**
 	 * Render sources section.
+	 * @param data
 	 */
 	function renderSources( data ) {
 		if ( ! data?.Database?.SourceDefinitions?.length ) {
@@ -374,6 +419,7 @@
 
 	/**
 	 * Escape HTML special characters.
+	 * @param text
 	 */
 	function escapeHtml( text ) {
 		const div = document.createElement( 'div' );
@@ -383,6 +429,7 @@
 
 	/**
 	 * Initialize a GLL block.
+	 * @param block
 	 */
 	async function initBlock( block ) {
 		const fileUrl = block.dataset.fileUrl;

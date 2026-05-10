@@ -1,7 +1,7 @@
 /**
  * Geometry Viewer Block - Save Component
  *
- * @package GllInfo
+ * @package
  */
 
 import { useBlockProps } from '@wordpress/block-editor';

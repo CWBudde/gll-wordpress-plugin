@@ -4,7 +4,7 @@
  * Singleton module for loading and managing the GLL WebAssembly parser.
  * Uses the Go WASM runtime to parse GLL files entirely in the browser.
  *
- * @package GllInfo
+ * @package
  */
 
 // Module state
@@ -63,7 +63,7 @@ function getWasmExecUrl() {
  *
  * @return {Promise<void>} Promise that resolves when script is loaded.
  */
-function loadWasmExec(): Promise<void> {
+function loadWasmExec(): Promise< void > {
 	return new Promise( ( resolve, reject ) => {
 		// Check if already loaded.
 		if ( typeof window.Go !== 'undefined' ) {

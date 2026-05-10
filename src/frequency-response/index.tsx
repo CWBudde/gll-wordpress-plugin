@@ -1,7 +1,7 @@
 /**
  * Registers the Frequency Response block.
  *
- * @package GllInfo
+ * @package
  */
 
 import { registerBlockType } from '@wordpress/blocks';

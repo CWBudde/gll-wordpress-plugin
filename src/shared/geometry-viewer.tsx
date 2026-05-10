@@ -1,7 +1,7 @@
 /**
  * Geometry viewer scene setup for Three.js.
  *
- * @package GllInfo
+ * @package
  */
 
 import {
@@ -45,7 +45,14 @@ export interface GeometryViewerProps {
 
 const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 	function GeometryViewer(
-		{ className = '', height = 500, onSceneReady, onAnimate, onResize, fallback },
+		{
+			className = '',
+			height = 500,
+			onSceneReady,
+			onAnimate,
+			onResize,
+			fallback,
+		},
 		ref
 	) {
 		const containerRef = useRef< HTMLDivElement >( null );
@@ -58,12 +65,16 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 		const animationIdRef = useRef< number | null >( null );
 		const lastTimeRef = useRef< number >( 0 );
 
-		const [ webGLSupported, setWebGLSupported ] = useState< boolean | null >(
-			null
-		);
+		const [ webGLSupported, setWebGLSupported ] = useState<
+			boolean | null
+		>( null );
 
 		const requestRender = useCallback( () => {
-			if ( rendererRef.current && sceneRef.current && cameraRef.current ) {
+			if (
+				rendererRef.current &&
+				sceneRef.current &&
+				cameraRef.current
+			) {
 				rendererRef.current.render(
 					sceneRef.current,
 					cameraRef.current
@@ -99,7 +110,11 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 			const supported = isWebGLSupported();
 			setWebGLSupported( supported );
 
-			if ( ! supported || ! containerRef.current || ! canvasRef.current ) {
+			if (
+				! supported ||
+				! containerRef.current ||
+				! canvasRef.current
+			) {
 				return;
 			}
 
@@ -115,7 +130,12 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 			const scene = new THREE.Scene();
 			sceneRef.current = scene;
 
-			const camera = new THREE.PerspectiveCamera( 42, width / height_, 0.1, 100 );
+			const camera = new THREE.PerspectiveCamera(
+				42,
+				width / height_,
+				0.1,
+				100
+			);
 			camera.position.set( 0, 0.4, 2.2 );
 			camera.lookAt( 0, 0, 0 );
 			cameraRef.current = camera;
@@ -133,7 +153,10 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 			const ambientLight = new THREE.AmbientLight( 0xffffff, 0.7 );
 			scene.add( ambientLight );
 
-			const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.85 );
+			const directionalLight = new THREE.DirectionalLight(
+				0xffffff,
+				0.85
+			);
 			directionalLight.position.set( 2.5, 2.5, 2 );
 			scene.add( directionalLight );
 

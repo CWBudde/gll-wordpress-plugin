@@ -1,7 +1,7 @@
 /**
  * Geometry Viewer Block - Editor Component
  *
- * @package GllInfo
+ * @package
  */
 
 import { __ } from '@wordpress/i18n';
@@ -34,13 +34,15 @@ import {
 	GeometryViewer,
 	isWebGLSupported,
 	buildCaseGeometryData,
+	buildGeometryMarkers,
 	getCaseGeometryVertices,
 	getReferencePoint,
 	toViewPoint,
 	computeBounds,
 	computeScaleFactor,
+	attachManualOrbitControls,
 } from '../shared';
-import type { GeometryViewerRef } from '../shared';
+import type { GeometryViewerRef, ManualOrbitControls } from '../shared';
 import './editor.scss';
 
 /**
@@ -71,7 +73,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const viewerRef = useRef< GeometryViewerRef >( null );
 	const controlsRef = useRef< OrbitControls | null >( null );
-	const fallbackCleanupRef = useRef< ( () => void ) | null >( null );
+	const fallbackControlsRef = useRef< ManualOrbitControls | null >( null );
 
 	const webGLSupported = useMemo( () => isWebGLSupported(), [] );
 
@@ -112,7 +114,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		return geometries[ index ] || null;
 	}, [ data, geometryIndex ] );
 
-	const geometryData = useMemo( () => {
+	const geometrySceneData = useMemo( () => {
 		if ( ! caseGeometry ) {
 			return null;
 		}
@@ -127,8 +129,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			: null;
 		const center = reference ? toViewPoint( reference ) : bounds.center;
 		const scale = computeScaleFactor( bounds, 1.2 );
-
-		return buildCaseGeometryData( caseGeometry, {
+		const meshData = buildCaseGeometryData( caseGeometry, {
 			transform: ( vertex ) => {
 				const viewPoint = toViewPoint( vertex );
 				return {
@@ -138,7 +139,23 @@ export default function Edit( { attributes, setAttributes } ) {
 				};
 			},
 		} );
-	}, [ caseGeometry, centerReference ] );
+
+		if ( ! meshData ) {
+			return null;
+		}
+
+		return {
+			meshData,
+			markers: buildGeometryMarkers( caseGeometry, {
+				center,
+				scale,
+				visibility: showMarkers,
+			} ),
+		};
+	}, [ caseGeometry, centerReference, showMarkers ] );
+
+	const geometryData = geometrySceneData?.meshData || null;
+	const markerData = geometrySceneData?.markers || [];
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
 
@@ -195,10 +212,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			);
 			edgeGeometry.setAttribute(
 				'color',
-				new THREE.Float32BufferAttribute(
-					geometryData.edgeColors,
-					3
-				)
+				new THREE.Float32BufferAttribute( geometryData.edgeColors, 3 )
 			);
 
 			const edgeMaterial = new THREE.LineBasicMaterial( {
@@ -207,44 +221,67 @@ export default function Edit( { attributes, setAttributes } ) {
 				opacity: 0.9,
 			} );
 
-			const edges = new THREE.LineSegments(
-				edgeGeometry,
-				edgeMaterial
-			);
+			const edges = new THREE.LineSegments( edgeGeometry, edgeMaterial );
 			group.add( edges );
 		}
 
+		markerData.forEach( ( marker ) => {
+			const markerGeometry = new THREE.SphereGeometry(
+				marker.radius,
+				16,
+				12
+			);
+			const markerMaterial = new THREE.MeshBasicMaterial( {
+				color: marker.color,
+			} );
+			const markerMesh = new THREE.Mesh(
+				markerGeometry,
+				markerMaterial
+			);
+			markerMesh.name = `gll-marker-${ marker.key }`;
+			markerMesh.userData = {
+				gllMarkerKey: marker.key,
+				gllMarkerLabel: marker.label,
+			};
+			markerMesh.position.set(
+				marker.position.x,
+				marker.position.y,
+				marker.position.z
+			);
+			group.add( markerMesh );
+		} );
+
 		scene.add( group );
 		geometryGroupRef.current = group;
-	}, [ geometryData, showFaces, showEdges ] );
+	}, [ geometryData, markerData, showFaces, showEdges ] );
 
-	const handleAnimate = useCallback(
-		( scene ) => {
-			if ( controlsRef.current ) {
-				controlsRef.current.update();
-				return;
-			}
-			if ( autoRotate ) {
-				scene.rotation.y += 0.0035;
-			}
-		},
-		[ autoRotate ]
-	);
+	const handleAnimate = useCallback( ( _scene, _camera, deltaTime ) => {
+		if ( controlsRef.current ) {
+			controlsRef.current.update();
+			return;
+		}
+		if ( fallbackControlsRef.current ) {
+			fallbackControlsRef.current.update( deltaTime );
+		}
+	}, [] );
 
 	const handleSceneReady = useCallback(
-		( scene, camera, renderer ) => {
+		( _scene, camera, renderer ) => {
 			buildGeometry();
 			if ( controlsRef.current ) {
 				controlsRef.current.dispose();
 				controlsRef.current = null;
 			}
-			if ( fallbackCleanupRef.current ) {
-				fallbackCleanupRef.current();
-				fallbackCleanupRef.current = null;
+			if ( fallbackControlsRef.current ) {
+				fallbackControlsRef.current.dispose();
+				fallbackControlsRef.current = null;
 			}
 
 			try {
-				const controls = new OrbitControls( camera, renderer.domElement );
+				const controls = new OrbitControls(
+					camera,
+					renderer.domElement
+				);
 				controls.enableDamping = true;
 				controls.dampingFactor = 0.08;
 				controls.screenSpacePanning = true;
@@ -264,10 +301,20 @@ export default function Edit( { attributes, setAttributes } ) {
 				};
 				controlsRef.current = controls;
 			} catch ( error ) {
-				console.warn( 'OrbitControls unavailable, using fallback controls.' );
-				fallbackCleanupRef.current = attachFallbackControls(
+				console.warn(
+					'OrbitControls unavailable, using manual orbit fallback.'
+				);
+				fallbackControlsRef.current = attachManualOrbitControls(
+					camera,
 					renderer.domElement,
-					scene
+					{
+						minDistance: 0.25,
+						maxDistance: 25,
+						rotateSpeed: 0.6,
+						panSpeed: 0.9,
+						dampingFactor: 0.08,
+						autoRotate,
+					}
 				);
 			}
 		},
@@ -278,22 +325,28 @@ export default function Edit( { attributes, setAttributes } ) {
 		if ( controlsRef.current ) {
 			controlsRef.current.autoRotate = autoRotate;
 		}
+		if ( fallbackControlsRef.current ) {
+			fallbackControlsRef.current.autoRotate = autoRotate;
+		}
 	}, [ autoRotate ] );
 
-	useEffect( () => () => {
-		if ( controlsRef.current ) {
-			controlsRef.current.dispose();
-			controlsRef.current = null;
-		}
-		if ( fallbackCleanupRef.current ) {
-			fallbackCleanupRef.current();
-			fallbackCleanupRef.current = null;
-		}
-		if ( geometryGroupRef.current ) {
-			disposeSceneObject( geometryGroupRef.current );
-			geometryGroupRef.current = null;
-		}
-	}, [] );
+	useEffect(
+		() => () => {
+			if ( controlsRef.current ) {
+				controlsRef.current.dispose();
+				controlsRef.current = null;
+			}
+			if ( fallbackControlsRef.current ) {
+				fallbackControlsRef.current.dispose();
+				fallbackControlsRef.current = null;
+			}
+			if ( geometryGroupRef.current ) {
+				disposeSceneObject( geometryGroupRef.current );
+				geometryGroupRef.current = null;
+			}
+		},
+		[]
+	);
 
 	useEffect( () => {
 		buildGeometry();
@@ -313,7 +366,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							render={ ( { open } ) => (
 								<Button variant="primary" onClick={ open }>
 									{ __( 'Select GLL File', 'gll-info' ) }
@@ -338,13 +394,19 @@ export default function Edit( { attributes, setAttributes } ) {
 					<MediaUploadCheck>
 						<MediaUpload
 							onSelect={ onSelectFile }
-							allowedTypes={ [ 'application/x-gll', 'application/octet-stream' ] }
+							allowedTypes={ [
+								'application/x-gll',
+								'application/octet-stream',
+							] }
 							value={ fileId }
 							render={ ( { open } ) => (
 								<Button
 									variant="secondary"
 									onClick={ open }
-									style={ { marginTop: '10px', marginRight: '10px' } }
+									style={ {
+										marginTop: '10px',
+										marginRight: '10px',
+									} }
 								>
 									{ __( 'Replace File', 'gll-info' ) }
 								</Button>
@@ -361,7 +423,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					</Button>
 				</PanelBody>
 
-				<PanelBody title={ __( 'Geometry Options', 'gll-info' ) } initialOpen={ true }>
+				<PanelBody
+					title={ __( 'Geometry Options', 'gll-info' ) }
+					initialOpen={ true }
+				>
 					<RangeControl
 						label={ __( 'Geometry Index', 'gll-info' ) }
 						value={ geometryIndex }
@@ -422,7 +487,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					/>
 				</PanelBody>
 
-				<PanelBody title={ __( 'Markers', 'gll-info' ) } initialOpen={ false }>
+				<PanelBody
+					title={ __( 'Markers', 'gll-info' ) }
+					initialOpen={ false }
+				>
 					<ToggleControl
 						label={ __( 'Reference Point', 'gll-info' ) }
 						checked={ showMarkers?.ref }
@@ -462,7 +530,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ isLoading && (
 						<div className="gll-geometry-loading">
 							<Spinner />
-							<p>{ __( 'Loading GLL data...', 'gll-info' ) }</p>
+							<p>{ __( 'Loading GLL data…', 'gll-info' ) }</p>
 						</div>
 					) }
 
@@ -478,7 +546,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ ! webGLSupported && (
 						<div className="gll-geometry-error">
 							<p>
-								{ __( 'WebGL is not supported in your browser. Please use a modern browser to view 3D content.', 'gll-info' ) }
+								{ __(
+									'WebGL is not supported in your browser. Please use a modern browser to view 3D content.',
+									'gll-info'
+								) }
 							</p>
 						</div>
 					) }
@@ -497,52 +568,6 @@ export default function Edit( { attributes, setAttributes } ) {
 			</div>
 		</>
 	);
-}
-
-function attachFallbackControls(
-	element: HTMLElement,
-	scene: THREE.Scene
-): () => void {
-	let isDragging = false;
-	let lastX = 0;
-	let lastY = 0;
-
-	const onPointerDown = ( event: PointerEvent ) => {
-		isDragging = true;
-		lastX = event.clientX;
-		lastY = event.clientY;
-		element.setPointerCapture( event.pointerId );
-	};
-
-	const onPointerMove = ( event: PointerEvent ) => {
-		if ( ! isDragging ) {
-			return;
-		}
-		const deltaX = event.clientX - lastX;
-		const deltaY = event.clientY - lastY;
-		lastX = event.clientX;
-		lastY = event.clientY;
-
-		scene.rotation.y += deltaX * 0.005;
-		scene.rotation.x += deltaY * 0.005;
-	};
-
-	const onPointerUp = ( event: PointerEvent ) => {
-		isDragging = false;
-		element.releasePointerCapture( event.pointerId );
-	};
-
-	element.addEventListener( 'pointerdown', onPointerDown );
-	element.addEventListener( 'pointermove', onPointerMove );
-	element.addEventListener( 'pointerup', onPointerUp );
-	element.addEventListener( 'pointerleave', onPointerUp );
-
-	return () => {
-		element.removeEventListener( 'pointerdown', onPointerDown );
-		element.removeEventListener( 'pointermove', onPointerMove );
-		element.removeEventListener( 'pointerup', onPointerUp );
-		element.removeEventListener( 'pointerleave', onPointerUp );
-	};
 }
 
 function disposeSceneObject( object: THREE.Object3D ) {
