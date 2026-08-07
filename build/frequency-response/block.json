@@ -14,9 +14,6 @@
     "chart",
     "acoustic"
   ],
-  "parent": [
-    "gll-info/gll-info"
-  ],
   "attributes": {
     "fileId": {
       "type": "number",

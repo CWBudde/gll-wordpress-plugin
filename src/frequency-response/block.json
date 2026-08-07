@@ -8,7 +8,6 @@
 	"icon": "chart-line",
 	"description": "Display frequency response chart from GLL file acoustic data with interactive controls.",
 	"keywords": [ "gll", "frequency", "response", "chart", "acoustic" ],
-	"parent": [ "gll-info/gll-info" ],
 	"attributes": {
 		"fileId": {
 			"type": "number",

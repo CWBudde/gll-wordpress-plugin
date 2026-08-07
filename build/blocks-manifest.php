@@ -18,9 +18,6 @@ return array(
 			'three',
 			'visualization'
 		),
-		'parent' => array(
-			'gll-info/gll-info'
-		),
 		'attributes' => array(
 			'fileId' => array(
 				'type' => 'number',
@@ -114,9 +111,6 @@ return array(
 			'chart',
 			'acoustic'
 		),
-		'parent' => array(
-			'gll-info/gll-info'
-		),
 		'attributes' => array(
 			'fileId' => array(
 				'type' => 'number',
@@ -206,9 +200,6 @@ return array(
 			'3d',
 			'viewer',
 			'three'
-		),
-		'parent' => array(
-			'gll-info/gll-info'
 		),
 		'attributes' => array(
 			'fileId' => array(
@@ -366,9 +357,6 @@ return array(
 			'directivity',
 			'plot',
 			'acoustic'
-		),
-		'parent' => array(
-			'gll-info/gll-info'
 		),
 		'attributes' => array(
 			'fileId' => array(

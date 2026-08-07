@@ -109,21 +109,44 @@ function gll_info_block_init() {
 add_action( 'init', 'gll_info_block_init' );
 
 /**
+ * All block types shipped by this plugin.
+ *
+ * Every block loads the WASM parser on its own, so each one needs the
+ * gllInfoSettings URLs — not just the top-level viewer.
+ *
+ * @return string[] Fully qualified block names.
+ */
+function gll_info_get_block_names() {
+	return array(
+		'gll-info/gll-info',
+		'gll-info/frequency-response',
+		'gll-info/polar-plot',
+		'gll-info/balloon-3d',
+		'gll-info/geometry',
+	);
+}
+
+/**
  * Enqueue editor assets with WASM configuration.
  */
 function gll_info_enqueue_editor_assets() {
-	// Pass WASM URLs to JavaScript.
-	wp_localize_script(
-		'gll-info-gll-info-editor-script',
-		'gllInfoSettings',
-		array(
-			'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
-			'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
-			'pluginUrl'   => GLL_INFO_PLUGIN_URL,
-			'restUrl'     => rest_url( 'gll-info/v1/' ),
-			'nonce'       => wp_create_nonce( 'wp_rest' ),
-		)
+	$settings = array(
+		'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
+		'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
+		'pluginUrl'   => GLL_INFO_PLUGIN_URL,
+		'restUrl'     => rest_url( 'gll-info/v1/' ),
+		'nonce'       => wp_create_nonce( 'wp_rest' ),
 	);
+
+	// Attach to every block's editor script: any one of them may be the only
+	// GLL block on the screen, and each resolves the WASM URLs independently.
+	foreach ( gll_info_get_block_names() as $block_name ) {
+		wp_localize_script(
+			str_replace( '/', '-', $block_name ) . '-editor-script',
+			'gllInfoSettings',
+			$settings
+		);
+	}
 }
 add_action( 'enqueue_block_editor_assets', 'gll_info_enqueue_editor_assets' );
 
@@ -131,8 +154,16 @@ add_action( 'enqueue_block_editor_assets', 'gll_info_enqueue_editor_assets' );
  * Enqueue frontend assets for GLL blocks.
  */
 function gll_info_enqueue_frontend_assets() {
-	// Only enqueue if a GLL block is present.
-	if ( ! has_block( 'gll-info/gll-info' ) ) {
+	// Only enqueue if at least one GLL block is present.
+	$has_gll_block = false;
+	foreach ( gll_info_get_block_names() as $block_name ) {
+		if ( has_block( $block_name ) ) {
+			$has_gll_block = true;
+			break;
+		}
+	}
+
+	if ( ! $has_gll_block ) {
 		return;
 	}
 

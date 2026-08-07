@@ -6,9 +6,9 @@
  * @package
  */
 
-/* global Chart */
+import Chart from 'chart.js/auto';
 
-import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { formatFrequency } from '../shared/charting-utils';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
@@ -20,11 +20,6 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	const blocks = document.querySelectorAll( '.gll-polar-plot-block' );
 
 	if ( blocks.length === 0 ) {
-		return;
-	}
-
-	if ( typeof Chart === 'undefined' ) {
-		console.error( 'Chart.js is not loaded' );
 		return;
 	}
 
@@ -70,8 +65,7 @@ async function initializeBlock( block ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const uint8Array = new Uint8Array( arrayBuffer );
-		const data = await parseGLLFile( uint8Array );
+		const data = await parseGLL( arrayBuffer );
 
 		const loadingEl = block.querySelector( '.gll-polar-plot-loading' );
 		if ( loadingEl ) {

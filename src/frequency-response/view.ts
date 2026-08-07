@@ -6,9 +6,9 @@
  * @package
  */
 
-/* global Chart */
+import Chart from 'chart.js/auto';
 
-import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import {
 	buildFrequencyPoints,
 	buildLogFrequencyScale,
@@ -24,12 +24,6 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	const blocks = document.querySelectorAll( '.gll-frequency-response-block' );
 
 	if ( blocks.length === 0 ) {
-		return;
-	}
-
-	// Ensure Chart.js is loaded
-	if ( typeof Chart === 'undefined' ) {
-		console.error( 'Chart.js is not loaded' );
 		return;
 	}
 
@@ -81,8 +75,7 @@ async function initializeBlock( block ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const uint8Array = new Uint8Array( arrayBuffer );
-		const data = await parseGLLFile( uint8Array );
+		const data = await parseGLL( arrayBuffer );
 
 		// Hide loading indicator
 		const loadingEl = block.querySelector(
