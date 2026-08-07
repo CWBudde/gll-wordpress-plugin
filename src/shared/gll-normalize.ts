@@ -307,4 +307,26 @@ export function normalizeGllData( raw ) {
 	};
 }
 
+
+/**
+ * Replace a block header's "Loading …" line with the parsed system label.
+ *
+ * Every block's save() markup carries a `.gll-loading-text` paragraph in its
+ * header. The views hide their spinner once data arrives but left this line
+ * saying "Loading …" indefinitely.
+ *
+ * @param {HTMLElement} block Block root element.
+ * @param {Object}      data  Normalized GLL data.
+ */
+export function setBlockHeaderLabel( block, data ) {
+	const loadingText = block?.querySelector?.( '.gll-loading-text' );
+	if ( ! loadingText ) {
+		return;
+	}
+
+	const label =
+		data?.GenSystem?.Label || data?.Metadata?.Description || '';
+	loadingText.textContent = label;
+}
+
 export default normalizeGllData;

@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { formatFrequency } from '../shared/charting-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 import {
@@ -196,6 +197,7 @@ async function initializeBlock( block: HTMLElement ) {
 
 		const arrayBuffer = await response.arrayBuffer();
 		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		const loadingEl = block.querySelector( '.gll-balloon-3d-loading' );
 		if ( loadingEl ) {

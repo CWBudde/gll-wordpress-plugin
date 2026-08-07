@@ -9,6 +9,7 @@
 import Chart from 'chart.js/auto';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { formatFrequency } from '../shared/charting-utils';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
@@ -66,6 +67,7 @@ async function initializeBlock( block ) {
 
 		const arrayBuffer = await response.arrayBuffer();
 		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		const loadingEl = block.querySelector( '.gll-polar-plot-loading' );
 		if ( loadingEl ) {

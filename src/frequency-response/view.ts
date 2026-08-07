@@ -9,6 +9,7 @@
 import Chart from 'chart.js/auto';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import {
 	buildFrequencyPoints,
 	buildLogFrequencyScale,
@@ -75,6 +76,7 @@ async function initializeBlock( block ) {
 
 		const arrayBuffer = await response.arrayBuffer();
 		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		// Hide loading indicator
 		const loadingEl = block.querySelector(
@@ -272,6 +274,9 @@ function renderChart( block, data, options ) {
 
 	const chartWrapper = document.createElement( 'div' );
 	chartWrapper.className = 'gll-chart-container';
+	// Without an explicit height the canvas falls back to Chart.js' 150px
+	// default, which squashes the plot and collapses the dB axis to one tick.
+	chartWrapper.style.minHeight = options.chartHeight + 'px';
 	chartWrapper.appendChild( canvas );
 	chartContainer.appendChild( chartWrapper );
 	chartContainer.style.display = 'block';
