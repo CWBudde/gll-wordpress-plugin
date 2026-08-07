@@ -12,8 +12,7 @@ import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import {
 	buildFrequencyPoints,
 	buildLogFrequencyScale,
-	getPhaseSeries,
-	unwrapPhase,
+	buildSourceResponseSeries,
 	formatFrequency,
 } from '../shared/charting-utils';
 
@@ -107,61 +106,34 @@ async function initializeBlock( block ) {
 /**
  * Extract frequency response data from GLL source.
  *
+ * Delegates to the shared series builder, which combines the directivity
+ * response with the source's on-axis spectrum and applies the delay-corrected
+ * phase representation.
+ *
  * @param {Object}  source        Source definition from GLL.
  * @param {number}  responseIndex Response index to use.
- * @param {number}  azimuth       Azimuth angle (degrees).
- * @param {number}  elevation     Elevation angle (degrees).
- * @param {boolean} normalized    Whether to normalize to on-axis.
+ * @param {string}  phaseMode     'unwrapped' | 'wrapped' | 'group-delay'.
+ * @param {boolean} normalized    If true, plot directivity only (no on-axis).
  * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
  */
-function extractResponseData(
-	source,
-	responseIndex,
-	azimuth,
-	elevation,
-	normalized
-) {
-	if ( ! source || ! source.Responses || source.Responses.length === 0 ) {
+function extractResponseData( source, responseIndex, phaseMode, normalized ) {
+	const series = buildSourceResponseSeries(
+		source,
+		responseIndex,
+		phaseMode,
+		normalized
+	);
+
+	if ( ! series ) {
 		return null;
-	}
-
-	// Get the response at the specified index
-	const response = source.Responses[ responseIndex ];
-	if ( ! response ) {
-		return null;
-	}
-
-	const frequencies = response.Frequencies || [];
-	if ( frequencies.length === 0 ) {
-		return null;
-	}
-
-	// For now, use the first available transfer function
-	// TODO: Implement proper azimuth/elevation lookup when GLL structure is finalized
-	const transferFunctions = response.TransferFunctions || [];
-	if ( transferFunctions.length === 0 ) {
-		return null;
-	}
-
-	const tf = transferFunctions[ 0 ];
-	const magnitudes = tf.Magnitude || [];
-	const phases = tf.Phase || [];
-
-	if ( magnitudes.length === 0 ) {
-		return null;
-	}
-
-	// Normalize if requested (subtract first value - on-axis)
-	let normalizedMagnitudes = magnitudes;
-	if ( normalized && magnitudes.length > 0 ) {
-		const onAxisValue = magnitudes[ 0 ];
-		normalizedMagnitudes = magnitudes.map( ( val ) => val - onAxisValue );
 	}
 
 	return {
-		frequencies,
-		magnitudes: normalizedMagnitudes,
-		phases: phases.length === magnitudes.length ? phases : [],
+		frequencies: series.frequencies,
+		magnitudes: series.level,
+		phases: series.phase || [],
+		phaseLabel: series.phaseLabel,
+		phaseAxisTitle: series.phaseAxisTitle,
 	};
 }
 
@@ -255,8 +227,7 @@ function renderChart( block, data, options ) {
 	const responseData = extractResponseData(
 		source,
 		options.responseIndex,
-		options.azimuth,
-		options.elevation,
+		options.phaseMode,
 		options.normalized
 	);
 
@@ -277,16 +248,14 @@ function renderChart( block, data, options ) {
 		return;
 	}
 
-	// Build phase series if phase data is available and requested
+	// The series builder has already applied the requested phase mode.
 	let phaseSeries = null;
 	if ( options.showPhase && phases.length > 0 ) {
-		const unwrappedPhase = unwrapPhase( phases );
-		phaseSeries = getPhaseSeries(
-			options.phaseMode,
-			frequencies,
-			phases,
-			unwrappedPhase
-		);
+		phaseSeries = {
+			values: phases,
+			label: responseData.phaseLabel,
+			axisTitle: responseData.phaseAxisTitle,
+		};
 	}
 
 	// Create metadata display

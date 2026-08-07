@@ -17,12 +17,16 @@ import {
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useState, useMemo } from '@wordpress/element';
 
 /**
  * Internal dependencies
  */
-import { useGLLLoader, ChartWrapper } from '../shared';
+import {
+	useGLLLoader,
+	ChartWrapper,
+	buildSourceResponseChartConfig,
+} from '../shared';
 import './editor.scss';
 
 /**
@@ -99,81 +103,19 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Get current source data
 	const currentSource = data?.Database?.SourceDefinitions?.[ sourceIndex ];
 
-	// Build chart configuration (simplified for editor preview)
-	const chartConfig = data
-		? {
-				type: 'line' as const,
-				data: {
-					datasets: [
-						showMagnitude && {
-							label: __( 'Magnitude (dB)', 'gll-info' ),
-							data: [],
-							borderColor: 'rgb(75, 192, 192)',
-							backgroundColor: 'rgba(75, 192, 192, 0.2)',
-							yAxisID: 'y',
-						},
-						showPhase && {
-							label:
-								phaseMode === 'group-delay'
-									? __( 'Group Delay (ms)', 'gll-info' )
-									: __( 'Phase (rad)', 'gll-info' ),
-							data: [],
-							borderColor: 'rgb(255, 99, 132)',
-							backgroundColor: 'rgba(255, 99, 132, 0.2)',
-							yAxisID: 'y1',
-						},
-					].filter( Boolean ),
-				},
-				options: {
-					responsive: true,
-					plugins: {
-						title: {
-							display: true,
-							text:
-								fileName ||
-								__( 'Frequency Response', 'gll-info' ),
-						},
-						legend: {
-							display: true,
-						},
-					},
-					scales: {
-						x: {
-							type: 'logarithmic',
-							display: true,
-							title: {
-								display: true,
-								text: __( 'Frequency (Hz)', 'gll-info' ),
-							},
-						},
-						y: showMagnitude && {
-							type: 'linear',
-							display: true,
-							position: 'left',
-							title: {
-								display: true,
-								text: __( 'Magnitude (dB)', 'gll-info' ),
-							},
-						},
-						y1: showPhase && {
-							type: 'linear',
-							display: true,
-							position: 'right',
-							title: {
-								display: true,
-								text:
-									phaseMode === 'group-delay'
-										? __( 'Group Delay (ms)', 'gll-info' )
-										: __( 'Phase (rad)', 'gll-info' ),
-							},
-							grid: {
-								drawOnChartArea: false,
-							},
-						},
-					},
-				},
-		  }
-		: null;
+	// Build the chart from the shared series builder — the same code path the
+	// frontend view uses, so editor and published page agree.
+	const chartConfig = useMemo( () => {
+		if ( ! currentSource ) {
+			return null;
+		}
+		return buildSourceResponseChartConfig(
+			currentSource,
+			responseIndex,
+			phaseMode,
+			normalized
+		);
+	}, [ currentSource, responseIndex, phaseMode, normalized ] );
 
 	// Render file selection placeholder if no file is selected
 	if ( ! fileUrl ) {

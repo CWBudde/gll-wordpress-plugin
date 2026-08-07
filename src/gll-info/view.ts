@@ -6,6 +6,8 @@
  * @package
  */
 
+import { normalizeGllData } from '../shared/gll-normalize';
+
 ( function () {
 	'use strict';
 
@@ -114,7 +116,7 @@
 			throw new Error( result.error || 'Failed to parse GLL file' );
 		}
 
-		return result.data;
+		return normalizeGllData( result.data );
 	}
 
 	/**
