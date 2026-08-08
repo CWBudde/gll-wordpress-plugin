@@ -10,6 +10,7 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       gll-info
+ * Domain Path:       /languages
  *
  * @package GllInfo
  */
@@ -20,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Plugin constants.
 define( 'GLL_INFO_VERSION', '0.1.0' );
+define( 'GLL_INFO_PLUGIN_FILE', __FILE__ );
 define( 'GLL_INFO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GLL_INFO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -152,6 +154,10 @@ function gll_info_enqueue_editor_assets() {
 			$settings
 		);
 	}
+
+	// Same moment, same handles: the editor bundles carry the bulk of the
+	// translated strings, so their JSON catalogues have to be attached here.
+	gll_info_set_block_script_translations( 'editor-script' );
 }
 add_action( 'enqueue_block_editor_assets', 'gll_info_enqueue_editor_assets' );
 
@@ -171,6 +177,11 @@ function gll_info_enqueue_frontend_assets() {
 	if ( ! $has_gll_block ) {
 		return;
 	}
+
+	// The view scripts are enqueued by the block renderer, not here, but their
+	// handles are already registered at this point — so this is the last hook
+	// that reliably runs before they are printed.
+	gll_info_set_block_script_translations( 'view-script' );
 
 	// Enqueue wasm_exec.js for frontend.
 	wp_enqueue_script(
@@ -195,5 +206,6 @@ function gll_info_enqueue_frontend_assets() {
 add_action( 'wp_enqueue_scripts', 'gll_info_enqueue_frontend_assets' );
 
 // Include additional plugin files.
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-i18n.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-media.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-patterns.php';

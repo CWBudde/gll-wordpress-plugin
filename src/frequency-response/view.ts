@@ -7,6 +7,7 @@
  */
 
 import Chart from 'chart.js/auto';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
@@ -42,7 +43,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	} catch ( error ) {
 		console.error( 'Failed to initialize WASM:', error );
 		blocks.forEach( ( block ) => {
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 		} );
 		return;
 	}
@@ -66,7 +70,7 @@ async function initializeBlock( block ) {
 	initBlockLiveRegions( block );
 
 	const fileUrl = block.dataset.fileUrl;
-	const fileName = block.dataset.fileName || 'GLL File';
+	const fileName = block.dataset.fileName || __( 'GLL File', 'gll-info' );
 	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
 	const responseIndex = parseInt( block.dataset.responseIndex, 10 ) || 0;
 	const phaseMode = block.dataset.phaseMode || 'unwrapped';
@@ -76,7 +80,7 @@ async function initializeBlock( block ) {
 	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
 
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
 
@@ -84,7 +88,13 @@ async function initializeBlock( block ) {
 		// Fetch and parse the GLL file
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					/* translators: %s: HTTP status text, e.g. "Not Found". */
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -168,36 +178,43 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 
 	// Frequency range badge
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Range:', 'gll-info' )
+		) }</strong> ${ minFreq } - ${ maxFreq }</span>`
 	);
 
-	// Phase mode badge
+	// Phase mode badge. The keys are the stored attribute values and stay in
+	// English; only the labels they map to are shown to a reader.
 	if ( phaseSeries ) {
 		const phaseModeLabels = {
-			'group-delay': 'Group Delay',
-			wrapped: 'Wrapped Phase',
-			unwrapped: 'Unwrapped Phase',
+			'group-delay': __( 'Group Delay', 'gll-info' ),
+			wrapped: __( 'Wrapped Phase', 'gll-info' ),
+			unwrapped: __( 'Unwrapped Phase', 'gll-info' ),
 		};
 		const phaseLabel =
 			phaseModeLabels[ options.phaseMode ] || phaseModeLabels.unwrapped;
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Phase:', 'gll-info' )
+			) }</strong> ${ escapeHtml( phaseLabel ) }</span>`
 		);
 	}
 
 	// Normalization badge
 	if ( options.normalized ) {
 		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>`
+			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>${ escapeHtml(
+				__( 'Normalized', 'gll-info' )
+			) }</strong></span>`
 		);
 	}
 
 	// Source info badge
 	if ( source.Label ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
-				source.Label
-			) }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Source:', 'gll-info' )
+			) }</strong> ${ escapeHtml( source.Label ) }</span>`
 		);
 	}
 
@@ -233,29 +250,58 @@ function buildCanvasLabel( {
 	const finite = magnitudes.filter( ( value ) => Number.isFinite( value ) );
 	const parts = [];
 
+	const subject = source.Label || options.fileName;
+
+	// The normalized variant is a whole clause rather than a suffix glued on,
+	// so translators can place the qualifier where their language needs it.
 	parts.push(
-		`Frequency response of ${ source.Label || options.fileName }` +
-			( options.normalized ? ', normalized' : '' )
+		options.normalized
+			? sprintf(
+					/* translators: %s: source label, or the file name when the source is unnamed. */
+					__( 'Frequency response of %s, normalized', 'gll-info' ),
+					subject
+			  )
+			: sprintf(
+					/* translators: %s: source label, or the file name when the source is unnamed. */
+					__( 'Frequency response of %s', 'gll-info' ),
+					subject
+			  )
 	);
 	parts.push(
-		`${ formatFrequency(
-			frequencyData.minFrequency
-		) } to ${ formatFrequency( frequencyData.maxFrequency ) }`
+		sprintf(
+			/* translators: 1: lowest plotted frequency, 2: highest plotted frequency. */
+			__( '%1$s to %2$s', 'gll-info' ),
+			formatFrequency( frequencyData.minFrequency ),
+			formatFrequency( frequencyData.maxFrequency )
+		)
 	);
 
 	if ( options.showMagnitude && finite.length > 0 ) {
 		parts.push(
-			`level ${ Math.min( ...finite ).toFixed( 1 ) } to ${ Math.max(
-				...finite
-			).toFixed( 1 ) } dB`
+			sprintf(
+				/* translators: 1: lowest plotted level in dB, 2: highest plotted level in dB. */
+				__( 'level %1$s to %2$s dB', 'gll-info' ),
+				Math.min( ...finite ).toFixed( 1 ),
+				Math.max( ...finite ).toFixed( 1 )
+			)
 		);
 	}
 
 	if ( phaseSeries ) {
-		parts.push( `${ phaseSeries.label } on the right axis` );
+		parts.push(
+			sprintf(
+				/* translators: %s: phase series label, already translated, e.g. "Phase (rad)". */
+				__( '%s on the right axis', 'gll-info' ),
+				phaseSeries.label
+			)
+		);
 	}
 
-	return `${ parts.join( ', ' ) }. The plotted values follow in a table.`;
+	return sprintf(
+		/* translators: %s: comma-separated summary of the plotted chart. */
+		__( '%s. The plotted values follow in a table.', 'gll-info' ),
+		parts.join( ', ' )
+	);
 }
 
 /**
@@ -285,18 +331,24 @@ function buildDataTable( frequencies, magnitudes ) {
 	table.className = 'gll-visually-hidden';
 
 	const caption = document.createElement( 'caption' );
-	caption.textContent =
-		'Frequency response level at one-third-octave band centres';
+	caption.textContent = __(
+		'Frequency response level at one-third-octave band centres',
+		'gll-info'
+	);
 	table.appendChild( caption );
 
 	const head = document.createElement( 'thead' );
 	const headRow = document.createElement( 'tr' );
-	[ 'Frequency', 'Level (dB)' ].forEach( ( text ) => {
-		const cell = document.createElement( 'th' );
-		cell.scope = 'col';
-		cell.textContent = text;
-		headRow.appendChild( cell );
-	} );
+	// Same two strings the chart axes use, so a translation reads consistently
+	// between the picture and its table.
+	[ __( 'Frequency', 'gll-info' ), __( 'Level (dB)', 'gll-info' ) ].forEach(
+		( text ) => {
+			const cell = document.createElement( 'th' );
+			cell.scope = 'col';
+			cell.textContent = text;
+			headRow.appendChild( cell );
+		}
+	);
 	head.appendChild( headRow );
 	table.appendChild( head );
 
@@ -346,7 +398,7 @@ function renderChart( block, data, options ) {
 	// Get source data
 	const source = data?.Database?.SourceDefinitions?.[ options.sourceIndex ];
 	if ( ! source ) {
-		showError( block, 'Source not found' );
+		showError( block, __( 'Source not found', 'gll-info' ) );
 		return;
 	}
 
@@ -361,7 +413,10 @@ function renderChart( block, data, options ) {
 	if ( ! responseData ) {
 		showError(
 			block,
-			'No frequency response data available for this source'
+			__(
+				'No frequency response data available for this source',
+				'gll-info'
+			)
 		);
 		return;
 	}
@@ -371,7 +426,7 @@ function renderChart( block, data, options ) {
 	// Build frequency data points for magnitude
 	const frequencyData = buildFrequencyPoints( frequencies, magnitudes );
 	if ( ! frequencyData ) {
-		showError( block, 'Invalid frequency response data' );
+		showError( block, __( 'Invalid frequency response data', 'gll-info' ) );
 		return;
 	}
 
@@ -430,7 +485,7 @@ function renderChart( block, data, options ) {
 
 	if ( options.showMagnitude ) {
 		datasets.push( {
-			label: 'Level (dB)',
+			label: __( 'Level (dB)', 'gll-info' ),
 			data: frequencyData.points,
 			borderColor: '#2563eb',
 			backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -464,7 +519,7 @@ function renderChart( block, data, options ) {
 		x: buildLogFrequencyScale(
 			frequencyData.minFrequency,
 			frequencyData.maxFrequency,
-			'Frequency'
+			__( 'Frequency', 'gll-info' )
 		),
 	};
 
@@ -475,7 +530,7 @@ function renderChart( block, data, options ) {
 			position: 'left',
 			title: {
 				display: true,
-				text: 'Level (dB)',
+				text: __( 'Level (dB)', 'gll-info' ),
 			},
 		};
 	}
@@ -519,9 +574,14 @@ function renderChart( block, data, options ) {
 				},
 				title: {
 					display: true,
-					text:
-						options.fileName +
-						( source.Label ? ` - ${ source.Label }` : '' ),
+					text: source.Label
+						? sprintf(
+								/* translators: 1: GLL file name, 2: source label. */
+								__( '%1$s - %2$s', 'gll-info' ),
+								options.fileName,
+								source.Label
+						  )
+						: options.fileName,
 				},
 				tooltip: {
 					callbacks: {

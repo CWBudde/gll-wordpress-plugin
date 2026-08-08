@@ -8,6 +8,8 @@
  * @package
  */
 
+import { __, sprintf } from '@wordpress/i18n';
+
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
@@ -28,7 +30,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	} catch ( error ) {
 		console.error( 'Failed to initialize WASM:', error );
 		blocks.forEach( ( block ) => {
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 		} );
 		return;
 	}
@@ -58,14 +63,20 @@ async function initializeBlock( block ) {
 	const hideWhenEmpty = block.dataset.hideWhenEmpty === 'true';
 
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
 
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					/* translators: %s: HTTP status text, e.g. "Not Found". */
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

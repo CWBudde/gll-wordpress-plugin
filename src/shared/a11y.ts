@@ -18,6 +18,8 @@
  * @package
  */
 
+import { __ } from '@wordpress/i18n';
+
 /**
  * Whether the visitor has asked for reduced motion.
  *
@@ -124,7 +126,10 @@ export function renderErrorPanel(
 	panel.setAttribute( 'role', 'alert' );
 
 	const label = document.createElement( 'strong' );
-	label.textContent = 'Error:';
+	// Called at render time, not module scope: a translated string captured in a
+	// module-level constant freezes before WordPress has registered the
+	// catalogue, and would ship English forever.
+	label.textContent = __( 'Error:', 'gll-info' );
 	panel.appendChild( label );
 	panel.appendChild( document.createTextNode( ` ${ message ?? '' }` ) );
 

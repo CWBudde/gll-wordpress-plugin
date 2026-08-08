@@ -7,6 +7,7 @@
  */
 
 import Chart from 'chart.js/auto';
+import { __, _x, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
@@ -42,7 +43,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	} catch ( error ) {
 		console.error( 'Failed to initialize WASM:', error );
 		blocks.forEach( ( block ) => {
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 		} );
 		return;
 	}
@@ -64,7 +68,7 @@ async function initializeBlock( block ) {
 	initBlockLiveRegions( block );
 
 	const fileUrl = block.dataset.fileUrl;
-	const fileName = block.dataset.fileName || 'GLL File';
+	const fileName = block.dataset.fileName || __( 'GLL File', 'gll-info' );
 	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
 	const frequencyIndex = parseInt( block.dataset.frequencyIndex, 10 ) || 0;
 	const showHorizontal = block.dataset.showHorizontal !== 'false';
@@ -73,14 +77,20 @@ async function initializeBlock( block ) {
 	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
 
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
 
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					/* translators: %s: HTTP status text, e.g. "Not Found". */
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -137,33 +147,69 @@ function buildCanvasLabel( {
 	options,
 } ) {
 	const angles = buildPolarAngles( slices.meta.stepDeg );
-	const parts = [ `Polar directivity plot at ${ freqLabel }` ];
+	const parts = [
+		sprintf(
+			/* translators: %s: frequency label, for example "1 kHz". */
+			__( 'Polar directivity plot at %s', 'gll-info' ),
+			freqLabel
+		),
+	];
 
 	/**
 	 * Describe one plane's coverage.
 	 *
-	 * @param {string} name   Plane name.
+	 * @param {string} name   Plane name, already translated.
 	 * @param {Array}  levels Levels for that plane.
 	 * @return {string} Sentence fragment.
 	 */
 	const describePlane = ( name, levels ) => {
 		const width = beamwidthAtDrop( angles, levels, 6 );
 		return width === null
-			? `${ name } coverage not determinable from the measured data`
-			: `${ name } −6 dB beamwidth ${ width }°`;
+			? sprintf(
+					/* translators: %s: measurement plane, "horizontal" or "vertical". */
+					__(
+						'%s coverage not determinable from the measured data',
+						'gll-info'
+					),
+					name
+			  )
+			: sprintf(
+					/* translators: 1: measurement plane, "horizontal" or "vertical". 2: beamwidth in degrees. */
+					__( '%1$s −6 dB beamwidth %2$s°', 'gll-info' ),
+					name,
+					String( width )
+			  );
 	};
 
 	if ( options.showHorizontal ) {
-		parts.push( describePlane( 'horizontal', horizontalLevels ) );
+		parts.push(
+			describePlane(
+				_x( 'horizontal', 'measurement plane', 'gll-info' ),
+				horizontalLevels
+			)
+		);
 	}
 	if ( options.showVertical ) {
-		parts.push( describePlane( 'vertical', verticalLevels ) );
+		parts.push(
+			describePlane(
+				_x( 'vertical', 'measurement plane', 'gll-info' ),
+				verticalLevels
+			)
+		);
 	}
 
-	parts.push( `${ slices.meta.symmetryName } symmetry` );
+	parts.push(
+		sprintf(
+			/* translators: %s: symmetry name, already translated, e.g. "Axial". */
+			__( '%s symmetry', 'gll-info' ),
+			slices.meta.symmetryName
+		)
+	);
 
 	if ( options.normalized ) {
-		parts.push( 'levels normalized to the on-axis maximum' );
+		parts.push(
+			__( 'levels normalized to the on-axis maximum', 'gll-info' )
+		);
 	}
 
 	return `${ parts.join( ', ' ) }.`;
@@ -189,20 +235,23 @@ function renderChart( block, data, options ) {
 
 	const source = sources[ options.sourceIndex ];
 	if ( ! source ) {
-		showError( block, 'Source not found' );
+		showError( block, __( 'Source not found', 'gll-info' ) );
 		return;
 	}
 
 	const frequencies = source.Responses?.[ 0 ]?.Frequencies || [];
 	if ( frequencies.length === 0 ) {
-		showError( block, 'No frequency data available' );
+		showError( block, __( 'No frequency data available', 'gll-info' ) );
 		return;
 	}
 
 	const freqIdx = Math.min( options.frequencyIndex, frequencies.length - 1 );
 	const slices = computePolarSlices( source, freqIdx );
 	if ( ! slices ) {
-		showError( block, 'No directivity data available for this source' );
+		showError(
+			block,
+			__( 'No directivity data available for this source', 'gll-info' )
+		);
 		return;
 	}
 
@@ -238,12 +287,24 @@ function renderChart( block, data, options ) {
 		levelRange.max !== null ? levelRange.max - 40 : undefined;
 
 	const freqLabel = formatFrequency( frequency );
-	const normSuffix = options.normalized ? ' (normalized)' : '';
 	const datasets = [];
 
+	// The normalized variant is a whole sentence rather than a translated
+	// suffix glued on, so translators can place the qualifier where their
+	// language needs it. Mirrors the editor preview in edit.tsx.
 	if ( options.showHorizontal ) {
 		datasets.push( {
-			label: `Horizontal @ ${ freqLabel }${ normSuffix }`,
+			label: options.normalized
+				? sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Horizontal @ %s (normalized)', 'gll-info' ),
+						freqLabel
+				  )
+				: sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Horizontal @ %s', 'gll-info' ),
+						freqLabel
+				  ),
 			data: horizontalLevels,
 			borderColor: '#2563eb',
 			backgroundColor: 'rgba(37, 99, 235, 0.12)',
@@ -256,7 +317,17 @@ function renderChart( block, data, options ) {
 
 	if ( options.showVertical ) {
 		datasets.push( {
-			label: `Vertical @ ${ freqLabel }${ normSuffix }`,
+			label: options.normalized
+				? sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Vertical @ %s (normalized)', 'gll-info' ),
+						freqLabel
+				  )
+				: sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Vertical @ %s', 'gll-info' ),
+						freqLabel
+				  ),
 			data: verticalLevels,
 			borderColor: '#dc2626',
 			backgroundColor: 'rgba(220, 38, 38, 0.12)',
@@ -270,31 +341,49 @@ function renderChart( block, data, options ) {
 	// Build metadata HTML
 	const badges = [];
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Frequency:</strong> ${ freqLabel }</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Frequency:', 'gll-info' )
+		) }</strong> ${ freqLabel }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ slices.meta.symmetryName }</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Symmetry:', 'gll-info' )
+		) }</strong> ${ escapeHtml( slices.meta.symmetryName ) }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Resolution:</strong> ${ slices.meta.meridianStep }\u00b0 \u00d7 ${ slices.meta.parallelStep }\u00b0</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Resolution:', 'gll-info' )
+		) }</strong> ${ slices.meta.meridianStep }\u00b0 \u00d7 ${
+			slices.meta.parallelStep
+		}\u00b0</span>`
 	);
 	if ( options.normalized ) {
 		badges.push(
-			'<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>'
+			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>${ escapeHtml(
+				__( 'Normalized', 'gll-info' )
+			) }</strong></span>`
 		);
 	}
 	if ( slices.meta.usesOnAxis ) {
-		badges.push( '<span class="gll-meta-badge">Uses on-axis</span>' );
+		badges.push(
+			`<span class="gll-meta-badge">${ escapeHtml(
+				__( 'Uses on-axis', 'gll-info' )
+			) }</span>`
+		);
 	}
 	if ( slices.meta.frontHalfOnly ) {
-		badges.push( '<span class="gll-meta-badge">Front-half only</span>' );
+		badges.push(
+			`<span class="gll-meta-badge">${ escapeHtml(
+				__( 'Front-half only', 'gll-info' )
+			) }</span>`
+		);
 	}
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
-				sourceLabel
-			) }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Source:', 'gll-info' )
+			) }</strong> ${ escapeHtml( sourceLabel ) }</span>`
 		);
 	}
 
@@ -349,18 +438,34 @@ function renderChart( block, data, options ) {
 					callbacks: {
 						title: ( items ) => {
 							const label = items?.[ 0 ]?.label;
-							return label ? `Angle ${ label }` : '';
+							return label
+								? sprintf(
+										/* translators: %s: angle label of the hovered point, for example "45°". */
+										__( 'Angle %s', 'gll-info' ),
+										label
+								  )
+								: '';
 						},
 						label: ( item ) => {
+							const seriesLabel =
+								item.dataset?.label ||
+								_x( 'Level', 'chart series', 'gll-info' );
 							if (
 								item?.raw === null ||
 								item?.raw === undefined
 							) {
-								return `${ item.dataset?.label || 'Level' }: -`;
+								return sprintf(
+									/* translators: %s: chart series name. */
+									__( '%s: -', 'gll-info' ),
+									seriesLabel
+								);
 							}
-							return `${ item.dataset?.label || 'Level' }: ${ (
-								item.raw as number
-							 ).toFixed( 1 ) } dB`;
+							return sprintf(
+								/* translators: 1: chart series name, 2: level in dB. */
+								__( '%1$s: %2$s dB', 'gll-info' ),
+								seriesLabel,
+								( item.raw as number ).toFixed( 1 )
+							);
 						},
 					},
 				},

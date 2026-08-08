@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { __, sprintf } from '@wordpress/i18n';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { escapeHtml } from '../shared/escape-html';
@@ -66,7 +67,10 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		blocks.forEach( ( block ) => {
 			showError(
 				block,
-				'WebGL is not supported in your browser. Please use a modern browser to view 3D content.'
+				__(
+					'WebGL is not supported in your browser. Please use a modern browser to view 3D content.',
+					'gll-info'
+				)
 			);
 		} );
 		return;
@@ -86,7 +90,10 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			await ensureWasmReady();
 		} catch ( error ) {
 			console.error( 'Failed to initialize WASM:', error );
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 			return;
 		}
 
@@ -134,7 +141,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 async function initializeBlock( block: HTMLElement ) {
 	const fileUrl = block.dataset.fileUrl;
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
 
@@ -184,7 +191,13 @@ async function initializeBlock( block: HTMLElement ) {
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					/* translators: %s: HTTP status text, e.g. "Not Found". */
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -256,7 +269,10 @@ async function initializeBlock( block: HTMLElement ) {
 		}
 
 		if ( ! geometryData ) {
-			showError( block, 'No geometry data available in this file.' );
+			showError(
+				block,
+				__( 'No geometry data available in this file.', 'gll-info' )
+			);
 			return;
 		}
 
@@ -280,11 +296,16 @@ async function initializeBlock( block: HTMLElement ) {
 		canvasContainer.appendChild( threeContainer );
 
 		const { stats } = geometryData;
-		const canvasLabel =
-			`Interactive 3D view of the loudspeaker case: ` +
-			`${ stats.vertexCount } vertices, ${ stats.edgeCount } edges, ` +
-			`${ stats.faceCount } faces. ` +
-			`Use the arrow keys to rotate and the plus and minus keys to zoom.`;
+		const canvasLabel = sprintf(
+			/* translators: 1: number of vertices, 2: number of edges, 3: number of faces. */
+			__(
+				'Interactive 3D view of the loudspeaker case: %1$d vertices, %2$d edges, %3$d faces. Use the arrow keys to rotate and the plus and minus keys to zoom.',
+				'gll-info'
+			),
+			stats.vertexCount,
+			stats.edgeCount,
+			stats.faceCount
+		);
 
 		initThreeScene( block, threeContainer, {
 			canvasHeight,
@@ -301,7 +322,12 @@ async function initializeBlock( block: HTMLElement ) {
 		// paragraph to overwrite, so this is the block's only announcement that
 		// the viewer finished building.
 		announce(
-			`Geometry loaded: ${ stats.vertexCount } vertices, ${ stats.faceCount } faces.`
+			sprintf(
+				/* translators: 1: number of vertices, 2: number of faces. */
+				__( 'Geometry loaded: %1$d vertices, %2$d faces.', 'gll-info' ),
+				stats.vertexCount,
+				stats.faceCount
+			)
 		);
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
@@ -359,17 +385,23 @@ function buildMetadataElement( options: {
 
 	if ( stats.vertexCount > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Vertices:</strong> ${ stats.vertexCount }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Vertices:', 'gll-info' )
+			) }</strong> ${ stats.vertexCount }</span>`
 		);
 	}
 	if ( stats.edgeCount > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Edges:</strong> ${ stats.edgeCount }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Edges:', 'gll-info' )
+			) }</strong> ${ stats.edgeCount }</span>`
 		);
 	}
 	if ( stats.faceCount > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Faces:</strong> ${ stats.faceCount }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Faces:', 'gll-info' )
+			) }</strong> ${ stats.faceCount }</span>`
 		);
 	}
 
@@ -378,43 +410,47 @@ function buildMetadataElement( options: {
 		const className = isSymmetric
 			? 'gll-meta-badge gll-meta-badge-highlight'
 			: 'gll-meta-badge';
-		const label = isSymmetric ? 'Symmetric' : 'Asymmetric';
+		const label = isSymmetric
+			? __( 'Symmetric', 'gll-info' )
+			: __( 'Asymmetric', 'gll-info' );
 		badges.push(
-			`<span class="${ className }"><strong>Symmetry:</strong> ${ label }</span>`
+			`<span class="${ className }"><strong>${ escapeHtml(
+				__( 'Symmetry:', 'gll-info' )
+			) }</strong> ${ escapeHtml( label ) }</span>`
 		);
 	}
 
 	if ( bounds ) {
 		const largest = Math.max( bounds.size.x, bounds.size.y, bounds.size.z );
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Largest Dimension:</strong> ${ formatNumber(
-				largest
-			) } mm</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Largest Dimension:', 'gll-info' )
+			) }</strong> ${ formatNumber( largest ) } mm</span>`
 		);
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Bounds (W × H × D):</strong> ${ formatNumber(
-				bounds.size.x
-			) } × ${ formatNumber( bounds.size.y ) } × ${ formatNumber(
-				bounds.size.z
-			) } mm</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Bounds (W × H × D):', 'gll-info' )
+			) }</strong> ${ formatNumber( bounds.size.x ) } × ${ formatNumber(
+				bounds.size.y
+			) } × ${ formatNumber( bounds.size.z ) } mm</span>`
 		);
 	}
 
 	const reference = getReferencePoint( geometry );
 	if ( reference ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Reference Point (mm):</strong> ${ escapeHtml(
-				formatPoint( reference )
-			) }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Reference Point (mm):', 'gll-info' )
+			) }</strong> ${ escapeHtml( formatPoint( reference ) ) }</span>`
 		);
 	}
 
 	const centerOfMass = getCenterOfMassPoint( geometry );
 	if ( centerOfMass ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Center of Mass (mm):</strong> ${ escapeHtml(
-				formatPoint( centerOfMass )
-			) }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Center of Mass (mm):', 'gll-info' )
+			) }</strong> ${ escapeHtml( formatPoint( centerOfMass ) ) }</span>`
 		);
 	}
 
@@ -423,7 +459,9 @@ function buildMetadataElement( options: {
 		: [];
 	if ( showSources && placements.length > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Sources:</strong> ${ placements.length }</span>`
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Sources:', 'gll-info' )
+			) }</strong> ${ placements.length }</span>`
 		);
 	}
 

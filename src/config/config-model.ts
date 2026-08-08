@@ -7,7 +7,9 @@
  * entry points, and `src/shared/` is for things more than one block reaches
  * for.
  *
- * The module is deliberately pure — no DOM, no React, no WordPress imports — so
+ * The module is deliberately pure — no DOM, no React, and of the WordPress
+ * packages only `@wordpress/i18n`, since every user-visible string is composed
+ * here rather than in the two renderers — so
  * every derivation (section order, badges, the unit attached to a limit value)
  * is decided once and tested once, leaving `edit.tsx` and `config-render.ts` as
  * dumb templates over identical data. That is what keeps the editor preview and
@@ -15,6 +17,8 @@
  *
  * @package
  */
+
+import { __, _x, sprintf } from '@wordpress/i18n';
 
 import { formatFrequency } from '../shared/charting-utils';
 
@@ -69,6 +73,11 @@ export interface CollectedConfig {
 /**
  * The marker every formatter falls back to, so that a missing field reads as
  * deliberately absent rather than as an empty string or a stray zero.
+ *
+ * Deliberately NOT translated: it is a sentinel as much as a display value —
+ * a dozen call sites below test `formatX( … ) !== NONE` to decide whether a
+ * detail part is worth printing, and a translated marker would break every one
+ * of those comparisons the moment a locale rendered it as anything else.
  */
 const NONE = '-';
 
@@ -134,7 +143,13 @@ export function formatNumber( value: any, digits: number = 2 ): string {
 export function formatWeight( kg: any ): string {
 	const text = formatNumber( kg, 2 );
 
-	return text === NONE ? NONE : `${ text } kg`;
+	return text === NONE
+		? NONE
+		: sprintf(
+				/* translators: %s: mass, already formatted to two decimals. */
+				__( '%s kg', 'gll-info' ),
+				text
+		  );
 }
 
 /**
@@ -146,7 +161,13 @@ export function formatWeight( kg: any ): string {
 export function formatAngle( deg: any ): string {
 	const text = formatNumber( deg, 1 );
 
-	return text === NONE ? NONE : `${ text }°`;
+	return text === NONE
+		? NONE
+		: sprintf(
+				/* translators: %s: angle, already formatted to one decimal. */
+				__( '%s°', 'gll-info' ),
+				text
+		  );
 }
 
 /**
@@ -168,12 +189,16 @@ export function formatGain( db: any ): string {
 	}
 
 	if ( numeric === 0 ) {
-		return '0 dB';
+		return __( '0 dB', 'gll-info' );
 	}
 
 	const sign = numeric > 0 ? '+' : '';
 
-	return `${ sign }${ numeric.toFixed( 1 ) } dB`;
+	return sprintf(
+		/* translators: %s: signed gain, already formatted to one decimal. */
+		__( '%s dB', 'gll-info' ),
+		`${ sign }${ numeric.toFixed( 1 ) }`
+	);
 }
 
 /**
@@ -195,10 +220,18 @@ export function formatDelay( seconds: any ): string {
 	}
 
 	if ( Math.abs( numeric ) >= MILLISECOND ) {
-		return `${ ( numeric * 1000 ).toFixed( 2 ) } ms`;
+		return sprintf(
+			/* translators: %s: delay in milliseconds, already formatted. */
+			__( '%s ms', 'gll-info' ),
+			( numeric * 1000 ).toFixed( 2 )
+		);
 	}
 
-	return `${ ( numeric * 1000000 ).toFixed( 1 ) } µs`;
+	return sprintf(
+		/* translators: %s: delay in microseconds, already formatted. */
+		__( '%s µs', 'gll-info' ),
+		( numeric * 1000000 ).toFixed( 1 )
+	);
 }
 
 /**
@@ -219,7 +252,11 @@ export function formatSampleRate( hz: any ): string {
 
 	const digits = numeric % 1000 === 0 ? 0 : 1;
 
-	return `${ ( numeric / 1000 ).toFixed( digits ) } kHz`;
+	return sprintf(
+		/* translators: %s: sample rate in kilohertz, already formatted. */
+		__( '%s kHz', 'gll-info' ),
+		( numeric / 1000 ).toFixed( digits )
+	);
 }
 
 /**
@@ -296,16 +333,36 @@ export function formatGeometrySummary( geometry: any ): string {
 	}
 
 	const parts = [
-		`${ ( geometry.Vertices || [] ).length } vertices`,
-		`${ ( geometry.Edges || [] ).length } edges`,
-		`${ ( geometry.Faces || [] ).length } faces`,
+		sprintf(
+			/* translators: %d: number of mesh vertices. */
+			__( '%d vertices', 'gll-info' ),
+			( geometry.Vertices || [] ).length
+		),
+		sprintf(
+			/* translators: %d: number of mesh edges. */
+			__( '%d edges', 'gll-info' ),
+			( geometry.Edges || [] ).length
+		),
+		sprintf(
+			/* translators: %d: number of mesh faces. */
+			__( '%d faces', 'gll-info' ),
+			( geometry.Faces || [] ).length
+		),
 	];
 
 	if ( geometry.IsSymmetric ) {
 		const axis = formatNumber( geometry.SymmetryAxis, 3 );
-		parts.push( axis === NONE ? 'Symmetric' : `Symmetric @ X=${ axis }` );
+		parts.push(
+			axis === NONE
+				? __( 'Symmetric', 'gll-info' )
+				: sprintf(
+						/* translators: %s: symmetry axis position on X, in metres. */
+						__( 'Symmetric @ X=%s', 'gll-info' ),
+						axis
+				  )
+		);
 	} else {
-		parts.push( 'Asymmetric' );
+		parts.push( __( 'Asymmetric', 'gll-info' ) );
 	}
 
 	return parts.join( ' • ' );
@@ -381,6 +438,29 @@ function pushLine( details: string[], line: string ) {
 }
 
 /**
+ * Build the "Key: …" second line, when the key is not already the title.
+ *
+ * Extracted so the one translatable 'Key: %s' string has a single call site
+ * across the four entry builders that need it, rather than four copies a
+ * translator would have to keep consistent by hand.
+ *
+ * @param {string} key   Sanitized record key.
+ * @param {string} title Entry title.
+ * @return {string|undefined} Subtitle, or undefined when it adds nothing.
+ */
+function keySubtitle( key: string, title: string ): string | undefined {
+	if ( ! key || key === title ) {
+		return undefined;
+	}
+
+	return sprintf(
+		/* translators: %s: record key from the GLL file. */
+		__( 'Key: %s', 'gll-info' ),
+		key
+	);
+}
+
+/**
  * Build a stable entry id.
  *
  * Keys are unique within a GLL section in practice, but nothing in the format
@@ -440,7 +520,14 @@ function buildBoxTypeEntries(
 	return boxTypes.map( ( box, index ) => {
 		const label = sanitizeDisplayText( box?.Label );
 		const key = sanitizeDisplayText( box?.Key );
-		const title = label || key || `Box Type ${ index + 1 }`;
+		const title =
+			label ||
+			key ||
+			sprintf(
+				/* translators: %d: position of the box type in the file. */
+				__( 'Box Type %d', 'gll-info' ),
+				index + 1
+			);
 		const weight = formatWeight( box?.Weight );
 		const vertical = formatAngle( box?.VerticalOpeningAngle );
 		const horizontal = formatAngle( box?.HorizontalOpeningAngle );
@@ -450,11 +537,30 @@ function buildBoxTypeEntries(
 		pushLine(
 			details,
 			joinParts( [
-				key && `Key: ${ key }`,
-				weight !== NONE && `Weight: ${ weight }`,
-				vertical !== NONE && `Vertical Opening Angle: ${ vertical }`,
+				key &&
+					sprintf(
+						/* translators: %s: record key from the GLL file. */
+						__( 'Key: %s', 'gll-info' ),
+						key
+					),
+				weight !== NONE &&
+					sprintf(
+						/* translators: %s: formatted mass, including its unit. */
+						__( 'Weight: %s', 'gll-info' ),
+						weight
+					),
+				vertical !== NONE &&
+					sprintf(
+						/* translators: %s: formatted angle, including its unit. */
+						__( 'Vertical Opening Angle: %s', 'gll-info' ),
+						vertical
+					),
 				horizontal !== NONE &&
-					`Horizontal Opening Angle: ${ horizontal }`,
+					sprintf(
+						/* translators: %s: formatted angle, including its unit. */
+						__( 'Horizontal Opening Angle: %s', 'gll-info' ),
+						horizontal
+					),
 			] )
 		);
 
@@ -472,7 +578,12 @@ function buildBoxTypeEntries(
 				);
 
 				if ( placementLabel && definition ) {
-					return `${ placementLabel } (${ definition })`;
+					return sprintf(
+						/* translators: 1: source placement label, 2: key of the source definition it references. */
+						_x( '%1$s (%2$s)', 'source placement', 'gll-info' ),
+						placementLabel,
+						definition
+					);
 				}
 
 				return placementLabel || definition;
@@ -482,9 +593,18 @@ function buildBoxTypeEntries(
 		pushLine(
 			details,
 			joinParts( [
-				sources.length > 0 && `Sources: ${ sources.join( ', ' ) }`,
+				sources.length > 0 &&
+					sprintf(
+						/* translators: %s: comma-separated list of acoustic source names. */
+						__( 'Sources: %s', 'gll-info' ),
+						sources.join( ', ' )
+					),
 				placements.length > 0 &&
-					`Source Placements: ${ placements.join( ', ' ) }`,
+					sprintf(
+						/* translators: %s: comma-separated list of source placements. */
+						__( 'Source Placements: %s', 'gll-info' ),
+						placements.join( ', ' )
+					),
 			] )
 		);
 
@@ -498,7 +618,7 @@ function buildBoxTypeEntries(
 		return {
 			id: entryId( 'box-types', key, label, index ),
 			title,
-			subtitle: key && key !== title ? `Key: ${ key }` : undefined,
+			subtitle: keySubtitle( key, title ),
 			details,
 		};
 	} );
@@ -522,7 +642,14 @@ function buildFrameEntries(
 	return frames.map( ( frame, index ) => {
 		const label = sanitizeDisplayText( frame?.Label );
 		const key = sanitizeDisplayText( frame?.Key );
-		const title = label || key || `Frame ${ index + 1 }`;
+		const title =
+			label ||
+			key ||
+			sprintf(
+				/* translators: %d: position of the frame in the file. */
+				__( 'Frame %d', 'gll-info' ),
+				index + 1
+			);
 		const weight = formatWeight( frame?.Weight );
 
 		const details: string[] = [];
@@ -530,8 +657,18 @@ function buildFrameEntries(
 		pushLine(
 			details,
 			joinParts( [
-				key && `Key: ${ key }`,
-				weight !== NONE && `Weight: ${ weight }`,
+				key &&
+					sprintf(
+						/* translators: %s: record key from the GLL file. */
+						__( 'Key: %s', 'gll-info' ),
+						key
+					),
+				weight !== NONE &&
+					sprintf(
+						/* translators: %s: formatted mass, including its unit. */
+						__( 'Weight: %s', 'gll-info' ),
+						weight
+					),
 			] )
 		);
 
@@ -552,7 +689,12 @@ function buildFrameEntries(
 					const vector = formatPoint( pin?.Vector );
 
 					if ( pinLabel && vector !== NONE ) {
-						return `${ pinLabel } (${ vector })`;
+						return sprintf(
+							/* translators: 1: pin point label, 2: coordinate triple. */
+							_x( '%1$s (%2$s)', 'pin point', 'gll-info' ),
+							pinLabel,
+							vector
+						);
 					}
 
 					return pinLabel || ( vector !== NONE ? vector : '' );
@@ -560,15 +702,25 @@ function buildFrameEntries(
 				.filter( Boolean );
 
 			if ( pins.length > 0 ) {
-				details.push( `Pin Points: ${ pins.join( ', ' ) }` );
+				details.push(
+					sprintf(
+						/* translators: %s: comma-separated list of rigging pin points. */
+						__( 'Pin Points: %s', 'gll-info' ),
+						pins.join( ', ' )
+					)
+				);
 			}
 		}
 
 		return {
 			id: entryId( 'frames', key, label, index ),
 			title,
-			subtitle: key && key !== title ? `Key: ${ key }` : undefined,
-			badges: [ frame?.IsFlown ? 'Flown' : 'Ground-stacked' ],
+			subtitle: keySubtitle( key, title ),
+			badges: [
+				frame?.IsFlown
+					? __( 'Flown', 'gll-info' )
+					: __( 'Ground-stacked', 'gll-info' ),
+			],
 			details,
 		};
 	} );
@@ -597,12 +749,33 @@ function describeBaseFilter( filter: any ): string {
 
 		parts.push(
 			shape,
-			Number.isFinite( iir.Order ) && `Order: ${ iir.Order }`,
-			frequency !== NONE && `Freq: ${ frequency }`,
+			Number.isFinite( iir.Order ) &&
+				sprintf(
+					/* translators: %s: IIR filter order. */
+					__( 'Order: %s', 'gll-info' ),
+					iir.Order
+				),
+			frequency !== NONE &&
+				sprintf(
+					/* translators: %s: formatted critical frequency, including its unit. */
+					__( 'Freq: %s', 'gll-info' ),
+					frequency
+				),
 			// Q only means something for a Sallen-Key section; the field is
 			// populated but ignored for the other shapes.
-			iir.FilterShape === 3 && quality !== NONE && `Q: ${ quality }`,
-			alignment && `Align: ${ alignment }`
+			iir.FilterShape === 3 &&
+				quality !== NONE &&
+				sprintf(
+					/* translators: %s: filter quality factor. */
+					__( 'Q: %s', 'gll-info' ),
+					quality
+				),
+			alignment &&
+				sprintf(
+					/* translators: %s: crossover alignment name. */
+					__( 'Align: %s', 'gll-info' ),
+					alignment
+				)
 		);
 	}
 
@@ -611,12 +784,23 @@ function describeBaseFilter( filter: any ): string {
 		const sampleRate = formatSampleRate( fir.SampleRate );
 
 		parts.push(
-			fir.IsTimeResponse ? 'Time Domain' : 'Freq Domain',
-			Boolean( fir.IsComplex ) && 'Complex',
-			sampleRate !== NONE && `SR: ${ sampleRate }`,
+			fir.IsTimeResponse
+				? __( 'Time Domain', 'gll-info' )
+				: __( 'Freq Domain', 'gll-info' ),
+			Boolean( fir.IsComplex ) && __( 'Complex', 'gll-info' ),
+			sampleRate !== NONE &&
+				sprintf(
+					/* translators: %s: formatted sample rate, including its unit. */
+					__( 'SR: %s', 'gll-info' ),
+					sampleRate
+				),
 			Number.isFinite( fir.CoefficientCount ) &&
 				fir.CoefficientCount > 0 &&
-				`${ fir.CoefficientCount } coefficients`
+				sprintf(
+					/* translators: %d: number of FIR filter coefficients. */
+					__( '%d coefficients', 'gll-info' ),
+					fir.CoefficientCount
+				)
 		);
 	}
 
@@ -626,10 +810,23 @@ function describeBaseFilter( filter: any ): string {
 
 		parts.push(
 			Number.isFinite( spectrum.NumberOfBands ) &&
-				`${ spectrum.NumberOfBands } bands`,
+				sprintf(
+					/* translators: %s: number of spectrum bands. */
+					__( '%s bands', 'gll-info' ),
+					spectrum.NumberOfBands
+				),
 			Number.isFinite( spectrum.BandsPerOctave ) &&
-				`${ spectrum.BandsPerOctave }/oct`,
-			delay !== NONE && `Delay: ${ delay }`
+				sprintf(
+					/* translators: %s: number of bands per octave. */
+					__( '%s/oct', 'gll-info' ),
+					spectrum.BandsPerOctave
+				),
+			delay !== NONE &&
+				sprintf(
+					/* translators: %s: formatted delay, including its unit. */
+					__( 'Delay: %s', 'gll-info' ),
+					delay
+				)
 		);
 	}
 
@@ -652,13 +849,20 @@ function buildFilterEntries(
 	return ( group?.Filters || [] ).map( ( definition: any, index: number ) => {
 		const label = sanitizeDisplayText( definition?.Label );
 		const key = sanitizeDisplayText( definition?.Key );
-		const title = label || key || `Filter ${ index + 1 }`;
+		const title =
+			label ||
+			key ||
+			sprintf(
+				/* translators: %d: position of the filter in its group. */
+				__( 'Filter %d', 'gll-info' ),
+				index + 1
+			);
 		const bank = definition?.Bank;
 
 		const badges = [
-			bank?.Bypass && 'Bypassed',
-			bank?.InvertPolarity && 'Inverted',
-			bank?.MuteInput && 'Muted',
+			bank?.Bypass && __( 'Bypassed', 'gll-info' ),
+			bank?.InvertPolarity && __( 'Inverted', 'gll-info' ),
+			bank?.MuteInput && __( 'Muted', 'gll-info' ),
 		].filter( Boolean ) as string[];
 
 		const details: string[] = [];
@@ -668,8 +872,18 @@ function buildFilterEntries(
 		pushLine(
 			details,
 			joinParts( [
-				gain !== NONE && `Gain: ${ gain }`,
-				delay !== NONE && `Delay: ${ delay }`,
+				gain !== NONE &&
+					sprintf(
+						/* translators: %s: formatted gain, including its unit. */
+						__( 'Gain: %s', 'gll-info' ),
+						gain
+					),
+				delay !== NONE &&
+					sprintf(
+						/* translators: %s: formatted delay, including its unit. */
+						__( 'Delay: %s', 'gll-info' ),
+						delay
+					),
 			] )
 		);
 
@@ -682,7 +896,7 @@ function buildFilterEntries(
 		return {
 			id: entryId( scope, key, label, index ),
 			title,
-			subtitle: key && key !== title ? `Key: ${ key }` : undefined,
+			subtitle: keySubtitle( key, title ),
 			badges,
 			details,
 		};
@@ -703,16 +917,31 @@ function buildFilterGroupEntries(
 	return groups.map( ( group, index ) => {
 		const label = sanitizeDisplayText( group?.Label );
 		const key = sanitizeDisplayText( group?.Key );
-		const title = label || key || `Filter Group ${ index + 1 }`;
+		const title =
+			label ||
+			key ||
+			sprintf(
+				/* translators: %d: position of the filter group in the file. */
+				__( 'Filter Group %d', 'gll-info' ),
+				index + 1
+			);
 		const id = entryId( 'filter-groups', key, label, index );
 		const children = buildFilterEntries( group, id, showDetails );
 
 		return {
 			id,
 			title,
-			subtitle: key && key !== title ? `Key: ${ key }` : undefined,
-			badges: group?.IsOverridable ? [ 'Overridable' ] : [],
-			details: [ `${ children.length } filters` ],
+			subtitle: keySubtitle( key, title ),
+			badges: group?.IsOverridable
+				? [ __( 'Overridable', 'gll-info' ) ]
+				: [],
+			details: [
+				sprintf(
+					/* translators: %d: number of filters in the group. */
+					__( '%d filters', 'gll-info' ),
+					children.length
+				),
+			],
 			children,
 		};
 	} );
@@ -727,7 +956,12 @@ function buildFilterGroupEntries(
 function buildLimitEntries( limits: any[] ): ConfigEntry[] {
 	return limits.map( ( limit, index ) => {
 		const title =
-			sanitizeDisplayText( limit?.TypeLabel ) || `Limit ${ index + 1 }`;
+			sanitizeDisplayText( limit?.TypeLabel ) ||
+			sprintf(
+				/* translators: %d: position of the rigging limit in the file. */
+				__( 'Limit %d', 'gll-info' ),
+				index + 1
+			);
 		const value = formatLimitValue( limit?.Type, limit?.Value );
 		const boxType = sanitizeDisplayText( limit?.BoxType );
 		const frame = sanitizeDisplayText( limit?.Frame );
@@ -737,9 +971,24 @@ function buildLimitEntries( limits: any[] ): ConfigEntry[] {
 		pushLine(
 			details,
 			joinParts( [
-				value !== NONE && `Value: ${ value }`,
-				boxType && `Box: ${ boxType }`,
-				frame && `Frame: ${ frame }`,
+				value !== NONE &&
+					sprintf(
+						/* translators: %s: formatted limit value, including its unit. */
+						__( 'Value: %s', 'gll-info' ),
+						value
+					),
+				boxType &&
+					sprintf(
+						/* translators: %s: key of the box type the limit applies to. */
+						__( 'Box: %s', 'gll-info' ),
+						boxType
+					),
+				frame &&
+					sprintf(
+						/* translators: %s: key of the frame the limit applies to. */
+						__( 'Frame: %s', 'gll-info' ),
+						frame
+					),
 			] )
 		);
 
@@ -761,7 +1010,11 @@ function buildWarningEntries( warnings: any[] ): ConfigEntry[] {
 	return warnings.map( ( warning, index ) => {
 		const title =
 			sanitizeDisplayText( warning?.TypeLabel ) ||
-			`Warning ${ index + 1 }`;
+			sprintf(
+				/* translators: %d: position of the rigging warning in the file. */
+				__( 'Warning %d', 'gll-info' ),
+				index + 1
+			);
 		const text = sanitizeDisplayText( warning?.Text );
 		const value = formatWarningValue( warning?.Type, warning?.Value );
 
@@ -772,7 +1025,13 @@ function buildWarningEntries( warnings: any[] ): ConfigEntry[] {
 		// A warning that fires at zero is not a threshold anyone set, and the
 		// corpus leaves the field at zero whenever the warning is text-only.
 		if ( value !== NONE && toFinite( warning?.Value ) !== 0 ) {
-			details.push( `Value: ${ value }` );
+			details.push(
+				sprintf(
+					/* translators: %s: formatted warning threshold, including its unit. */
+					__( 'Value: %s', 'gll-info' ),
+					value
+				)
+			);
 		}
 
 		return {
@@ -858,7 +1117,7 @@ export function collectConfig(
 		sections.push(
 			toSection(
 				'box-types',
-				'Box Types',
+				__( 'Box Types', 'gll-info' ),
 				buildBoxTypeEntries(
 					toArray( database.BoxTypes ),
 					geometries,
@@ -872,7 +1131,7 @@ export function collectConfig(
 		sections.push(
 			toSection(
 				'frames',
-				'Frames',
+				__( 'Frames', 'gll-info' ),
 				buildFrameEntries(
 					toArray( database.Frames ),
 					geometries,
@@ -887,7 +1146,7 @@ export function collectConfig(
 		sections.push(
 			toSection(
 				'filter-groups',
-				'Filter Groups',
+				__( 'Filter Groups', 'gll-info' ),
 				buildFilterGroupEntries(
 					toArray( database.FilterGroups ),
 					showFilterDetails
@@ -900,7 +1159,7 @@ export function collectConfig(
 		sections.push(
 			toSection(
 				'limits',
-				'Limits',
+				__( 'Limits', 'gll-info' ),
 				buildLimitEntries( toArray( database.Limits ) )
 			)
 		);
@@ -910,7 +1169,7 @@ export function collectConfig(
 		sections.push(
 			toSection(
 				'warnings',
-				'Warnings',
+				__( 'Warnings', 'gll-info' ),
 				buildWarningEntries( toArray( database.Warnings ) )
 			)
 		);
