@@ -1,0 +1,301 @@
+/**
+ * Configuration Block - Frontend Styles
+ *
+ * Styles for the rendered block on the frontend.
+ *
+ * The card frame (background, border, radius, padding, shadow) comes from
+ * `.gll-block` in the shared token layer, so the `transparent` and `plain`
+ * appearance variants can strip it. Everything here paints through tokens.
+ *
+ * The sections are native `<details>` elements: collapsing is the browser's
+ * job, keyboard and find-in-page work for free, and view.ts only has to
+ * remember the state. The native marker is hidden and replaced with our own
+ * rotating glyph so it looks the same across engines.
+ *
+ * @package GllInfo
+ */
+
+@use "../shared/tokens";
+
+.gll-config-block {
+	margin: 20px 0;
+
+	.gll-config-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 1px solid var(--gll-border);
+
+		svg {
+			width: 32px;
+			height: 32px;
+			color: var(--gll-accent);
+			flex-shrink: 0;
+		}
+
+		.gll-config-header-text {
+			flex: 1;
+
+			h3 {
+				margin: 0 0 4px;
+				font-size: 20px;
+				font-weight: 600;
+				color: var(--gll-heading);
+			}
+
+			.gll-loading-text {
+				margin: 0;
+				font-size: 14px;
+				color: var(--gll-text-muted);
+			}
+		}
+	}
+
+	.gll-config-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		padding: 40px;
+		background: var(--gll-surface-muted);
+		border-radius: 4px;
+
+		.gll-spinner {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			border: 3px solid var(--gll-border);
+			border-top-color: var(--gll-accent);
+			border-radius: 50%;
+			animation: gll-spin 0.8s linear infinite;
+		}
+
+		span:not(.gll-spinner) {
+			color: var(--gll-text-muted);
+			font-size: 14px;
+		}
+	}
+
+	.gll-config-card {
+		margin-bottom: 12px;
+		background: var(--gll-surface-muted);
+		border: 1px solid var(--gll-border);
+		border-radius: 6px;
+		overflow: hidden;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		> summary {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 12px 14px;
+			cursor: pointer;
+			font-size: 15px;
+			font-weight: 600;
+			color: var(--gll-heading);
+			user-select: none;
+
+			// Hidden in favour of the rotating glyph below, so every engine
+			// draws the same disclosure affordance.
+			list-style: none;
+
+			&::-webkit-details-marker {
+				display: none;
+			}
+
+			&::marker {
+				content: "";
+			}
+
+			// The glyph itself. `inline-block` so the rotation applies.
+			&::before {
+				content: "\25b6";
+				display: inline-block;
+				flex-shrink: 0;
+				font-size: 11px;
+				line-height: 1;
+				color: var(--gll-text-muted);
+				transition: transform 0.15s ease;
+			}
+
+			&:hover {
+				color: var(--gll-accent);
+			}
+
+			&:focus-visible {
+				outline: 2px solid var(--gll-accent);
+				outline-offset: -2px;
+			}
+		}
+
+		&[open] > summary::before {
+			transform: rotate(90deg);
+		}
+
+		> summary + * {
+			padding: 0 14px 14px;
+		}
+	}
+
+	.gll-config-count {
+		margin-left: auto;
+		flex-shrink: 0;
+		padding: 2px 9px;
+		background: var(--gll-surface);
+		border: 1px solid var(--gll-border);
+		border-radius: 999px;
+		font-size: 12px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		color: var(--gll-text-muted);
+
+		// A card whose renderer had no count to show must not leave an empty
+		// pill floating at the end of the summary.
+		&:empty {
+			display: none;
+		}
+	}
+
+	.gll-config-entry {
+		padding: 10px 12px;
+		margin-bottom: 8px;
+		background: var(--gll-surface);
+		border: 1px solid var(--gll-border);
+		border-radius: 4px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.gll-config-entry-title {
+		font-weight: 600;
+		color: var(--gll-heading);
+		overflow-wrap: anywhere;
+	}
+
+	.gll-config-entry-subtitle {
+		margin-top: 2px;
+		font-size: 13px;
+		color: var(--gll-text-muted);
+		overflow-wrap: anywhere;
+	}
+
+	.gll-config-entry-detail {
+		margin-top: 4px;
+		font-size: 13px;
+		color: var(--gll-text);
+		font-variant-numeric: tabular-nums;
+		overflow-wrap: anywhere;
+	}
+
+	.gll-config-entry-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-top: 8px;
+	}
+
+	.gll-config-entry-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 3px 8px;
+		background: var(--gll-surface-muted);
+		border: 1px solid var(--gll-border);
+		border-radius: 4px;
+		font-size: 12px;
+		line-height: 1.4;
+		color: var(--gll-text-muted);
+
+		strong {
+			margin-right: 4px;
+			font-weight: 600;
+			color: var(--gll-heading);
+		}
+	}
+
+	// Filter definitions nested inside their group. Indented with a rule so the
+	// hierarchy survives without a second card frame.
+	.gll-config-children {
+		margin-top: 8px;
+		padding-left: 12px;
+		border-left: 2px solid var(--gll-border);
+
+		.gll-config-entry {
+			background: var(--gll-surface-muted);
+		}
+	}
+
+	.gll-config-empty {
+		padding: 12px;
+		background: var(--gll-surface);
+		border-radius: 4px;
+		color: var(--gll-text-muted);
+		font-size: 14px;
+		text-align: center;
+	}
+
+	// Error colors stay hardcoded: they must remain legible even when the
+	// theming itself is what went wrong.
+	.gll-error {
+		padding: 20px;
+		background: #fff8f8;
+		border: 1px solid #d63638;
+		border-radius: 4px;
+		color: #d63638;
+
+		strong {
+			display: block;
+			margin-bottom: 8px;
+		}
+	}
+}
+
+// Spinner animation
+@keyframes gll-spin {
+
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+
+	.gll-config-block {
+
+		// Tighten the card frame rather than re-declaring `padding`, so the
+		// `plain` / `transparent` variants still win.
+		--gll-padding: 15px;
+
+		.gll-config-header {
+
+			h3 {
+				font-size: 18px;
+			}
+		}
+
+		.gll-config-card > summary {
+			padding: 10px 12px;
+			font-size: 14px;
+		}
+
+		.gll-config-count {
+			// The count would otherwise force the summary text to wrap awkwardly.
+			padding: 2px 7px;
+		}
+
+		.gll-config-children {
+			padding-left: 8px;
+		}
+	}
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "gll-info/config",
+  "version": "0.1.0",
+  "title": "GLL Configuration",
+  "category": "media",
+  "icon": "admin-settings",
+  "description": "Show the configuration of a GLL file: box types, frames, filter groups, limits and warnings.",
+  "keywords": [
+    "gll",
+    "config",
+    "box types",
+    "frames",
+    "filters",
+    "limits"
+  ],
+  "attributes": {
+    "fileId": {
+      "type": "number",
+      "default": 0
+    },
+    "fileUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "fileName": {
+      "type": "string",
+      "default": ""
+    },
+    "showBoxTypes": {
+      "type": "boolean",
+      "default": true
+    },
+    "showFrames": {
+      "type": "boolean",
+      "default": true
+    },
+    "showFilterGroups": {
+      "type": "boolean",
+      "default": true
+    },
+    "showLimits": {
+      "type": "boolean",
+      "default": true
+    },
+    "showWarnings": {
+      "type": "boolean",
+      "default": true
+    },
+    "showGeometrySummary": {
+      "type": "boolean",
+      "default": true
+    },
+    "showFilterDetails": {
+      "type": "boolean",
+      "default": true
+    },
+    "showPinPoints": {
+      "type": "boolean",
+      "default": false
+    },
+    "initiallyCollapsed": {
+      "type": "boolean",
+      "default": false
+    },
+    "rememberCollapsed": {
+      "type": "boolean",
+      "default": true
+    },
+    "hideWhenEmpty": {
+      "type": "boolean",
+      "default": false
+    },
+    "appearance": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "plain",
+        "transparent"
+      ],
+      "default": "auto"
+    }
+  },
+  "example": {
+    "attributes": {
+      "fileName": "example-speaker.gll"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  },
+  "textdomain": "gll-info",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

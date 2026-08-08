@@ -104,6 +104,108 @@ return array(
 		'style' => 'file:./style-index.css',
 		'viewScript' => 'file:./view.js'
 	),
+	'config' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/config',
+		'version' => '0.1.0',
+		'title' => 'GLL Configuration',
+		'category' => 'media',
+		'icon' => 'admin-settings',
+		'description' => 'Show the configuration of a GLL file: box types, frames, filter groups, limits and warnings.',
+		'keywords' => array(
+			'gll',
+			'config',
+			'box types',
+			'frames',
+			'filters',
+			'limits'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'showBoxTypes' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showFrames' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showFilterGroups' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showLimits' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showWarnings' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showGeometrySummary' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showFilterDetails' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showPinPoints' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'initiallyCollapsed' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'rememberCollapsed' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'hideWhenEmpty' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
+	),
 	'frequency-response' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
 		'apiVersion' => 3,
