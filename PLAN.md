@@ -725,22 +725,102 @@ third-party manufacturer GLLs and were not vendored.
 ## Phase 10: Configuration Block
 
 ### Task 10.1: Config Block Structure
-- [ ] Create block registration (`gll-info/config`)
-- [ ] Define attributes (sections to show, collapsed state)
+- [x] Create block registration (`gll-info/config`)
+- [x] Define attributes (sections to show, collapsed state)
 
 ### Task 10.2: Collapsible Cards Component
-- [ ] Port collapsible card UI from web demo
-- [ ] Persist collapsed state
+- [x] Port collapsible card UI from web demo
+- [x] Persist collapsed state
 
 ### Task 10.3: Box Types Display
-- [ ] List box types with specifications
-- [ ] Show geometry if available
+- [x] List box types with specifications
+- [x] Show geometry if available
 
 ### Task 10.4: Other Config Sections
-- [ ] Frames display
-- [ ] Filter groups display
-- [ ] Limits display
-- [ ] Warnings display
+- [x] Frames display
+- [x] Filter groups display
+- [x] Limits display
+- [x] Warnings display
+
+Most of the work was again in the normalizer, as in Phase 9. It carried box
+types and case geometries but dropped `database.frames`, `database.limits`,
+`database.warnings` and `database.filter_groups` outright, even though all four
+already reach the browser from WASM. Nothing consumed them, so nothing had
+noticed. The opening angles were reachable only off `CaseGeometries`, never off
+the box type that owns them.
+
+Frame geometry drove the one real design decision. Frame meshes are appended to
+the flat `Database.CaseGeometries` list after the box meshes, and each frame
+keeps a `CaseGeometryIndex` back-pointer, rather than nesting a copy. Appending
+is what makes it safe: `geometry/view.ts` and `geometry/edit.tsx` index that list
+positionally against a saved `geometryIndex` attribute, so box meshes holding
+their positions is the difference between a no-op and every existing post
+silently switching geometry. A corpus test pins that invariant. The payoff is
+that the 3D geometry block can now show a frame at all, which it never could,
+for the price of one label fallback — 5 of the 29 corpus files carry frames and
+every one of those frames has geometry.
+
+**Task 10.3's "show geometry if available" is a summary line, not a viewer.**
+The demo embeds an inline WebGL canvas per box. A box list reaches 26 entries
+and browsers cap live WebGL contexts near 8–16, so the demo's model only works
+because it opens one viewer at a time behind a button. `src/geometry/` is
+already the dedicated 3D block and now reaches frames too, so this block renders
+`600 vertices • 300 edges • 0 faces • Symmetric @ X=0.000` and stops. Its
+frontend bundle is 18 KB; the geometry block's is 538 KB.
+
+Collapse state has two legitimate owners and got both. The author picks which
+cards start open, as a block attribute in post content; a visitor's own toggling
+overrides it from `localStorage`, keyed by card name alone, so "I never care
+about filter groups" follows the reader rather than the file. Native `<details>`
+carries it instead of the demo's `div` with an `onclick` and a `▶` glyph:
+`<summary>` is focusable, takes Enter *and* Space, exposes its state to
+assistive tech and lets in-page find expand it. It also fails safe — if the view
+script dies after render the cards still open, whereas a class toggle would
+leave the content permanently unreachable.
+
+Two format concerns that the demo gets wrong were fixed rather than ported.
+Limit and warning values are printed there with no unit even though the type
+enum implies one; they now carry kg for weight and degrees for tilt. And the
+limit and warning type enums *number differently* — type 1 is Max Count Type for
+a limit but Min Count for a warning — so they need two separate label tables.
+Go's `String()` never crosses the JSON boundary, so only the bare integer
+arrives. A test named after the divergence guards against a future reader
+merging them.
+
+FIR coefficients are reduced to a count in the normalizer. `data_irm` and
+`data_dip` are 8193 float64 each per filter and the only thing any UI shows is
+their length; carrying them would put ~131 KB per filter into a structure that
+lives as long as the page. Log spectrum level and phase go the same way. This is
+the Phase 9 `raw.resources` reasoning, and like it, it is enforced by a test
+rather than a comment. Box `input_config` stays dropped: it is populated in none
+of the 29 corpus files, so normalizing it would ship translation code no sample
+exercises.
+
+Corpus coverage drove the UX exactly as in Phase 9. Box types appear in 26 of 29
+files, filter groups in 10, frames in 5, limits in 5, warnings in 2. Because
+empty is the normal case, the front end drops an empty section outright while
+the editor keeps it and says why, so an author flipping a toggle can tell "off"
+from "absent".
+
+Worth recording: the corpus figures above were first estimated at 8 files with
+filter groups. The end-to-end test measured 10. The `gllinfo` CLI agrees with
+neither — it reports 9, missing `N-APS v1_0.gll`, which the WASM build parses as
+having 2 groups. The plugin uses the WASM parser, so 10 is the number that
+matters here, but the two parsers in `gll-tools` genuinely disagree about that
+file and that is worth chasing there.
+
+Out of scope deliberately: cluster setups, connectors and transformers (the
+demo renders them from a different function into a different tab, and Phase 10's
+tasks do not list them — they remain available in the raw data), and the
+per-filter-group frequency response chart, which would need the FIR/IIR response
+computation ported and would force the huge coefficient arrays back into the
+browser. That belongs in its own phase.
+
+Not done: browser verification, for the same reason as Phases 8 and 9 — there is
+no local WordPress environment and staging is outward-facing. The committed
+fixture `sample.gll` carries no frames, limits, warnings or filter groups, so
+every real assertion is corpus-gated and skips wherever the external corpus is
+absent, CI included.
 
 ---
 
@@ -837,7 +917,7 @@ gll-info/
 │   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.4 done)
 │   ├── geometry/               # [DONE]
 │   ├── resources/              # [DONE]
-│   └── config/                 # TODO Phase 10
+│   └── config/                 # [DONE]
 ├── assets/
 │   ├── wasm/
 │   │   ├── gll.wasm            # [DONE]
@@ -891,15 +971,15 @@ gll-info/
 | 6. 3D Balloon | 9 | Very High | TODO |
 | 7. Sources List | 9 | Medium-High | PARTIAL (5/9 tasks complete, 1 partial) |
 | 8. Geometry Viewer | 11 | Very High | DONE |
-| 9. Resources | 4 | Medium | TODO |
-| 10. Configuration | 4 | Medium | TODO |
+| 9. Resources | 4 | Medium | DONE |
+| 10. Configuration | 4 | Medium | DONE |
 | 11. Integration | 5 | Medium | TODO |
 | 12. Testing | 5 | Medium | TODO |
 
 **Total: 70 tasks across 12 phases**
-**Completed: ~35 tasks (Phases 1-5, Phase 7: Tasks 7.1, 7.2, 7.7)**
+**Completed: ~54 tasks (Phases 1-5, 8-10, Phase 7: Tasks 7.1, 7.2, 7.4, 7.5, 7.7, 7.9)**
 **Partially Completed: ~2 tasks (Phase 7: Tasks 7.6, 7.8)**
-**Remaining: ~33 tasks (Phase 6, 8-12, Phase 7: Tasks 7.3-7.5, 7.9)**
+**Remaining: ~14 tasks (Phase 6, 11-12, Phase 7: Task 7.3)**
 
 ---
 

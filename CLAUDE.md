@@ -136,11 +136,21 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
 - ✅ Phase 1: Foundation (WASM loader, React context, media library)
 - ✅ Phase 2: Core file block (file selector with MediaUpload)
 - ✅ Phase 3: Overview block (integrated into main block)
-- ✅ Phase 7: Sources list (integrated into main block)
-- ⏳ Phase 4: Frequency response block (Chart.js dependency added)
-- ⏳ Phases 5-6, 8-11: Remaining visualization blocks
+- ✅ Phase 4: Frequency response block (Chart.js)
+- ✅ Phase 5: Polar plot block
+- ✅ Phase 8: Geometry viewer block (Three.js, OrbitControls)
+- ✅ Phase 9: Resources block (embedded documentation and data files)
+- ✅ Phase 10: Configuration block (box types, frames, filters, limits, warnings)
+- 🔶 Phase 7: Sources list (integrated into main block; Task 7.3 outstanding)
+- ⏳ Phase 6: 3D balloon block
+- ⏳ Phases 11-12: Integration, polish, testing and release
 
 The main block (`gll-info/gll-info`) currently integrates overview and sources display with toggle controls in the InspectorControls panel.
+
+`src/shared/gll-normalize.ts` is the single translation point between the raw
+parser output (snake_case) and everything downstream (PascalCase). A block that
+cannot find its data almost always needs a normalizer change first — that has
+been the shape of Phases 9 and 10 both.
 
 ## Key Technical Notes
 
