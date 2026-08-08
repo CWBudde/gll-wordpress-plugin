@@ -6,7 +6,7 @@
  *   - integration: real WASM under node (tests/**\/*.integration.test.ts)
  *
  * Both extend @wordpress/jest-preset-default which is bundled with
- * @wordpress/scripts and handles babel transform for TS/TSX plus CSS module
+ * `@wordpress/scripts` and handles babel transform for TS/TSX plus CSS module
  * mapping. The preset also adds @wordpress/jest-console which fails tests on
  * unhandled console.error / console.warn.
  */

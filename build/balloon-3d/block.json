@@ -15,9 +15,6 @@
     "three",
     "visualization"
   ],
-  "parent": [
-    "gll-info/gll-info"
-  ],
   "attributes": {
     "fileId": {
       "type": "number",

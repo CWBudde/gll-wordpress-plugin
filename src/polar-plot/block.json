@@ -8,7 +8,6 @@
 	"icon": "chart-pie",
 	"description": "Display polar directivity plot from GLL file acoustic data with horizontal and vertical slices.",
 	"keywords": [ "gll", "polar", "directivity", "plot", "acoustic" ],
-	"parent": [ "gll-info/gll-info" ],
 	"attributes": {
 		"fileId": {
 			"type": "number",

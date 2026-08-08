@@ -1,0 +1,10 @@
+# Defining this file replaces the defaults bundled with @wordpress/scripts,
+# so their entries are repeated here.
+build
+node_modules
+vendor
+
+# Vendored Go WebAssembly runtime, shipped verbatim from the Go toolchain via
+# gll-tools. It is not ours to lint, and it alone accounts for the large
+# majority of the repository's lint errors.
+assets/wasm/wasm_exec.js

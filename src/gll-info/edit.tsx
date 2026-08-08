@@ -590,8 +590,9 @@ function SourceResponseControls( { source, index } ) {
 					</div>
 					<div className="gll-source-response-meta">
 						<span className="gll-meta-badge">
-							{ __( 'Response', 'gll-info' ) } { responseIndex + 1 }{ ' ' }
-							{ __( 'of', 'gll-info' ) } { responseCount }
+							{ __( 'Response', 'gll-info' ) }{ ' ' }
+							{ responseIndex + 1 } { __( 'of', 'gll-info' ) }{ ' ' }
+							{ responseCount }
 						</span>
 						{ currentAngle && (
 							<>
@@ -718,47 +719,49 @@ function SourceCard( {
 							{ __( 'No placements found', 'gll-info' ) }
 						</div>
 					) }
-					{ formattedPlacements.map( ( placement, placementIndex ) => (
-						<div
-							className="gll-source-placement"
-							key={ placementIndex }
-						>
-							<div className="gll-source-placement-detail">
-								<strong>
-									{ __( 'Box:', 'gll-info' ) }
-								</strong>
-								{ placement.boxLabel }{ ' ' }
-								{ placement.boxKey
-									? `(${ placement.boxKey })`
-									: '' }
+					{ formattedPlacements.map(
+						( placement, placementIndex ) => (
+							<div
+								className="gll-source-placement"
+								key={ placementIndex }
+							>
+								<div className="gll-source-placement-detail">
+									<strong>
+										{ __( 'Box:', 'gll-info' ) }
+									</strong>
+									{ placement.boxLabel }{ ' ' }
+									{ placement.boxKey
+										? `(${ placement.boxKey })`
+										: '' }
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>
+										{ __( 'Source:', 'gll-info' ) }
+									</strong>
+									{ placement.sourceLabel ||
+										placement.sourceKey }{ ' ' }
+									({ placement.sourceKey })
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>
+										{ __( 'Position:', 'gll-info' ) }
+									</strong>
+									{ placement.positionLabel }
+								</div>
+								<div className="gll-source-placement-detail">
+									<strong>
+										{ __( 'Rotation:', 'gll-info' ) }
+									</strong>
+									{ __( 'H', 'gll-info' ) }:{ ' ' }
+									{ placement.headingLabel },
+									{ __( 'V', 'gll-info' ) }:{ ' ' }
+									{ placement.verticalLabel },
+									{ __( 'R', 'gll-info' ) }:{ ' ' }
+									{ placement.rollLabel }
+								</div>
 							</div>
-							<div className="gll-source-placement-detail">
-								<strong>
-									{ __( 'Source:', 'gll-info' ) }
-								</strong>
-								{ placement.sourceLabel ||
-									placement.sourceKey }{ ' ' }
-								({ placement.sourceKey })
-							</div>
-							<div className="gll-source-placement-detail">
-								<strong>
-									{ __( 'Position:', 'gll-info' ) }
-								</strong>
-								{ placement.positionLabel }
-							</div>
-							<div className="gll-source-placement-detail">
-								<strong>
-									{ __( 'Rotation:', 'gll-info' ) }
-								</strong>
-								{ __( 'H', 'gll-info' ) }:{ ' ' }
-								{ placement.headingLabel },
-								{ __( 'V', 'gll-info' ) }:{ ' ' }
-								{ placement.verticalLabel },
-								{ __( 'R', 'gll-info' ) }:{ ' ' }
-								{ placement.rollLabel }
-							</div>
-						</div>
-					) ) }
+						)
+					) }
 				</div>
 			</details>
 		</div>
@@ -820,10 +823,7 @@ function SourceCard( {
 								{ resolutionLabel && (
 									<div className="gll-source-detail">
 										<strong>
-											{ __(
-												'Resolution:',
-												'gll-info'
-											) }
+											{ __( 'Resolution:', 'gll-info' ) }
 										</strong>{ ' ' }
 										{ resolutionLabel }
 									</div>
@@ -894,10 +894,7 @@ function SourceCard( {
 								{ resolutionLabel && (
 									<div className="gll-source-detail">
 										<strong>
-											{ __(
-												'Resolution:',
-												'gll-info'
-											) }
+											{ __( 'Resolution:', 'gll-info' ) }
 										</strong>{ ' ' }
 										{ resolutionLabel }
 									</div>
@@ -1041,10 +1038,7 @@ function GLLSources( {
 						className="gll-sources-sentinel"
 						role="status"
 					>
-						{ __(
-							'Loading more sources…',
-							'gll-info'
-						) }{ ' ' }
+						{ __( 'Loading more sources…', 'gll-info' ) }{ ' ' }
 						<span className="gll-sources-sentinel-progress">
 							({ visibleCount } / { totalSources })
 						</span>
@@ -1065,7 +1059,6 @@ function GLLSources( {
  */
 export default function Edit( { attributes, setAttributes } ) {
 	const {
-		fileId,
 		fileUrl,
 		fileName,
 		showOverview,

@@ -8,7 +8,9 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 import {
@@ -169,6 +171,12 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  */
 async function initializeBlock( block: HTMLElement ) {
 	const fileUrl = block.dataset.fileUrl;
+
+	if ( ! fileUrl ) {
+		showError( block, 'No file URL specified' );
+		return;
+	}
+
 	const fileName = block.dataset.fileName || 'GLL File';
 	const sourceIndex = parseInt( block.dataset.sourceIndex || '0', 10 );
 	const frequencyIndex = parseInt( block.dataset.frequencyIndex || '0', 10 );
@@ -183,11 +191,6 @@ async function initializeBlock( block: HTMLElement ) {
 	const qualityPreset: QualityPreset =
 		presetRaw === 'low' || presetRaw === 'high' ? presetRaw : 'medium';
 
-	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
-		return;
-	}
-
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
@@ -195,8 +198,8 @@ async function initializeBlock( block: HTMLElement ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const uint8Array = new Uint8Array( arrayBuffer );
-		const data = await parseGLLFile( uint8Array );
+		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		const loadingEl = block.querySelector( '.gll-balloon-3d-loading' );
 		if ( loadingEl ) {
@@ -292,7 +295,9 @@ function render3DBalloon(
 		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ options.qualityPreset }</span>`
+		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ escapeHtml(
+			options.qualityPreset
+		) }</span>`
 	);
 	if ( options.wireframe ) {
 		badges.push(
@@ -307,7 +312,9 @@ function render3DBalloon(
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
+				sourceLabel
+			) }</span>`
 		);
 	}
 
@@ -626,7 +633,7 @@ function showError( block: HTMLElement, message: string ) {
 	if ( canvasContainer ) {
 		canvasContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 		( canvasContainer as HTMLElement ).style.display = 'block';

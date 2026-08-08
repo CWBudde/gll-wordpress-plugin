@@ -56,6 +56,7 @@
 }
 
 @keyframes gll-three-spin {
+
 	to {
 		transform: rotate(360deg);
 	}
@@ -102,6 +103,7 @@
 // Theme support
 .is-dark-theme,
 [data-wp-dark-mode="true"] {
+
 	.gll-three-wrapper {
 		--gll-three-bg: #1e293b;
 		--gll-three-text: #f1f5f9;

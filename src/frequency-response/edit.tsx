@@ -17,12 +17,16 @@ import {
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useState, useMemo } from '@wordpress/element';
 
 /**
  * Internal dependencies
  */
-import { useGLLLoader, ChartWrapper } from '../shared';
+import {
+	useGLLLoader,
+	ChartWrapper,
+	buildSourceResponseChartConfig,
+} from '../shared';
 import './editor.scss';
 
 /**
@@ -42,8 +46,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		responseIndex,
 		phaseMode,
 		normalized,
-		azimuth,
-		elevation,
 		showPhase,
 		showMagnitude,
 		chartHeight,
@@ -99,81 +101,56 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Get current source data
 	const currentSource = data?.Database?.SourceDefinitions?.[ sourceIndex ];
 
-	// Build chart configuration (simplified for editor preview)
-	const chartConfig = data
-		? {
-				type: 'line' as const,
-				data: {
-					datasets: [
-						showMagnitude && {
-							label: __( 'Magnitude (dB)', 'gll-info' ),
-							data: [],
-							borderColor: 'rgb(75, 192, 192)',
-							backgroundColor: 'rgba(75, 192, 192, 0.2)',
-							yAxisID: 'y',
-						},
-						showPhase && {
-							label:
-								phaseMode === 'group-delay'
-									? __( 'Group Delay (ms)', 'gll-info' )
-									: __( 'Phase (rad)', 'gll-info' ),
-							data: [],
-							borderColor: 'rgb(255, 99, 132)',
-							backgroundColor: 'rgba(255, 99, 132, 0.2)',
-							yAxisID: 'y1',
-						},
-					].filter( Boolean ),
-				},
-				options: {
-					responsive: true,
-					plugins: {
-						title: {
-							display: true,
-							text:
-								fileName ||
-								__( 'Frequency Response', 'gll-info' ),
-						},
-						legend: {
-							display: true,
-						},
-					},
-					scales: {
-						x: {
-							type: 'logarithmic',
-							display: true,
-							title: {
-								display: true,
-								text: __( 'Frequency (Hz)', 'gll-info' ),
-							},
-						},
-						y: showMagnitude && {
-							type: 'linear',
-							display: true,
-							position: 'left',
-							title: {
-								display: true,
-								text: __( 'Magnitude (dB)', 'gll-info' ),
-							},
-						},
-						y1: showPhase && {
-							type: 'linear',
-							display: true,
-							position: 'right',
-							title: {
-								display: true,
-								text:
-									phaseMode === 'group-delay'
-										? __( 'Group Delay (ms)', 'gll-info' )
-										: __( 'Phase (rad)', 'gll-info' ),
-							},
-							grid: {
-								drawOnChartArea: false,
-							},
-						},
-					},
-				},
-		  }
-		: null;
+	// Build the chart from the shared series builder — the same code path the
+	// frontend view uses, so editor and published page agree.
+	const chartConfig = useMemo( () => {
+		if ( ! currentSource ) {
+			return null;
+		}
+
+		const config = buildSourceResponseChartConfig(
+			currentSource,
+			responseIndex,
+			phaseMode,
+			normalized
+		);
+
+		if ( ! config ) {
+			return null;
+		}
+
+		// The shared builder always emits both series; the saved block honours
+		// the visibility toggles, so the preview has to as well or the editor
+		// shows something the published page will not.
+		const datasets = config.data.datasets.filter( ( dataset ) =>
+			dataset.yAxisID === 'y1' ? showPhase : showMagnitude
+		);
+
+		if ( datasets.length === 0 ) {
+			return null;
+		}
+
+		const scales = { ...config.options.scales };
+		if ( ! showMagnitude ) {
+			delete scales.y;
+		}
+		if ( ! showPhase ) {
+			delete scales.y1;
+		}
+
+		return {
+			...config,
+			data: { ...config.data, datasets },
+			options: { ...config.options, scales },
+		};
+	}, [
+		currentSource,
+		responseIndex,
+		phaseMode,
+		normalized,
+		showMagnitude,
+		showPhase,
+	] );
 
 	// Render file selection placeholder if no file is selected
 	if ( ! fileUrl ) {
@@ -325,35 +302,6 @@ export default function Edit( { attributes, setAttributes } ) {
 								step={ 50 }
 							/>
 						</PanelBody>
-
-						<PanelBody
-							title={ __( 'Angular Position', 'gll-info' ) }
-							initialOpen={ false }
-						>
-							<RangeControl
-								label={ __( 'Azimuth (degrees)', 'gll-info' ) }
-								value={ azimuth }
-								onChange={ ( value ) =>
-									setAttributes( { azimuth: value } )
-								}
-								min={ -180 }
-								max={ 180 }
-								step={ 5 }
-							/>
-							<RangeControl
-								label={ __(
-									'Elevation (degrees)',
-									'gll-info'
-								) }
-								value={ elevation }
-								onChange={ ( value ) =>
-									setAttributes( { elevation: value } )
-								}
-								min={ -90 }
-								max={ 90 }
-								step={ 5 }
-							/>
-						</PanelBody>
 					</>
 				) }
 			</InspectorControls>
@@ -395,21 +343,6 @@ export default function Edit( { attributes, setAttributes } ) {
 									</strong>{ ' ' }
 									20 Hz - 20 kHz
 								</span>
-								{ azimuth !== 0 || elevation !== 0 ? (
-									<span className="gll-meta-badge">
-										<strong>
-											{ __( 'Position:', 'gll-info' ) }
-										</strong>{ ' ' }
-										Az { azimuth }° / El { elevation }°
-									</span>
-								) : (
-									<span className="gll-meta-badge">
-										<strong>
-											{ __( 'Position:', 'gll-info' ) }
-										</strong>{ ' ' }
-										On-axis (0° / 0°)
-									</span>
-								) }
 								{ showPhase && (
 									<span className="gll-meta-badge">
 										<strong>

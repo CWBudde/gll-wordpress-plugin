@@ -53,10 +53,10 @@ export function buildLogFrequencies( definition, countOverride ) {
 	}
 	const bandsPerOctave = Number( definition.bands_per_octave );
 	const startFreq = Number( definition.start_freq );
-	const pointCount = Number( definition.point_count );
 	if ( ! bandsPerOctave || ! startFreq ) {
 		return null;
 	}
+	const pointCount = Number( definition.point_count );
 	const count =
 		Number.isFinite( countOverride ) && countOverride > 0
 			? countOverride
@@ -438,8 +438,7 @@ export function responseIndexToBalloonIndices( responseIndex, grid ) {
 
 	const meridianCount = grid.meridianCount;
 	const parallelCount = grid.parallelCount;
-	const responseCount =
-		grid.responseCount || meridianCount * parallelCount;
+	const responseCount = grid.responseCount || meridianCount * parallelCount;
 
 	if ( responseIndex >= responseCount ) {
 		return null;

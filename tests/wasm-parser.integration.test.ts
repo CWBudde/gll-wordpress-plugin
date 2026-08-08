@@ -67,13 +67,16 @@ describe( 'real WASM parser (integration)', () => {
 			);
 			const result = JSON.parse( resultJson );
 
+			// The parser emits snake_case mirroring the on-disk structure.
+			// normalizeGllData() is what turns this into the PascalCase shape
+			// the blocks read — see gll-normalize.integration.test.ts.
 			expect( result.success ).toBe( true );
 			expect( result.data ).toBeDefined();
-			expect( result.data.Header ).toBeDefined();
-			expect( result.data.GenSystem ).toBeDefined();
-			expect( result.data.Database ).toBeDefined();
+			expect( result.data.header ).toBeDefined();
+			expect( result.data.gen_system ).toBeDefined();
+			expect( result.data.database ).toBeDefined();
 			expect(
-				Array.isArray( result.data.Database.SourceDefinitions )
+				Array.isArray( result.data.database.source_definitions )
 			).toBe( true );
 		}
 	);

@@ -1,0 +1,9 @@
+# Defining this file replaces the defaults bundled with @wordpress/scripts,
+# so their entries are repeated here.
+build
+vendor
+
+# Vendored Go WebAssembly runtime, shipped verbatim from the Go toolchain via
+# gll-tools. Reformatting it would rewrite ~700 lines of upstream code and make
+# every future refresh a conflict.
+assets/wasm/wasm_exec.js

@@ -7,6 +7,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import {
 	buildCaseGeometryData,
 	buildGeometryMarkers,
@@ -69,7 +71,6 @@ async function initializeBlock( block: HTMLElement ) {
 	}
 
 	const autoRotate = block.dataset.autoRotate === 'true';
-	const canvasHeight = parseInt( block.dataset.canvasHeight || '500', 10 );
 	const geometryIndex = parseInt( block.dataset.geometryIndex || '0', 10 );
 	const showFaces = block.dataset.showFaces !== 'false';
 	const showEdges = block.dataset.showEdges !== 'false';
@@ -93,6 +94,7 @@ async function initializeBlock( block: HTMLElement ) {
 
 		const arrayBuffer = await response.arrayBuffer();
 		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 		const geometries = data?.Database?.CaseGeometries || [];
 		const geometry =
 			geometries[ Math.min( geometryIndex, geometries.length - 1 ) ];
@@ -133,6 +135,10 @@ async function initializeBlock( block: HTMLElement ) {
 			return;
 		}
 
+		const canvasHeight = parseInt(
+			block.dataset.canvasHeight || '500',
+			10
+		);
 		const threeContainer = document.createElement( 'div' );
 		threeContainer.className = 'gll-three-container';
 		threeContainer.style.minHeight = canvasHeight + 'px';
@@ -421,7 +427,7 @@ function showError( block: HTMLElement, message: string ) {
 	if ( canvasContainer ) {
 		canvasContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 	}

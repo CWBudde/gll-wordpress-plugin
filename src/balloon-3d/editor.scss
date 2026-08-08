@@ -112,14 +112,7 @@
 			border-radius: 4px;
 			// HSL color scale: Hue 0 (red) at max, Hue 240 (blue) at min
 			// Using stops at 0%, 25%, 50%, 75%, 100% to match HSL interpolation
-			background: linear-gradient(
-				to right,
-				hsl(240, 75%, 50%) 0%,      // Blue (min)
-				hsl(180, 75%, 50%) 25%,     // Cyan
-				hsl(120, 75%, 50%) 50%,     // Green
-				hsl(60, 75%, 50%) 75%,      // Yellow
-				hsl(0, 75%, 50%) 100%       // Red (max)
-			);
+			background: linear-gradient(to right, hsl(240, 75%, 50%) 0%, hsl(180, 75%, 50%) 25%, hsl(120, 75%, 50%) 50%, hsl(60, 75%, 50%) 75%, hsl(0, 75%, 50%) 100%);
 			border: 1px solid #dee2e6;
 		}
 

@@ -142,19 +142,23 @@
 }
 
 @keyframes gll-spin {
+
 	0% {
 		transform: rotate(0deg);
 	}
+
 	100% {
 		transform: rotate(360deg);
 	}
 }
 
 @media (max-width: 768px) {
+
 	.gll-polar-plot-block {
 		padding: 15px;
 
 		.gll-polar-plot-header {
+
 			h3 {
 				font-size: 18px;
 			}

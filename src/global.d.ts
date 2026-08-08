@@ -11,7 +11,7 @@ interface GllInfoSettings {
 // Go WASM runtime
 declare class Go {
 	importObject: WebAssembly.Imports;
-	run(instance: WebAssembly.Instance): Promise<void>;
+	run( instance: WebAssembly.Instance ): Promise< void >;
 }
 
 // Extend Window interface for globals
@@ -19,7 +19,7 @@ declare global {
 	interface Window {
 		gllInfoSettings?: GllInfoSettings;
 		Go: typeof Go;
-		parseGLL: (data: Uint8Array) => string;
+		parseGLL: ( data: Uint8Array ) => string;
 	}
 
 	// Chart.js global (loaded via WordPress enqueue, not imported in view scripts)
@@ -28,13 +28,13 @@ declare global {
 
 // Allow importing JSON files
 declare module '*.json' {
-	const value: Record<string, unknown>;
+	const value: Record< string, unknown >;
 	export default value;
 }
 
 // Allow importing SCSS files
 declare module '*.scss' {
-	const content: Record<string, string>;
+	const content: Record< string, string >;
 	export default content;
 }
 

@@ -6,14 +6,15 @@
  * @package
  */
 
-/* global Chart */
+import Chart from 'chart.js/auto';
 
-import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import {
 	buildFrequencyPoints,
 	buildLogFrequencyScale,
-	getPhaseSeries,
-	unwrapPhase,
+	buildSourceResponseSeries,
 	formatFrequency,
 } from '../shared/charting-utils';
 
@@ -24,12 +25,6 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	const blocks = document.querySelectorAll( '.gll-frequency-response-block' );
 
 	if ( blocks.length === 0 ) {
-		return;
-	}
-
-	// Ensure Chart.js is loaded
-	if ( typeof Chart === 'undefined' ) {
-		console.error( 'Chart.js is not loaded' );
 		return;
 	}
 
@@ -62,8 +57,6 @@ async function initializeBlock( block ) {
 	const responseIndex = parseInt( block.dataset.responseIndex, 10 ) || 0;
 	const phaseMode = block.dataset.phaseMode || 'unwrapped';
 	const normalized = block.dataset.normalized === 'true';
-	const azimuth = parseFloat( block.dataset.azimuth ) || 0;
-	const elevation = parseFloat( block.dataset.elevation ) || 0;
 	const showPhase = block.dataset.showPhase !== 'false';
 	const showMagnitude = block.dataset.showMagnitude !== 'false';
 	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
@@ -81,8 +74,8 @@ async function initializeBlock( block ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const uint8Array = new Uint8Array( arrayBuffer );
-		const data = await parseGLLFile( uint8Array );
+		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		// Hide loading indicator
 		const loadingEl = block.querySelector(
@@ -99,8 +92,6 @@ async function initializeBlock( block ) {
 			responseIndex,
 			phaseMode,
 			normalized,
-			azimuth,
-			elevation,
 			showPhase,
 			showMagnitude,
 			chartHeight,
@@ -114,61 +105,34 @@ async function initializeBlock( block ) {
 /**
  * Extract frequency response data from GLL source.
  *
+ * Delegates to the shared series builder, which combines the directivity
+ * response with the source's on-axis spectrum and applies the delay-corrected
+ * phase representation.
+ *
  * @param {Object}  source        Source definition from GLL.
  * @param {number}  responseIndex Response index to use.
- * @param {number}  azimuth       Azimuth angle (degrees).
- * @param {number}  elevation     Elevation angle (degrees).
- * @param {boolean} normalized    Whether to normalize to on-axis.
+ * @param {string}  phaseMode     'unwrapped' | 'wrapped' | 'group-delay'.
+ * @param {boolean} normalized    If true, plot directivity only (no on-axis).
  * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
  */
-function extractResponseData(
-	source,
-	responseIndex,
-	azimuth,
-	elevation,
-	normalized
-) {
-	if ( ! source || ! source.Responses || source.Responses.length === 0 ) {
+function extractResponseData( source, responseIndex, phaseMode, normalized ) {
+	const series = buildSourceResponseSeries(
+		source,
+		responseIndex,
+		phaseMode,
+		normalized
+	);
+
+	if ( ! series ) {
 		return null;
-	}
-
-	// Get the response at the specified index
-	const response = source.Responses[ responseIndex ];
-	if ( ! response ) {
-		return null;
-	}
-
-	const frequencies = response.Frequencies || [];
-	if ( frequencies.length === 0 ) {
-		return null;
-	}
-
-	// For now, use the first available transfer function
-	// TODO: Implement proper azimuth/elevation lookup when GLL structure is finalized
-	const transferFunctions = response.TransferFunctions || [];
-	if ( transferFunctions.length === 0 ) {
-		return null;
-	}
-
-	const tf = transferFunctions[ 0 ];
-	const magnitudes = tf.Magnitude || [];
-	const phases = tf.Phase || [];
-
-	if ( magnitudes.length === 0 ) {
-		return null;
-	}
-
-	// Normalize if requested (subtract first value - on-axis)
-	let normalizedMagnitudes = magnitudes;
-	if ( normalized && magnitudes.length > 0 ) {
-		const onAxisValue = magnitudes[ 0 ];
-		normalizedMagnitudes = magnitudes.map( ( val ) => val - onAxisValue );
 	}
 
 	return {
-		frequencies,
-		magnitudes: normalizedMagnitudes,
-		phases: phases.length === magnitudes.length ? phases : [],
+		frequencies: series.frequencies,
+		magnitudes: series.level,
+		phases: series.phase || [],
+		phaseLabel: series.phaseLabel,
+		phaseAxisTitle: series.phaseAxisTitle,
 	};
 }
 
@@ -193,25 +157,15 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 		`<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>`
 	);
 
-	// Angular position badge
-	if ( options.azimuth !== 0 || options.elevation !== 0 ) {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Position:</strong> Az ${ options.azimuth }° / El ${ options.elevation }°</span>`
-		);
-	} else {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Position:</strong> On-axis (0° / 0°)</span>`
-		);
-	}
-
 	// Phase mode badge
 	if ( phaseSeries ) {
+		const phaseModeLabels = {
+			'group-delay': 'Group Delay',
+			wrapped: 'Wrapped Phase',
+			unwrapped: 'Unwrapped Phase',
+		};
 		const phaseLabel =
-			options.phaseMode === 'group-delay'
-				? 'Group Delay'
-				: options.phaseMode === 'wrapped'
-				? 'Wrapped Phase'
-				: 'Unwrapped Phase';
+			phaseModeLabels[ options.phaseMode ] || phaseModeLabels.unwrapped;
 		badges.push(
 			`<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>`
 		);
@@ -227,7 +181,9 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 	// Source info badge
 	if ( source.Label ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ source.Label }</span>`
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
+				source.Label
+			) }</span>`
 		);
 	}
 
@@ -262,8 +218,7 @@ function renderChart( block, data, options ) {
 	const responseData = extractResponseData(
 		source,
 		options.responseIndex,
-		options.azimuth,
-		options.elevation,
+		options.phaseMode,
 		options.normalized
 	);
 
@@ -284,16 +239,14 @@ function renderChart( block, data, options ) {
 		return;
 	}
 
-	// Build phase series if phase data is available and requested
+	// The series builder has already applied the requested phase mode.
 	let phaseSeries = null;
 	if ( options.showPhase && phases.length > 0 ) {
-		const unwrappedPhase = unwrapPhase( phases );
-		phaseSeries = getPhaseSeries(
-			options.phaseMode,
-			frequencies,
-			phases,
-			unwrappedPhase
-		);
+		phaseSeries = {
+			values: phases,
+			label: responseData.phaseLabel,
+			axisTitle: responseData.phaseAxisTitle,
+		};
 	}
 
 	// Create metadata display
@@ -310,6 +263,9 @@ function renderChart( block, data, options ) {
 
 	const chartWrapper = document.createElement( 'div' );
 	chartWrapper.className = 'gll-chart-container';
+	// Without an explicit height the canvas falls back to Chart.js' 150px
+	// default, which squashes the plot and collapses the dB axis to one tick.
+	chartWrapper.style.minHeight = options.chartHeight + 'px';
 	chartWrapper.appendChild( canvas );
 	chartContainer.appendChild( chartWrapper );
 	chartContainer.style.display = 'block';
@@ -441,7 +397,7 @@ function showError( block, message ) {
 	if ( chartContainer ) {
 		chartContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 		chartContainer.style.display = 'block';

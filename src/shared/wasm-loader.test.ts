@@ -251,7 +251,12 @@ describe( 'wasm-loader', () => {
 
 		it( 'reads the file as ArrayBuffer and parses it', async () => {
 			const parseImpl = jest.fn( () =>
-				JSON.stringify( { success: true, data: { ok: 1 } } )
+				JSON.stringify( {
+					success: true,
+					// Already-normalized shape: parseGLL passes it through
+					// untouched, keeping this test about plumbing.
+					data: { Database: {}, ok: 1 },
+				} )
 			);
 			const env = setupSuccessfulWasmEnvironment( parseImpl );
 			try {
@@ -272,7 +277,7 @@ describe( 'wasm-loader', () => {
 				} as unknown as File;
 
 				const result = await loader.parseGLLFile( fileLike );
-				expect( result ).toEqual( { ok: 1 } );
+				expect( result ).toEqual( { Database: {}, ok: 1 } );
 				expect(
 					fileLike.arrayBuffer as jest.Mock
 				).toHaveBeenCalledTimes( 1 );
@@ -286,7 +291,12 @@ describe( 'wasm-loader', () => {
 	describe( 'parseGLLFromUrl', () => {
 		it( 'fetches the URL and parses the response body', async () => {
 			const parseImpl = jest.fn( () =>
-				JSON.stringify( { success: true, data: { url: 'ok' } } )
+				JSON.stringify( {
+					success: true,
+					// Already-normalized shape: parseGLL passes it through
+					// untouched, keeping this test about plumbing.
+					data: { Database: {}, url: 'ok' },
+				} )
 			);
 			const env = setupSuccessfulWasmEnvironment( parseImpl );
 
@@ -311,7 +321,7 @@ describe( 'wasm-loader', () => {
 				const result = await loader.parseGLLFromUrl(
 					'https://example.com/sample.gll'
 				);
-				expect( result ).toEqual( { url: 'ok' } );
+				expect( result ).toEqual( { Database: {}, url: 'ok' } );
 			} finally {
 				teardownWasmEnvironment( env );
 			}

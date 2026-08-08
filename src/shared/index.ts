@@ -15,6 +15,9 @@ export {
 	parseGLLFromUrl,
 } from './wasm-loader';
 
+// Parser output normalization
+export { normalizeGllData } from './gll-normalize';
+
 // GLL Context
 export { GLLContext, GLLProvider, useGLL, useGLLLoader } from './gll-context';
 

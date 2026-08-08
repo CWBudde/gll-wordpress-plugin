@@ -6,9 +6,11 @@
  * @package
  */
 
-/* global Chart */
+import Chart from 'chart.js/auto';
 
-import { ensureWasmReady, parseGLLFile } from '../shared/wasm-loader';
+import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
@@ -20,11 +22,6 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	const blocks = document.querySelectorAll( '.gll-polar-plot-block' );
 
 	if ( blocks.length === 0 ) {
-		return;
-	}
-
-	if ( typeof Chart === 'undefined' ) {
-		console.error( 'Chart.js is not loaded' );
 		return;
 	}
 
@@ -70,8 +67,8 @@ async function initializeBlock( block ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const uint8Array = new Uint8Array( arrayBuffer );
-		const data = await parseGLLFile( uint8Array );
+		const data = await parseGLL( arrayBuffer );
+		setBlockHeaderLabel( block, data );
 
 		const loadingEl = block.querySelector( '.gll-polar-plot-loading' );
 		if ( loadingEl ) {
@@ -216,7 +213,9 @@ function renderChart( block, data, options ) {
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
+				sourceLabel
+			) }</span>`
 		);
 	}
 
@@ -316,7 +315,7 @@ function showError( block, message ) {
 	if ( chartContainer ) {
 		chartContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 		chartContainer.style.display = 'block';

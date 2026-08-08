@@ -7,6 +7,8 @@
  * @package
  */
 
+import { normalizeGllData } from './gll-normalize';
+
 // Module state
 let wasmInstance = null;
 let wasmReady = false;
@@ -193,7 +195,8 @@ export async function parseGLL( data ) {
 		throw new Error( result.error || 'Failed to parse GLL file' );
 	}
 
-	return result.data;
+	// The parser speaks snake_case; the blocks speak PascalCase.
+	return normalizeGllData( result.data );
 }
 
 /**
