@@ -24,8 +24,33 @@
 	--gll-text-muted: var(--color-muted, #666);
 	--gll-heading: var(--color-heading, var(--gll-text));
 	--gll-border: var(--color-border, #e0e0e0);
-	--gll-accent: var(--wp--preset--color--primary, var(--color-link, #667eea));
+	// #4c51bf, not the #667eea this started as. The accent is painted both as
+	// text on a light surface (the highlighted meta badges) and as a background
+	// behind white text (the resources download button), and #667eea managed
+	// only 3.66:1 against white in *either* direction — under AA's 4.5:1 for
+	// normal text both times. The two uses therefore pull the same way, so one
+	// darkening fixes both: #4c51bf is 6.49:1 against white, 5.95:1 against the
+	// muted surface and 5.01:1 against the 12%-tinted badge fill, while staying
+	// the same blue-violet (hue 237 against the old 229).
+	// A site owner overriding this can still land on something that fails, which
+	// is why nothing load-bearing depends on it: the focus indicator below is
+	// drawn from the text and surface tokens instead, so a bad accent costs
+	// contrast on a badge, not the ability to see where the keyboard is.
+	--gll-accent: var(--wp--preset--color--primary, var(--color-link, #4c51bf));
 	--gll-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+
+	// Focus indicator, two-tone. WordPress themes range from white to near
+	// black, and any single colour is invisible against one end of that range;
+	// a pair that contrasts with each other means whichever tone a background
+	// swallows, the other one shows. The pair is the theme's own text and
+	// surface colours, which a theme must already keep legible against each
+	// other, so the ring inherits that guarantee for free — and it keeps working
+	// on the accent-coloured download button, where an accent ring would not.
+	// The contrast tone repeats the surface fallback chain rather than reading
+	// `--gll-surface`, because the `transparent` appearance variant sets that
+	// token to `transparent` and would otherwise erase half the ring.
+	--gll-focus: var(--gll-text);
+	--gll-focus-contrast: var(--wp--preset--color--base, var(--color-surface, #fff));
 
 	// Derived tokens. Kept here so blocks never re-derive them inconsistently.
 	--gll-radius: 8px;

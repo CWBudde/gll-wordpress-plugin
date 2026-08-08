@@ -4,6 +4,8 @@
  * @package GllInfo
  */
 
+@use "a11y";
+
 .gll-three-wrapper {
 	position: relative;
 	width: 100%;
@@ -23,6 +25,11 @@
 	&:active {
 		cursor: grabbing;
 	}
+
+	// `attachKeyboardOrbit` gives this canvas `tabindex="0"`, which put it in
+	// the tab order with nothing to show for it. The ring goes inside, since
+	// the wrapper clips its overflow.
+	@include a11y.focus-ring;
 }
 
 // Loading state
@@ -61,6 +68,10 @@
 		transform: rotate(360deg);
 	}
 }
+
+// This spinner has its own token, so its resting ring takes that rather than
+// the accent the block-level spinners use.
+@include a11y.reduced-motion-spinner(".gll-three-loading__spinner", var(--gll-three-spinner, #3b82f6));
 
 // No WebGL fallback
 .gll-three-wrapper--no-webgl {

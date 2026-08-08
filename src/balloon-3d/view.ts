@@ -8,6 +8,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { __, sprintf } from '@wordpress/i18n';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { escapeHtml } from '../shared/escape-html';
@@ -20,6 +21,13 @@ import {
 } from '../shared/balloon-utils';
 import type { BalloonGridInfo } from '../shared/balloon-utils';
 import { resolveTheme } from '../shared/resolve-theme';
+import {
+	attachKeyboardOrbit,
+	describeCanvas,
+	initBlockLiveRegions,
+	prefersReducedMotion,
+	renderErrorPanel,
+} from '../shared/a11y';
 import { applySceneTheme } from './theme-three';
 
 type QualityPreset = 'low' | 'medium' | 'high';
@@ -105,7 +113,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 		blocks.forEach( ( block ) => {
 			showError(
 				block,
-				'WebGL is not supported in your browser. Please use a modern browser to view 3D content.'
+				__(
+					'WebGL is not supported in your browser. Please use a modern browser to view 3D content.',
+					'gll-info'
+				)
 			);
 		} );
 		return;
@@ -123,7 +134,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 			await ensureWasmReady();
 		} catch ( error ) {
 			console.error( 'Failed to initialize WASM:', error );
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 			return;
 		}
 
@@ -175,17 +189,28 @@ async function initializeBlock( block: HTMLElement ) {
 	const fileUrl = block.dataset.fileUrl;
 
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
 
-	const fileName = block.dataset.fileName || 'GLL File';
+	// Before the fetch, not after it: this block's save() carries a
+	// `.gll-loading-text` paragraph, which the helper turns into the live
+	// region and which `setBlockHeaderLabel` later rewrites from
+	// "Loading 3D balloon…" to the parsed system label. The region has to be in
+	// the document before that rewrite happens, or assistive technology reads
+	// the new text as the region's initial content and says nothing at all.
+	initBlockLiveRegions( block );
+
+	const fileName = block.dataset.fileName || __( 'GLL File', 'gll-info' );
 	const sourceIndex = parseInt( block.dataset.sourceIndex || '0', 10 );
 	const frequencyIndex = parseInt( block.dataset.frequencyIndex || '0', 10 );
 	const dbRange = parseInt( block.dataset.dbRange || '40', 10 );
 	const scale = parseFloat( block.dataset.scale || '1.0' );
 	const wireframe = block.dataset.wireframe === 'true';
-	const autoRotate = block.dataset.autoRotate === 'true';
+	// Auto-rotation is unstoppable motion — the block offers no pause control —
+	// so a reduced-motion preference overrides the author's choice outright.
+	const autoRotate =
+		block.dataset.autoRotate === 'true' && ! prefersReducedMotion();
 	const showReferenceSphere = block.dataset.showReferenceSphere !== 'false';
 	const showAxesHelper = block.dataset.showAxesHelper !== 'false';
 	const canvasHeight = parseInt( block.dataset.canvasHeight || '500', 10 );
@@ -196,7 +221,13 @@ async function initializeBlock( block: HTMLElement ) {
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					// translators: %s: HTTP status text returned by the server.
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -250,19 +281,22 @@ function render3DBalloon(
 
 	const source = sources[ options.sourceIndex ];
 	if ( ! source ) {
-		showError( block, 'Source not found' );
+		showError( block, __( 'Source not found', 'gll-info' ) );
 		return;
 	}
 
 	const frequencies = source.Responses?.[ 0 ]?.Frequencies || [];
 	if ( frequencies.length === 0 ) {
-		showError( block, 'No frequency data available' );
+		showError( block, __( 'No frequency data available', 'gll-info' ) );
 		return;
 	}
 
 	const balloonGrid = getBalloonGrid( source ) as BalloonGridInfo | null;
 	if ( ! balloonGrid ) {
-		showError( block, 'No directivity data available for this source' );
+		showError(
+			block,
+			__( 'No directivity data available for this source', 'gll-info' )
+		);
 		return;
 	}
 
@@ -275,48 +309,75 @@ function render3DBalloon(
 	const displayMin = globalMax - options.dbRange;
 	const midLevel = ( displayMin + displayMax ) / 2;
 
+	const freqLabel = formatFrequency( frequency );
+
 	// Build metadata HTML
 	const badges = [];
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Frequency:</strong> ${ formatFrequency(
-			frequency
-		) }</span>`
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Frequency:',
+			'gll-info'
+		) }</strong> ${ freqLabel }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Display Range:</strong> ${ displayMin.toFixed(
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Display Range:',
+			'gll-info'
+		) }</strong> ${ displayMin.toFixed( 1 ) } &ndash; ${ displayMax.toFixed(
 			1
-		) } &ndash; ${ displayMax.toFixed( 1 ) } dB</span>`
+		) } dB</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Grid:</strong> ${ balloonGrid.fullMeridianCount } &times; ${ balloonGrid.fullParallelCount }</span>`
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Grid:',
+			'gll-info'
+		) }</strong> ${ balloonGrid.fullMeridianCount } &times; ${
+			balloonGrid.fullParallelCount
+		}</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Resolution:</strong> ${ balloonGrid.meridianStep }° × ${ balloonGrid.parallelStep }°</span>`
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Resolution:',
+			'gll-info'
+		) }</strong> ${ balloonGrid.meridianStep }° × ${
+			balloonGrid.parallelStep
+		}°</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>`
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Symmetry:',
+			'gll-info'
+		) }</strong> ${ balloonGrid.symmetryName }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ escapeHtml(
-			options.qualityPreset
-		) }</span>`
+		`<span class="gll-meta-badge"><strong>${ __(
+			'Quality:',
+			'gll-info'
+		) }</strong> ${ escapeHtml( options.qualityPreset ) }</span>`
 	);
 	if ( options.wireframe ) {
 		badges.push(
-			'<span class="gll-meta-badge gll-meta-badge-highlight">Wireframe</span>'
+			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
+				'Wireframe',
+				'gll-info'
+			) }</span>`
 		);
 	}
 	if ( options.autoRotate ) {
 		badges.push(
-			'<span class="gll-meta-badge gll-meta-badge-highlight">Auto-Rotate</span>'
+			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
+				'Auto-Rotate',
+				'gll-info'
+			) }</span>`
 		);
 	}
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
-				sourceLabel
-			) }</span>`
+			`<span class="gll-meta-badge"><strong>${ __(
+				'Source:',
+				'gll-info'
+			) }</strong> ${ escapeHtml( sourceLabel ) }</span>`
 		);
 	}
 
@@ -324,14 +385,27 @@ function render3DBalloon(
 		''
 	) }</div>`;
 
+	/**
+	 * Format one colour-bar tick.
+	 *
+	 * @param {number} level Sound pressure level.
+	 * @return {string} Localized "NN dB".
+	 */
+	const decibelTick = ( level: number ) =>
+		sprintf(
+			// translators: %s: sound pressure level, already rounded.
+			__( '%s dB', 'gll-info' ),
+			level.toFixed( 0 )
+		);
+
 	// Build color bar legend HTML
 	const colorbarHtml = `
 		<div class="gll-balloon-3d-colorbar">
 			<div class="gll-colorbar-gradient"></div>
 			<div class="gll-colorbar-labels">
-				<span>${ displayMin.toFixed( 0 ) } dB</span>
-				<span>${ midLevel.toFixed( 0 ) } dB</span>
-				<span>${ displayMax.toFixed( 0 ) } dB</span>
+				<span>${ decibelTick( displayMin ) }</span>
+				<span>${ decibelTick( midLevel ) }</span>
+				<span>${ decibelTick( displayMax ) }</span>
 			</div>
 		</div>
 	`;
@@ -345,6 +419,28 @@ function render3DBalloon(
 	canvasContainer.appendChild( threeContainer );
 	( canvasContainer as HTMLElement ).style.display = 'block';
 
+	// The renderer canvas is opaque to assistive technology, so it gets a text
+	// alternative describing what is plotted — the frequency, the level range
+	// and the grid the balloon is built from — rather than the word "chart".
+	// The second sentence is the only place the keyboard bindings are stated;
+	// they are invisible chrome otherwise.
+	const canvasLabel = `${ sprintf(
+		/* translators: 1: frequency, e.g. "1 kHz". 2: lowest displayed level in dB. 3: highest displayed level in dB. 4: number of meridians. 5: number of parallels. 6: symmetry name. */
+		__(
+			'3D directivity balloon at %1$s, levels from %2$s to %3$s dB on a %4$d by %5$d measurement grid, %6$s symmetry.',
+			'gll-info'
+		),
+		freqLabel,
+		displayMin.toFixed( 1 ),
+		displayMax.toFixed( 1 ),
+		balloonGrid.fullMeridianCount,
+		balloonGrid.fullParallelCount,
+		balloonGrid.symmetryName
+	) } ${ __(
+		'Use the arrow keys to rotate and the plus and minus keys to zoom.',
+		'gll-info'
+	) }`;
+
 	// Initialize Three.js scene
 	initThreeScene(
 		block,
@@ -352,7 +448,8 @@ function render3DBalloon(
 		source,
 		balloonGrid,
 		frequencies,
-		options
+		options,
+		canvasLabel
 	);
 }
 
@@ -364,6 +461,7 @@ function render3DBalloon(
  * @param balloonGrid
  * @param frequencies
  * @param options
+ * @param canvasLabel Text alternative for the renderer canvas.
  */
 function initThreeScene(
 	block: HTMLElement,
@@ -371,7 +469,8 @@ function initThreeScene(
 	source: any,
 	balloonGrid: BalloonGridInfo,
 	frequencies: number[],
-	options: BlockOptions
+	options: BlockOptions,
+	canvasLabel: string
 ) {
 	const quality = resolveQuality( options.qualityPreset );
 	const width = container.clientWidth;
@@ -399,6 +498,7 @@ function initThreeScene(
 		Math.min( window.devicePixelRatio, quality.maxPixelRatio )
 	);
 	renderer.setClearColor( 0x000000, 0 );
+	describeCanvas( renderer.domElement, canvasLabel );
 	container.appendChild( renderer.domElement );
 
 	// Create orbit controls
@@ -442,6 +542,44 @@ function initThreeScene(
 		ONE: THREE.TOUCH.ROTATE,
 		TWO: THREE.TOUCH.DOLLY_PAN,
 	};
+
+	// No `controls.enableKeys` here: the flag was removed from OrbitControls in
+	// three r132 and package.json pins ^0.159.0, so setting it would bind
+	// nothing. Keyboard operation is provided below by moving the camera
+	// ourselves and letting `controls.update()` re-derive its spherical state on
+	// the next frame — exactly what the pointer path does, so the two cannot
+	// disagree about where the camera is.
+	const orbitTarget = new THREE.Vector3();
+	const spherical = new THREE.Spherical();
+	const detachKeyboard = attachKeyboardOrbit( renderer.domElement, {
+		orbit: ( deltaAzimuth, deltaPolar ) => {
+			orbitTarget.copy( controls.target );
+			spherical.setFromVector3(
+				camera.position.clone().sub( orbitTarget )
+			);
+			spherical.theta += deltaAzimuth;
+			// The same poles OrbitControls clamps to above; straight overhead
+			// flips the up vector and the balloon appears to jump.
+			spherical.phi = Math.max(
+				0.05,
+				Math.min( Math.PI - 0.05, spherical.phi + deltaPolar )
+			);
+			camera.position.setFromSpherical( spherical ).add( orbitTarget );
+			camera.lookAt( orbitTarget );
+		},
+		zoom: ( factor ) => {
+			orbitTarget.copy( controls.target );
+			spherical.setFromVector3(
+				camera.position.clone().sub( orbitTarget )
+			);
+			// The same bounds the pointer wheel obeys.
+			spherical.radius = Math.max(
+				0.5,
+				Math.min( 10, spherical.radius * factor )
+			);
+			camera.position.setFromSpherical( spherical ).add( orbitTarget );
+		},
+	} );
 
 	// Add lights
 	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.65 );
@@ -556,6 +694,7 @@ function initThreeScene(
 
 	const cleanup = () => {
 		cancelAnimationFrame( animationId );
+		detachKeyboard();
 		resizeObserver.disconnect();
 		if ( visibilityObserver ) {
 			visibilityObserver.disconnect();
@@ -655,11 +794,11 @@ function showError( block: HTMLElement, message: string ) {
 
 	const canvasContainer = block.querySelector( '.gll-balloon-3d-canvas' );
 	if ( canvasContainer ) {
-		canvasContainer.innerHTML = `
-			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		// The inline styles this used to carry duplicated `.gll-error` in
+		// style.scss and produced a white-on-white panel under a dark theme.
+		// The shared panel is also a `role="alert"` live region, so the failure
+		// is spoken instead of silently replacing the viewer.
+		renderErrorPanel( canvasContainer, message );
 		( canvasContainer as HTMLElement ).style.display = 'block';
 	}
 }

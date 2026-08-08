@@ -9,9 +9,27 @@
  * @package GllInfo
  */
 
+@use "../shared/a11y";
 @use "../shared/tokens";
 
 .gll-geometry-block {
+
+	// This is the block whose save() carries no `.gll-loading-text` paragraph,
+	// so `initBlockLiveRegions` creates a live region for it and marks it with
+	// this class. Nothing defined the class, so the region — announcements and
+	// all — was being painted into the page as ordinary visible text.
+	.gll-visually-hidden {
+
+		@include a11y.visually-hidden;
+	}
+
+	// view.ts renders failures through the shared `renderErrorPanel`, which
+	// emits `.gll-error` like every other block. This was the one block missing
+	// the rule, so the panel arrived unstyled.
+	.gll-error {
+
+		@include a11y.error-panel;
+	}
 
 	.gll-geometry-header {
 		margin-bottom: 16px;
