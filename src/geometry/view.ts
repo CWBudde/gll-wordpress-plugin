@@ -27,8 +27,13 @@ import {
 	attachManualOrbitControls,
 	type ManualOrbitControls,
 } from '../shared/manual-orbit-controls';
-import { applyHelperTheme } from './helper-theme';
-import { buildGeometryGroup, disposeSceneObject } from './scene-builder';
+import { resolveTheme } from '../shared/resolve-theme';
+import { applyHelperTheme, geometryFallbackColors } from './helper-theme';
+import {
+	buildGeometryGroup,
+	disposeSceneObject,
+	type SourceConeOptions,
+} from './scene-builder';
 
 document.addEventListener( 'DOMContentLoaded', () => {
 	const blocks = document.querySelectorAll( '.gll-geometry-block' );
@@ -108,6 +113,12 @@ async function initializeBlock( block: HTMLElement ) {
 		let geometryData = null;
 		let geometryBounds: GeometryBounds | null = null;
 		let markerData: ReturnType< typeof buildGeometryMarkers > = [];
+		let sourceCones: SourceConeOptions | null = null;
+
+		// `block` carries the `gll-block` class, so the theme tokens resolve
+		// off it without waiting for the canvas to exist.
+		const theme = resolveTheme( block );
+
 		if ( geometry ) {
 			const vertices = getCaseGeometryVertices( geometry );
 			if ( vertices.length > 0 ) {
@@ -121,7 +132,10 @@ async function initializeBlock( block: HTMLElement ) {
 					? toViewPoint( reference )
 					: bounds.center;
 				const scale = computeScaleFactor( bounds, 1.2 );
+				// Vertex colours come from the GLL data; the fallback for
+				// geometry that carries none is chrome, so it follows the theme.
 				geometryData = buildCaseGeometryData( geometry, {
+					...geometryFallbackColors( theme ),
 					transform: ( vertex ) => {
 						const viewPoint = toViewPoint( vertex );
 						return {
@@ -136,6 +150,25 @@ async function initializeBlock( block: HTMLElement ) {
 					scale,
 					visibility: showMarkers,
 				} );
+
+				const placements = geometry.SourcePlacements;
+				if (
+					showSources &&
+					Array.isArray( placements ) &&
+					placements.length > 0
+				) {
+					sourceCones = {
+						placements,
+						sourceDefinitions: data?.Database?.SourceDefinitions,
+						boxOpeningAngles: {
+							horizontal: geometry.HorizontalOpeningAngle,
+							vertical: geometry.VerticalOpeningAngle,
+						},
+						center,
+						scale,
+						theme,
+					};
+				}
 			}
 		}
 
@@ -170,6 +203,7 @@ async function initializeBlock( block: HTMLElement ) {
 			showEdges,
 			markerData,
 			geometryData,
+			sourceCones,
 		} );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
@@ -314,6 +348,7 @@ function initThreeScene(
 		showEdges: boolean;
 		markerData: ReturnType< typeof buildGeometryMarkers >;
 		geometryData: ReturnType< typeof buildCaseGeometryData >;
+		sourceCones: SourceConeOptions | null;
 	}
 ) {
 	const width = container.clientWidth;
@@ -365,6 +400,7 @@ function initThreeScene(
 		markers: options.markerData,
 		showFaces: options.showFaces,
 		showEdges: options.showEdges,
+		sources: options.sourceCones,
 	} );
 	if ( geometryGroup ) {
 		scene.add( geometryGroup );

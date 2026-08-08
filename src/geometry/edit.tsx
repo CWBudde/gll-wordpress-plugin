@@ -51,7 +51,8 @@ import type {
 	ManualOrbitControls,
 	GeometryMarker,
 } from '../shared';
-import { applyHelperTheme } from './helper-theme';
+import type { GllTheme } from '../shared/resolve-theme';
+import { applyHelperTheme, geometryFallbackColors } from './helper-theme';
 import { buildGeometryGroup, disposeSceneObject } from './scene-builder';
 import './editor.scss';
 
@@ -63,6 +64,30 @@ import './editor.scss';
  * make that effect tear the whole scene down and rebuild it on every render.
  */
 const NO_MARKERS: readonly GeometryMarker[] = Object.freeze( [] );
+
+/**
+ * Compare two resolved themes by value.
+ *
+ * `resolveTheme` builds a fresh object on every call, so identity comparison
+ * would report a change on every resize and rebuild the scene needlessly.
+ *
+ * @param {Object|null} a First theme.
+ * @param {Object|null} b Second theme.
+ * @return {boolean} True when both describe the same colours.
+ */
+function sameTheme( a: GllTheme | null, b: GllTheme | null ): boolean {
+	if ( ! a || ! b ) {
+		return a === b;
+	}
+	return (
+		a.text === b.text &&
+		a.textMuted === b.textMuted &&
+		a.border === b.border &&
+		a.accent === b.accent &&
+		a.surface === b.surface &&
+		a.isDark === b.isDark
+	);
+}
 
 /**
  * Format a number with up to one decimal place.
@@ -174,6 +199,20 @@ export default function Edit( { attributes, setAttributes } ) {
 		return geometries[ index ] || null;
 	}, [ data, geometryIndex ] );
 
+	/**
+	 * The resolved theme, kept in state because the geometry colour buffers
+	 * bake the fallbacks in and the source cones are coloured from it. Only a
+	 * genuine change is stored: `resolveTheme` returns a fresh object on every
+	 * call, and adopting each one would rebuild the scene on every resize.
+	 */
+	const [ theme, setTheme ] = useState< GllTheme | null >( null );
+
+	const adoptTheme = useCallback( ( next: GllTheme ) => {
+		setTheme( ( current ) =>
+			sameTheme( current, next ) ? current : next
+		);
+	}, [] );
+
 	const geometrySceneData = useMemo( () => {
 		if ( ! caseGeometry ) {
 			return null;
@@ -189,7 +228,10 @@ export default function Edit( { attributes, setAttributes } ) {
 			: null;
 		const center = reference ? toViewPoint( reference ) : bounds.center;
 		const scale = computeScaleFactor( bounds, 1.2 );
+		// Vertex colours come from the GLL data; the fallback for geometry that
+		// carries none is chrome, so it follows the theme.
 		const meshData = buildCaseGeometryData( caseGeometry, {
+			...( theme ? geometryFallbackColors( theme ) : {} ),
 			transform: ( vertex ) => {
 				const viewPoint = toViewPoint( vertex );
 				return {
@@ -207,13 +249,15 @@ export default function Edit( { attributes, setAttributes } ) {
 		return {
 			meshData,
 			bounds,
+			center,
+			scale,
 			markers: buildGeometryMarkers( caseGeometry, {
 				center,
 				scale,
 				visibility: showMarkers,
 			} ),
 		};
-	}, [ caseGeometry, centerReference, showMarkers ] );
+	}, [ caseGeometry, centerReference, showMarkers, theme ] );
 
 	const geometryData = geometrySceneData?.meshData || null;
 	const markerData = geometrySceneData?.markers ?? NO_MARKERS;
@@ -254,12 +298,45 @@ export default function Edit( { attributes, setAttributes } ) {
 	 */
 	const handleResize = useCallback( () => {
 		if ( themedSceneRef.current ) {
-			applyHelperTheme(
-				themedSceneRef.current.scene,
-				themedSceneRef.current.element
+			adoptTheme(
+				applyHelperTheme(
+					themedSceneRef.current.scene,
+					themedSceneRef.current.element
+				)
 			);
 		}
-	}, [] );
+	}, [ adoptTheme ] );
+
+	/**
+	 * Cone options, or null when sources are hidden or the theme has not been
+	 * resolved yet. Memoized so the scene only rebuilds when something the
+	 * cones actually depend on changes.
+	 */
+	const sourceConeOptions = useMemo( () => {
+		if (
+			! showSources ||
+			! theme ||
+			! geometrySceneData ||
+			! caseGeometry
+		) {
+			return null;
+		}
+		const placements = caseGeometry.SourcePlacements;
+		if ( ! Array.isArray( placements ) || placements.length === 0 ) {
+			return null;
+		}
+		return {
+			placements,
+			sourceDefinitions: data?.Database?.SourceDefinitions,
+			boxOpeningAngles: {
+				horizontal: caseGeometry.HorizontalOpeningAngle,
+				vertical: caseGeometry.VerticalOpeningAngle,
+			},
+			center: geometrySceneData.center,
+			scale: geometrySceneData.scale,
+			theme,
+		};
+	}, [ showSources, theme, geometrySceneData, caseGeometry, data ] );
 
 	const buildGeometry = useCallback( () => {
 		const scene = viewerRef.current?.scene;
@@ -277,6 +354,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			markers: markerData,
 			showFaces,
 			showEdges,
+			sources: sourceConeOptions,
 		} );
 
 		if ( ! group ) {
@@ -285,7 +363,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		scene.add( group );
 		geometryGroupRef.current = group;
-	}, [ geometryData, markerData, showFaces, showEdges ] );
+	}, [ geometryData, markerData, showFaces, showEdges, sourceConeOptions ] );
 
 	const handleAnimate = useCallback( ( _scene, _camera, deltaTime ) => {
 		if ( controlsRef.current ) {
@@ -305,7 +383,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			// follow the block's theme tokens. `renderer.domElement` sits
 			// inside the `.gll-block` wrapper and therefore inherits them.
 			themedSceneRef.current = { scene, element: renderer.domElement };
-			applyHelperTheme( scene, renderer.domElement );
+			adoptTheme( applyHelperTheme( scene, renderer.domElement ) );
 
 			if ( controlsRef.current ) {
 				controlsRef.current.dispose();
@@ -357,7 +435,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				);
 			}
 		},
-		[ autoRotate, buildGeometry ]
+		[ adoptTheme, autoRotate, buildGeometry ]
 	);
 
 	useEffect( () => {
