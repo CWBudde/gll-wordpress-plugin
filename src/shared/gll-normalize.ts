@@ -131,6 +131,8 @@ function normalizeSource( entry ) {
 			NominalBandwidthFrom: definition.nominal_bandwidth_from,
 			NominalBandwidthTo: definition.nominal_bandwidth_to,
 			OnAxisLevel: definition.on_axis_level,
+			RatedHorizontalAngle: definition.rated_horizontal_angle,
+			RatedVerticalAngle: definition.rated_vertical_angle,
 			OnAxisSpectrum: normalizeSpectrum( definition.on_axis_spectrum ),
 			BalloonData: {
 				ResponseCount: balloon.response_count,
@@ -162,38 +164,137 @@ function normalizePoint( point ) {
 }
 
 /**
+ * Fold a raw 1-based GLL vertex reference to a 0-based index.
+ *
+ * A negative index refers to the mirrored twin of that vertex and 0 means
+ * "unset". Twins are not reconstructed here, so a mirrored reference resolves
+ * to the original vertex; see `internal/viz/geometry.go` in gll-tools for the
+ * full mirroring rule.
+ *
+ * @param {number} index Raw 1-based index.
+ * @return {number} Zero-based index, or -1 when unset.
+ */
+function toVertexIndex( index ) {
+	if ( ! index || ! Number.isFinite( index ) ) {
+		return -1;
+	}
+	return Math.abs( index ) - 1;
+}
+
+/**
+ * Normalize one case-geometry edge.
+ *
+ * Raw edges are `{v1, v2, color, label, has_twin}` using the same 1-based,
+ * negative-means-twin convention as faces. `parseEdge` in geometry-utils
+ * indexes the vertex list directly, so the pair is folded to 0-based here.
+ *
+ * @param {Object} edge Raw `edges[]` entry.
+ * @return {Object|null} Normalized edge, or null when either end is unset.
+ */
+function normalizeEdge( edge ) {
+	if ( ! edge ) {
+		return null;
+	}
+
+	const a = toVertexIndex( edge.v1 );
+	const b = toVertexIndex( edge.v2 );
+	if ( a < 0 || b < 0 ) {
+		return null;
+	}
+
+	return {
+		A: a,
+		B: b,
+		Color: edge.color,
+		Label: edge.label,
+	};
+}
+
+/**
+ * Normalize one case-geometry face.
+ *
+ * Raw faces are `{vertices, color, label, has_twin}` where `vertices` holds
+ * 1-based indices and a negative index refers to the mirrored twin of that
+ * vertex (0 is "unset"). `parseFace` in geometry-utils indexes the vertex list
+ * directly, so the indices are folded to 0-based absolutes here, mirroring
+ * `internal/viz/geometry.go` in gll-tools.
+ *
+ * @param {Object} face Raw `faces[]` entry.
+ * @return {Object|null} Normalized face, or null when it has too few indices.
+ */
+function normalizeFace( face ) {
+	if ( ! face || ! Array.isArray( face.vertices ) ) {
+		return null;
+	}
+
+	const indices = [];
+	face.vertices.forEach( ( index ) => {
+		const resolved = toVertexIndex( index );
+		if ( resolved >= 0 ) {
+			indices.push( resolved );
+		}
+	} );
+
+	if ( indices.length < 3 ) {
+		return null;
+	}
+
+	return {
+		Indices: indices,
+		Color: face.color,
+		Label: face.label,
+	};
+}
+
+/**
  * Normalize a case geometry.
  *
  * Edges arrive as `{v1, v2}` vertex-index pairs, which none of the spellings
- * `parseEdge` accepts; they are re-expressed as `{A, B}`. GLL case geometries
- * carry no face list, so `Faces` stays empty and consumers fall back to the
- * edge wireframe.
+ * `parseEdge` accepts; they are re-expressed as 0-based `{A, B}`. Faces are
+ * emitted by
+ * the parser for case-geometry sub-version >= 1 and are folded to the 0-based
+ * index shape `parseFace` expects; older files carry none, so `Faces` is empty
+ * and consumers fall back to the edge wireframe.
  *
- * @param {Object} geometry Raw `case_geometry` block.
- * @param {Object} box      Owning raw box type, for reference points.
+ * The geometry is made self-describing: the blocks address geometries by their
+ * position in the flat `Database.CaseGeometries` list, which does not line up
+ * with `Database.BoxTypes` once a box lacks a `case_geometry`. Carrying the box
+ * identity and its placements along removes the need to correlate by index.
+ * `SourcePlacements` is shared by reference with the normalized box type.
+ *
+ * @param {Object} geometry      Raw `case_geometry` block.
+ * @param {Object} box           Owning raw box type, for reference points.
+ * @param {Object} normalizedBox Owning normalized box type, for placements.
+ * @param {number} boxIndex      Index of the owning box in `box_types`.
  * @return {Object|null} Normalized geometry or null.
  */
-function normalizeCaseGeometry( geometry, box ) {
+function normalizeCaseGeometry( geometry, box, normalizedBox, boxIndex ) {
 	if ( ! geometry ) {
 		return null;
 	}
 
 	const edges = Array.isArray( geometry.edges )
-		? geometry.edges.map( ( edge ) => ( {
-				A: edge.v1,
-				B: edge.v2,
-				Label: edge.label,
-		  } ) )
+		? geometry.edges.map( normalizeEdge ).filter( Boolean )
+		: [];
+
+	const faces = Array.isArray( geometry.faces )
+		? geometry.faces.map( normalizeFace ).filter( Boolean )
 		: [];
 
 	return {
 		Vertices: geometry.vertices || [],
 		Edges: edges,
-		Faces: [],
+		Faces: faces,
 		IsSymmetric: geometry.is_symmetric,
 		ReferencePoint: normalizePoint( box && box.reference_point ),
 		CenterOfMass: normalizePoint( box && box.center_of_mass ),
 		NextPivot: normalizePoint( box && box.next_pivot ),
+		BoxIndex: boxIndex,
+		BoxKey: box && box.key,
+		BoxLabel: box && box.label,
+		SourcePlacements: normalizedBox ? normalizedBox.SourcePlacements : [],
+		HorizontalOpeningAngle: box && box.horizontal_opening_angle,
+		VerticalOpeningAngle: box && box.vertical_opening_angle,
 	};
 }
 
@@ -230,6 +331,7 @@ function normalizeBoxType( box ) {
 		Label: box.label,
 		Key: box.key,
 		Weight: box.weight,
+		Sources: box.sources || [],
 		ReferencePoint: normalizePoint( box.reference_point ),
 		CenterOfMass: normalizePoint( box.center_of_mass ),
 		NextPivot: normalizePoint( box.next_pivot ),
@@ -263,9 +365,18 @@ export function normalizeGllData( raw ) {
 	const boxTypes = database.box_types || [];
 
 	// The blocks address geometries by a flat index, but the parser nests one
-	// geometry per box type.
+	// geometry per box type — and boxes without a geometry drop out, so the two
+	// lists do not line up. Each geometry therefore carries its owning box.
+	const normalizedBoxTypes = boxTypes.map( normalizeBoxType );
 	const caseGeometries = boxTypes
-		.map( ( box ) => normalizeCaseGeometry( box.case_geometry, box ) )
+		.map( ( box, i ) =>
+			normalizeCaseGeometry(
+				box.case_geometry,
+				box,
+				normalizedBoxTypes[ i ],
+				i
+			)
+		)
 		.filter( Boolean );
 
 	return {
@@ -300,7 +411,7 @@ export function normalizeGllData( raw ) {
 			SourceDefinitions: ( database.source_definitions || [] ).map(
 				normalizeSource
 			),
-			BoxTypes: boxTypes.map( normalizeBoxType ),
+			BoxTypes: normalizedBoxTypes,
 			CaseGeometries: caseGeometries,
 		},
 		Resources: raw.resources || [],

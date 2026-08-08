@@ -81,6 +81,26 @@ export interface GeometryQuaternion {
 	w: number;
 }
 
+/**
+ * How the raw H/V/R numbers of a source placement should be interpreted.
+ *
+ * GLL stores placement angles in radians (see gll-tools docs/format.md:175),
+ * so 'radians' is the contract. 'auto' adds a rescue heuristic for malformed
+ * files; 'degrees' forces the other reading.
+ */
+export type GeometryAngleUnits = 'radians' | 'degrees' | 'auto';
+
+export interface GeometrySourceOrientation {
+	/** View-space unit vector for the GLL local +X axis. */
+	right: GeometryVertex;
+	/** View-space unit vector for the GLL local +Z axis. */
+	up: GeometryVertex;
+	/** View-space unit vector for the GLL local +Y axis: where the source aims. */
+	forward: GeometryVertex;
+	/** Rotation taking local (X = right, Y = up, Z = forward) into view space. */
+	quaternion: GeometryQuaternion;
+}
+
 const GEOMETRY_MARKER_RADIUS = 0.01;
 
 export function buildCaseGeometryData(
@@ -325,30 +345,74 @@ export function getEulerHvr( rotation: any ): GeometryEulerHvr | null {
 	return null;
 }
 
-export function eulerHvrToQuaternion(
-	rotation: any
-): GeometryQuaternion | null {
+/**
+ * Build the view-space orientation basis of a GLL source placement.
+ *
+ * GLL places sources with a heading/vertical/roll triple expressed in radians
+ * (gll-tools docs/format.md:175, docs/acoustic-model.md:14). The local frame is
+ * Z-up with the acoustic axis along local +Y, so the returned `forward` is the
+ * image of local +Y. View space is Y-up, reached through the same
+ * `(x, y, z) -> (x, z, y)` swap as `toViewPoint`.
+ *
+ * The full basis is returned (not just the aim vector) because roll about the
+ * acoustic axis matters for non-circular coverage cones.
+ *
+ * @param rotation      Raw placement rotation, in any spelling `getEulerHvr` accepts.
+ * @param options       Optional settings.
+ * @param options.units Angle unit interpretation. Defaults to 'auto'.
+ * @return The orientation, or null when no H/V/R triple could be read.
+ */
+export function sourcePlacementOrientation(
+	rotation: unknown,
+	options: { units?: GeometryAngleUnits } = {}
+): GeometrySourceOrientation | null {
 	const hvr = getEulerHvr( rotation );
 	if ( ! hvr ) {
 		return null;
 	}
 
-	const heading = axisAngleToQuaternion(
-		{ x: 0, y: 1, z: 0 },
-		degreesToRadians( -hvr.heading )
-	);
-	const vertical = axisAngleToQuaternion(
-		{ x: 0, y: 0, z: 1 },
-		degreesToRadians( -hvr.vertical )
-	);
-	const roll = axisAngleToQuaternion(
-		{ x: 1, y: 0, z: 0 },
-		degreesToRadians( -hvr.roll )
-	);
+	const scale = resolveAngleScale( hvr, options.units || 'auto' );
+	const h = hvr.heading * scale;
+	const v = hvr.vertical * scale;
+	const r = hvr.roll * scale;
 
-	return normalizeQuaternion(
-		multiplyQuaternions( multiplyQuaternions( heading, vertical ), roll )
-	);
+	const sh = Math.sin( h );
+	const ch = Math.cos( h );
+	const sv = Math.sin( v );
+	const cv = Math.cos( v );
+	const sr = Math.sin( r );
+	const cr = Math.cos( r );
+
+	// Rotation matrix in GLL space, rows as in gll-tools web/modules/geometry.js:68.
+	// Its columns are the local basis vectors: X = right, Y = forward, Z = up.
+	const rightGll: GeometryVertex = {
+		x: ch * cr - sv * sh * sr,
+		y: -cv * sh,
+		z: -ch * sr - sv * sh * cr,
+	};
+	const forwardGll: GeometryVertex = {
+		x: sh * cr + sv * ch * sr,
+		y: cv * ch,
+		z: -sh * sr + sv * ch * cr,
+	};
+	const upGll: GeometryVertex = {
+		x: cv * sr,
+		y: -sv,
+		z: cv * cr,
+	};
+
+	// R_view = S * R * S with S the involution (x, y, z) -> (x, z, y). Because
+	// det( S ) = -1 appears twice, det( R_view ) = +1: still a proper rotation.
+	const right = toViewPoint( rightGll );
+	const up = toViewPoint( upGll );
+	const forward = toViewPoint( forwardGll );
+
+	return {
+		right,
+		up,
+		forward,
+		quaternion: quaternionFromBasis( right, up, forward ),
+	};
 }
 
 export function buildGeometryMarkers(
@@ -512,34 +576,105 @@ function pickNumber( obj: any, keys: string[] ): number | null {
 	return null;
 }
 
-function degreesToRadians( degrees: number ): number {
-	return ( degrees * Math.PI ) / 180;
+const DEGREES_TO_RADIANS = Math.PI / 180;
+
+/**
+ * Decide the factor converting the raw H/V/R numbers to radians.
+ *
+ * Radians is the documented contract, so 'auto' only falls back to degrees when
+ * a value is too large to be a plausible radian angle (> 2*PI). Known failure
+ * mode: a degree-valued file whose H, V and R are all <= 6.28 degrees is read as
+ * radians and comes out wildly over-rotated. Pass an explicit unit to override.
+ *
+ * @param hvr   The raw angle triple.
+ * @param units Requested interpretation.
+ * @return Multiplier turning the raw values into radians.
+ */
+function resolveAngleScale(
+	hvr: GeometryEulerHvr,
+	units: GeometryAngleUnits
+): number {
+	if ( units === 'degrees' ) {
+		return DEGREES_TO_RADIANS;
+	}
+	if ( units === 'radians' ) {
+		return 1;
+	}
+
+	const largest = Math.max(
+		Math.abs( hvr.heading ),
+		Math.abs( hvr.vertical ),
+		Math.abs( hvr.roll )
+	);
+
+	return largest > Math.PI * 2 + 1e-6 ? DEGREES_TO_RADIANS : 1;
 }
 
-function axisAngleToQuaternion(
-	axis: GeometryVertex,
-	angleRadians: number
+/**
+ * Convert an orthonormal view-space basis to a quaternion.
+ *
+ * The matrix columns are, in order, local X -> right, Y -> up, Z -> forward.
+ * Uses the trace / largest-diagonal-element branch for numerical stability.
+ *
+ * @param right   Image of local +X.
+ * @param up      Image of local +Y.
+ * @param forward Image of local +Z.
+ * @return The normalized rotation quaternion.
+ */
+function quaternionFromBasis(
+	right: GeometryVertex,
+	up: GeometryVertex,
+	forward: GeometryVertex
 ): GeometryQuaternion {
-	const halfAngle = angleRadians / 2;
-	const sin = Math.sin( halfAngle );
-	return {
-		x: axis.x * sin,
-		y: axis.y * sin,
-		z: axis.z * sin,
-		w: Math.cos( halfAngle ),
-	};
-}
+	const m00 = right.x;
+	const m10 = right.y;
+	const m20 = right.z;
+	const m01 = up.x;
+	const m11 = up.y;
+	const m21 = up.z;
+	const m02 = forward.x;
+	const m12 = forward.y;
+	const m22 = forward.z;
 
-function multiplyQuaternions(
-	a: GeometryQuaternion,
-	b: GeometryQuaternion
-): GeometryQuaternion {
-	return {
-		x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
-		y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-		z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
-		w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
-	};
+	const trace = m00 + m11 + m22;
+
+	if ( trace > 0 ) {
+		const s = Math.sqrt( trace + 1 ) * 2;
+		return normalizeQuaternion( {
+			x: ( m21 - m12 ) / s,
+			y: ( m02 - m20 ) / s,
+			z: ( m10 - m01 ) / s,
+			w: 0.25 * s,
+		} );
+	}
+
+	if ( m00 > m11 && m00 > m22 ) {
+		const s = Math.sqrt( 1 + m00 - m11 - m22 ) * 2;
+		return normalizeQuaternion( {
+			x: 0.25 * s,
+			y: ( m01 + m10 ) / s,
+			z: ( m02 + m20 ) / s,
+			w: ( m21 - m12 ) / s,
+		} );
+	}
+
+	if ( m11 > m22 ) {
+		const s = Math.sqrt( 1 + m11 - m00 - m22 ) * 2;
+		return normalizeQuaternion( {
+			x: ( m01 + m10 ) / s,
+			y: 0.25 * s,
+			z: ( m12 + m21 ) / s,
+			w: ( m02 - m20 ) / s,
+		} );
+	}
+
+	const s = Math.sqrt( 1 + m22 - m00 - m11 ) * 2;
+	return normalizeQuaternion( {
+		x: ( m02 + m20 ) / s,
+		y: ( m12 + m21 ) / s,
+		z: 0.25 * s,
+		w: ( m10 - m01 ) / s,
+	} );
 }
 
 function normalizeQuaternion(

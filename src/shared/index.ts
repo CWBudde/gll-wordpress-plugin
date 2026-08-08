@@ -106,14 +106,16 @@ export {
 	resolveGeometryVertex,
 	buildGeometryMarkers,
 	transformGeometryPoint,
-	eulerHvrToQuaternion,
+	sourcePlacementOrientation,
 } from './geometry-utils';
 export type {
+	GeometryAngleUnits,
 	GeometryBounds,
 	GeometryEulerHvr,
 	GeometryMarker,
 	GeometryMarkerVisibility,
 	GeometryQuaternion,
+	GeometrySourceOrientation,
 } from './geometry-utils';
 export {
 	getCaseGeometryVertices,

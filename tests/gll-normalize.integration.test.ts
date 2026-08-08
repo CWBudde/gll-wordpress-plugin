@@ -143,6 +143,46 @@ maybeDescribe( 'normalizeGllData against the real parser', () => {
 		}
 	} );
 
+	it( 'binds every case geometry to its owning box type', () => {
+		const geometries = normalized.Database.CaseGeometries;
+		const boxTypes = normalized.Database.BoxTypes;
+
+		geometries.forEach( ( geometry: any ) => {
+			// The flat geometry index is not the box index, so the geometry has
+			// to name its own box.
+			expect( boxTypes[ geometry.BoxIndex ].Key ).toBe( geometry.BoxKey );
+
+			expect( Array.isArray( geometry.SourcePlacements ) ).toBe( true );
+			expect( geometry.SourcePlacements ).toBe(
+				boxTypes[ geometry.BoxIndex ].SourcePlacements
+			);
+		} );
+
+		// The fixture may carry no case geometry at all, so check the shared
+		// placement shape on the box types as well.
+		boxTypes.forEach( ( box: any ) => {
+			expect( Array.isArray( box.SourcePlacements ) ).toBe( true );
+
+			box.SourcePlacements.forEach( ( placement: any ) => {
+				if ( placement.Position ) {
+					expect(
+						Number.isFinite( placement.Position.x ) &&
+							Number.isFinite( placement.Position.y ) &&
+							Number.isFinite( placement.Position.z )
+					).toBe( true );
+				}
+
+				if ( placement.Rotation ) {
+					expect(
+						Number.isFinite( placement.Rotation.Heading ) &&
+							Number.isFinite( placement.Rotation.Vertical ) &&
+							Number.isFinite( placement.Rotation.Roll )
+					).toBe( true );
+				}
+			} );
+		} );
+	} );
+
 	it( 'is idempotent', () => {
 		expect( normalizeGllData( normalized ) ).toBe( normalized );
 	} );
