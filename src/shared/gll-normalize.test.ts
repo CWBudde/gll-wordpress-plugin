@@ -321,6 +321,130 @@ describe( 'normalizeGllData', () => {
 		} );
 	} );
 
+	describe( 'embedded files', () => {
+		it( 'normalizes include files and keeps their label', () => {
+			const result = normalizeGllData( {
+				database: {
+					include_files: [
+						{
+							label: 'G512 Data',
+							key: 'inc1',
+							filename: 'CODA Data Sheet - G512-Pro.pdf',
+							size: 523073,
+							data_uri: 'data:application/pdf;base64,JVBERi0=',
+						},
+					],
+				},
+			} );
+
+			expect( result.Database.IncludeFiles ).toEqual( [
+				{
+					Label: 'G512 Data',
+					Key: 'inc1',
+					Filename: 'CODA Data Sheet - G512-Pro.pdf',
+					Name: 'CODA Data Sheet - G512-Pro.pdf',
+					Size: 523073,
+					DataUri: 'data:application/pdf;base64,JVBERi0=',
+				},
+			] );
+		} );
+
+		it( 'folds Windows authoring paths to a base name', () => {
+			const result = normalizeGllData( {
+				database: {
+					data_files: [
+						{
+							key: 'a',
+							filename: '.\\Drawings\\CODA-logoLeft.PNG',
+							size: 5028,
+						},
+						// HOPS7-Pro is the one corpus file nesting two levels.
+						{
+							key: 'b',
+							filename:
+								'.\\Drawings\\Logo Drawings\\CODA-logoRight.PNG',
+							size: 337,
+						},
+					],
+				},
+			} );
+
+			const names = result.Database.DataFiles.map( ( f ) => f.Name );
+			expect( names ).toEqual( [
+				'CODA-logoLeft.PNG',
+				'CODA-logoRight.PNG',
+			] );
+
+			// The raw path is information in its own right, so it survives.
+			expect( result.Database.DataFiles[ 0 ].Filename ).toBe(
+				'.\\Drawings\\CODA-logoLeft.PNG'
+			);
+		} );
+
+		it( 'falls back to the raw value when a path ends in a separator', () => {
+			const result = normalizeGllData( {
+				database: {
+					data_files: [ { filename: '.\\Drawings\\', size: 12 } ],
+				},
+			} );
+
+			expect( result.Database.DataFiles[ 0 ].Name ).toBe(
+				'.\\Drawings\\'
+			);
+		} );
+
+		it( 'drops the blank slots real files leave in the table', () => {
+			// 3Way-LR.gll declares two data files and fills neither; a third of
+			// the corpus fills only one of the two.
+			const result = normalizeGllData( {
+				database: {
+					data_files: [
+						{ key: '', filename: '', size: 0 },
+						{ key: 'b', filename: 'logo.png', size: 1059 },
+						{ key: '', filename: '   ', size: 0 },
+					],
+				},
+			} );
+
+			expect( result.Database.DataFiles ).toHaveLength( 1 );
+			expect( result.Database.DataFiles[ 0 ].Name ).toBe( 'logo.png' );
+		} );
+
+		it( 'keeps a file that has a size but no inlined bytes', () => {
+			// Existence and downloadability are separate questions: such a file
+			// still deserves a row, just without a download.
+			const result = normalizeGllData( {
+				database: {
+					data_files: [ { filename: 'big.xed', size: 900 } ],
+				},
+			} );
+
+			expect( result.Database.DataFiles ).toHaveLength( 1 );
+			expect( result.Database.DataFiles[ 0 ].DataUri ).toBeUndefined();
+		} );
+
+		it( 'yields empty lists when the parser omits the tables', () => {
+			// Both fields are `omitempty` on the Go side, so they can be absent
+			// rather than empty.
+			const result = normalizeGllData( { database: {} } );
+
+			expect( result.Database.IncludeFiles ).toEqual( [] );
+			expect( result.Database.DataFiles ).toEqual( [] );
+		} );
+
+		it( 'does not carry the heuristic resource scan', () => {
+			// Its PNG entries duplicate data_files byte for byte and its zlib
+			// entries are PDF internals; carrying it doubled the retained
+			// memory of every embedded image for no consumer.
+			const result = normalizeGllData( {
+				database: {},
+				resources: [ { type: 'PNG', name: 'logo.png', size: 10 } ],
+			} );
+
+			expect( result.Resources ).toBeUndefined();
+		} );
+	} );
+
 	describe( 'idempotency', () => {
 		it( 'returns already normalized data unchanged', () => {
 			const raw = {

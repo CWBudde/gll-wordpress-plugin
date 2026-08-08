@@ -25,6 +25,87 @@ function isNormalized( raw ) {
 }
 
 /**
+ * Reduce a GLL-stored path to its base name.
+ *
+ * Embedded file names carry the authoring machine's relative path, using
+ * Windows separators: `.\Drawings\CODA-logoLeft.PNG`, and in one corpus file a
+ * two-level `.\Drawings\Logo Drawings\CODA-logoRight.PNG`. Include files
+ * (the PDFs) carry no prefix at all, so this has to tolerate both.
+ *
+ * Folding happens here rather than in the render layer because it is a format
+ * concern, of the same kind as the 1-based vertex indices and the `x/y/z`
+ * rotation spelling this module already translates. A consumer that had to
+ * know about `.\Drawings\` would defeat the point of a single translation
+ * point.
+ *
+ * @param {string} filename Raw file name as stored in the GLL.
+ * @return {string} Base name, or the input when it has no separators.
+ */
+function toBaseName( filename ) {
+	const text = String( filename || '' );
+	// `pop()` returns '' for a trailing separator, so fall back to the input.
+	return text.replace( /\\/g, '/' ).split( '/' ).pop() || text;
+}
+
+/**
+ * Normalize one embedded file record (an include file or a data file).
+ *
+ * Both parser records share a shape; include files additionally carry a
+ * human-authored `label`, which is why documentation rows can show something
+ * friendlier than a file name.
+ *
+ * Returns null for the blank padding entries described on
+ * `normalizeEmbeddedFiles`.
+ *
+ * @param {Object} file Raw embedded file record.
+ * @return {Object|null} Normalized record, or null when the slot is unused.
+ */
+function normalizeEmbeddedFile( file ) {
+	if ( ! file ) {
+		return null;
+	}
+
+	const filename = String( file.filename || '' ).trim();
+	const size = Number( file.size );
+
+	// An unused table slot, not a file. See normalizeEmbeddedFiles.
+	if ( ! filename || ! Number.isFinite( size ) || size <= 0 ) {
+		return null;
+	}
+
+	return {
+		Label: file.label,
+		Key: file.key,
+		Filename: file.filename,
+		Name: toBaseName( file.filename ),
+		Size: size,
+		DataUri: file.data_uri,
+	};
+}
+
+/**
+ * Normalize a list of embedded files, dropping unused slots.
+ *
+ * The parser emits these tables at their on-disk length, and real files leave
+ * slots empty: every GLL in the reference corpus declares exactly two data
+ * files, but a third of them fill only one, and `3Way-LR.gll` fills neither.
+ * An unused slot is `{key: "", filename: "", size: 0}` — it carries no
+ * information, so it is padding rather than data, and it is dropped here for
+ * the same reason unrenderable edges and faces are.
+ *
+ * Note that a missing `data_uri` is deliberately *not* disqualifying. The WASM
+ * layer omits it for records it declines to inline, and such a file still
+ * exists and still deserves a row showing its name and size — it simply has no
+ * download.
+ *
+ * @param {Array} files Raw embedded file records.
+ * @return {Object[]} Normalized records, unused slots removed.
+ */
+function normalizeEmbeddedFiles( files ) {
+	return ( files || [] ).map( normalizeEmbeddedFile ).filter( Boolean );
+}
+
+/**
  * Normalize a spectrum block ({definition, level, phase, delay}).
  *
  * The inner `definition` keeps its snake_case field names: `buildLogFrequencies`
@@ -381,6 +462,17 @@ export function normalizeGllData( raw ) {
 		)
 		.filter( Boolean );
 
+	// `raw.resources` — the parser's heuristic byte scan for embedded PNG and
+	// zlib blobs — is deliberately not carried over. Across the reference
+	// corpus its PNG entries duplicate `data_files` byte for byte, base64
+	// payload included, and every one of its zlib entries turned out to lie
+	// inside an embedded PDF (they are that PDF's own object and font
+	// streams). Keeping it meant retaining a second copy of every embedded
+	// image for a consumer that never existed.
+	//
+	// `database.author_files` never reaches us at all: the WASM layer drops it
+	// on purpose, as those are encrypted licence blobs whose names leak the
+	// author's absolute paths.
 	return {
 		Header: {
 			Magic: header.magic,
@@ -415,8 +507,9 @@ export function normalizeGllData( raw ) {
 			),
 			BoxTypes: normalizedBoxTypes,
 			CaseGeometries: caseGeometries,
+			IncludeFiles: normalizeEmbeddedFiles( database.include_files ),
+			DataFiles: normalizeEmbeddedFiles( database.data_files ),
 		},
-		Resources: raw.resources || [],
 	};
 }
 
