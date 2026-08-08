@@ -10,6 +10,7 @@ import Chart from 'chart.js/auto';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
@@ -212,7 +213,9 @@ function renderChart( block, data, options ) {
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
+				sourceLabel
+			) }</span>`
 		);
 	}
 
@@ -312,7 +315,7 @@ function showError( block, message ) {
 	if ( chartContainer ) {
 		chartContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 		chartContainer.style.display = 'block';

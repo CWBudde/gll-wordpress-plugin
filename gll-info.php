@@ -112,18 +112,23 @@ add_action( 'init', 'gll_info_block_init' );
  * All block types shipped by this plugin.
  *
  * Every block loads the WASM parser on its own, so each one needs the
- * gllInfoSettings URLs — not just the top-level viewer.
+ * gllInfoSettings URLs — not just the top-level viewer. Derived from the block
+ * registry rather than hardcoded, so adding or removing a block cannot leave
+ * the enqueue logic silently out of step. Blocks are registered on `init`, and
+ * every caller runs later than that.
  *
  * @return string[] Fully qualified block names.
  */
 function gll_info_get_block_names() {
-	return array(
-		'gll-info/gll-info',
-		'gll-info/frequency-response',
-		'gll-info/polar-plot',
-		'gll-info/balloon-3d',
-		'gll-info/geometry',
-	);
+	$names = array();
+
+	foreach ( WP_Block_Type_Registry::get_instance()->get_all_registered() as $block_name => $block_type ) {
+		if ( 0 === strpos( $block_name, 'gll-info/' ) ) {
+			$names[] = $block_name;
+		}
+	}
+
+	return $names;
 }
 
 /**

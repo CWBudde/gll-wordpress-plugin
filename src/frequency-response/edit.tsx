@@ -109,13 +109,50 @@ export default function Edit( { attributes, setAttributes } ) {
 		if ( ! currentSource ) {
 			return null;
 		}
-		return buildSourceResponseChartConfig(
+
+		const config = buildSourceResponseChartConfig(
 			currentSource,
 			responseIndex,
 			phaseMode,
 			normalized
 		);
-	}, [ currentSource, responseIndex, phaseMode, normalized ] );
+
+		if ( ! config ) {
+			return null;
+		}
+
+		// The shared builder always emits both series; the saved block honours
+		// the visibility toggles, so the preview has to as well or the editor
+		// shows something the published page will not.
+		const datasets = config.data.datasets.filter( ( dataset ) =>
+			dataset.yAxisID === 'y1' ? showPhase : showMagnitude
+		);
+
+		if ( datasets.length === 0 ) {
+			return null;
+		}
+
+		const scales = { ...config.options.scales };
+		if ( ! showMagnitude ) {
+			delete scales.y;
+		}
+		if ( ! showPhase ) {
+			delete scales.y1;
+		}
+
+		return {
+			...config,
+			data: { ...config.data, datasets },
+			options: { ...config.options, scales },
+		};
+	}, [
+		currentSource,
+		responseIndex,
+		phaseMode,
+		normalized,
+		showMagnitude,
+		showPhase,
+	] );
 
 	// Render file selection placeholder if no file is selected
 	if ( ! fileUrl ) {

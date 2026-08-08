@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
+import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 import {
@@ -294,7 +295,9 @@ function render3DBalloon(
 		`<span class="gll-meta-badge"><strong>Symmetry:</strong> ${ balloonGrid.symmetryName }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ options.qualityPreset }</span>`
+		`<span class="gll-meta-badge"><strong>Quality:</strong> ${ escapeHtml(
+			options.qualityPreset
+		) }</span>`
 	);
 	if ( options.wireframe ) {
 		badges.push(
@@ -309,7 +312,9 @@ function render3DBalloon(
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ sourceLabel }</span>`
+			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
+				sourceLabel
+			) }</span>`
 		);
 	}
 
@@ -628,7 +633,7 @@ function showError( block: HTMLElement, message: string ) {
 	if ( canvasContainer ) {
 		canvasContainer.innerHTML = `
 			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ message }
+				<strong>Error:</strong> ${ escapeHtml( message ) }
 			</div>
 		`;
 		( canvasContainer as HTMLElement ).style.display = 'block';
