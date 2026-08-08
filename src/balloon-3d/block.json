@@ -80,6 +80,29 @@
 			"fileName": "example-speaker.gll"
 		}
 	},
+	"variations": [
+		{
+			"name": "wireframe",
+			"title": "GLL Wireframe Balloon",
+			"description": "3D directivity balloon drawn as a wireframe mesh instead of a solid surface.",
+			"icon": "admin-site-alt3",
+			"attributes": {
+				"wireframe": true
+			},
+			"scope": [ "inserter" ]
+		},
+		{
+			"name": "minimal",
+			"title": "GLL Balloon (Minimal)",
+			"description": "3D directivity balloon without the reference sphere and axes helper, for a clean presentation view.",
+			"icon": "admin-site-alt3",
+			"attributes": {
+				"showReferenceSphere": false,
+				"showAxesHelper": false
+			},
+			"scope": [ "inserter" ]
+		}
+	],
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]

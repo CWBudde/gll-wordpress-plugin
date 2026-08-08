@@ -68,6 +68,28 @@
 			"fileName": "example-speaker.gll"
 		}
 	},
+	"variations": [
+		{
+			"name": "wireframe",
+			"title": "GLL Wireframe Geometry",
+			"description": "Cabinet geometry drawn as edges only, without shaded faces.",
+			"icon": "admin-site-alt3",
+			"attributes": {
+				"showFaces": false
+			},
+			"scope": [ "inserter" ]
+		},
+		{
+			"name": "turntable",
+			"title": "GLL Rotating Geometry",
+			"description": "Cabinet geometry that rotates on its own, for use as a display element.",
+			"icon": "admin-site-alt3",
+			"attributes": {
+				"autoRotate": true
+			},
+			"scope": [ "inserter" ]
+		}
+	],
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]

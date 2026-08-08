@@ -76,6 +76,33 @@
 			"fileName": "example-speaker.gll"
 		}
 	},
+	"variations": [
+		{
+			"name": "rigging",
+			"title": "GLL Rigging Configuration",
+			"description": "Box types, frames, limits and warnings — the mechanical configuration, without the DSP filter groups.",
+			"icon": "admin-settings",
+			"attributes": {
+				"showFilterGroups": false,
+				"showFilterDetails": false
+			},
+			"scope": [ "inserter" ]
+		},
+		{
+			"name": "filters",
+			"title": "GLL Filter Configuration",
+			"description": "Only the DSP filter groups and their filter details.",
+			"icon": "admin-settings",
+			"attributes": {
+				"showBoxTypes": false,
+				"showFrames": false,
+				"showLimits": false,
+				"showWarnings": false,
+				"showGeometrySummary": false
+			},
+			"scope": [ "inserter" ]
+		}
+	],
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]

@@ -196,3 +196,4 @@ add_action( 'wp_enqueue_scripts', 'gll_info_enqueue_frontend_assets' );
 
 // Include additional plugin files.
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-media.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-patterns.php';

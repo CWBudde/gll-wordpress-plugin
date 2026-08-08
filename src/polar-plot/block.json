@@ -56,6 +56,38 @@
 			"fileName": "example-speaker.gll"
 		}
 	},
+	"variations": [
+		{
+			"name": "horizontal",
+			"title": "GLL Horizontal Polar Plot",
+			"description": "Polar directivity plot showing the horizontal slice only.",
+			"icon": "chart-pie",
+			"attributes": {
+				"showVertical": false
+			},
+			"scope": [ "inserter" ]
+		},
+		{
+			"name": "vertical",
+			"title": "GLL Vertical Polar Plot",
+			"description": "Polar directivity plot showing the vertical slice only.",
+			"icon": "chart-pie",
+			"attributes": {
+				"showHorizontal": false
+			},
+			"scope": [ "inserter" ]
+		},
+		{
+			"name": "normalized",
+			"title": "GLL Normalized Polar Plot",
+			"description": "Polar plot normalized to the on-axis level, so the coverage pattern is read directly in dB relative to the axis.",
+			"icon": "chart-pie",
+			"attributes": {
+				"normalized": true
+			},
+			"scope": [ "inserter" ]
+		}
+	],
 	"supports": {
 		"html": false,
 		"align": [ "wide", "full" ]
