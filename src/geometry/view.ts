@@ -23,6 +23,7 @@ import {
 	attachManualOrbitControls,
 	type ManualOrbitControls,
 } from '../shared/manual-orbit-controls';
+import { applyHelperTheme } from './helper-theme';
 
 document.addEventListener( 'DOMContentLoaded', () => {
 	const blocks = document.querySelectorAll( '.gll-geometry-block' );
@@ -209,6 +210,10 @@ function initThreeScene(
 	}
 	scene.add( axesHelper );
 
+	// Helpers are chrome, so they follow the block's theme tokens. The lights
+	// stay white and the clear color stays transparent.
+	applyHelperTheme( scene, container );
+
 	const geometryGroup = buildGeometryGroup(
 		options.geometryData,
 		options.showFaces,
@@ -263,6 +268,9 @@ function initThreeScene(
 		camera.aspect = newWidth / height;
 		camera.updateProjectionMatrix();
 		renderer.setSize( newWidth, height );
+		// A resize is the cheapest signal we get that the surrounding styling
+		// may have changed, so re-resolve the tokens here.
+		applyHelperTheme( scene, container );
 	} );
 	resizeObserver.observe( container );
 

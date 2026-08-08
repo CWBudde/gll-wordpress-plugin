@@ -49,6 +49,11 @@
 		"chartHeight": {
 			"type": "number",
 			"default": 400
+		},
+		"appearance": {
+			"type": "string",
+			"enum": [ "auto", "plain", "transparent" ],
+			"default": "auto"
 		}
 	},
 	"example": {

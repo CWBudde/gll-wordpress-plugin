@@ -1,14 +1,16 @@
 /**
  * Geometry Viewer Block - Editor Styles
  *
+ * As on the frontend, the card comes from `.gll-block` on the block wrapper.
+ * The error state keeps its fixed red palette on purpose: it has to stay
+ * legible precisely when the surrounding styling has gone wrong.
+ *
  * @package GllInfo
  */
 
+@use "../shared/tokens";
+
 .gll-geometry-block {
-	padding: 20px;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	background: #fff;
 
 	.gll-geometry-header {
 		display: flex;
@@ -16,13 +18,13 @@
 		gap: 12px;
 		margin-bottom: 20px;
 		padding-bottom: 15px;
-		border-bottom: 1px solid #e0e0e0;
+		border-bottom: 1px solid var(--gll-border);
 
 		h3 {
 			margin: 0;
 			font-size: 18px;
 			font-weight: 600;
-			color: #1e1e1e;
+			color: var(--gll-heading);
 		}
 	}
 
@@ -32,12 +34,12 @@
 		justify-content: center;
 		gap: 12px;
 		padding: 40px;
-		background: #f9f9f9;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
 
 		p {
 			margin: 0;
-			color: #666;
+			color: var(--gll-text-muted);
 		}
 	}
 
@@ -58,8 +60,8 @@
 		overflow: hidden;
 
 		.gll-three-wrapper {
-			background: #f8fafc;
-			border: 1px solid #e0e0e0;
+			background: var(--gll-three-bg);
+			border: 1px solid var(--gll-border);
 			border-radius: 4px;
 		}
 	}

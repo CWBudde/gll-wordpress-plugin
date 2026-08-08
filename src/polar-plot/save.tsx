@@ -9,6 +9,8 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 
+import { appearanceClass } from '../shared';
+
 /**
  * Save component for Polar Plot block.
  *
@@ -27,6 +29,7 @@ export default function save( { attributes } ) {
 		showVertical,
 		normalized,
 		chartHeight,
+		appearance,
 	} = attributes;
 
 	if ( ! fileUrl ) {
@@ -34,7 +37,7 @@ export default function save( { attributes } ) {
 	}
 
 	const blockProps = useBlockProps.save( {
-		className: 'gll-polar-plot-block',
+		className: `gll-polar-plot-block ${ appearanceClass( appearance ) }`,
 		'data-file-url': fileUrl,
 		'data-file-id': fileId || '',
 		'data-file-name': fileName || '',

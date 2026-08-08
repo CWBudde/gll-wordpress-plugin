@@ -1,0 +1,68 @@
+/**
+ * Shared theme tokens for all GLL blocks.
+ *
+ * Every color a block paints resolves through this layer. Each token has a
+ * three-step fallback chain:
+ *
+ *   1. The WordPress `theme.json` preset, which block themes provide for free.
+ *   2. A classic-theme convention (`--color-surface`, `--color-text`, ...).
+ *      Not a standard, but widely used and correct for the themes we target.
+ *   3. The plugin's own default, so nothing regresses on a theme that declares
+ *      neither of the above.
+ *
+ * Because the browser walks this chain itself, `getComputedStyle` returns the
+ * final value — see `resolve-theme.ts`, which feeds it to Chart.js and
+ * Three.js.
+ *
+ * @package GllInfo
+ */
+
+.gll-block {
+	--gll-surface: var(--wp--preset--color--base, var(--color-surface, #fff));
+	--gll-surface-muted: var(--wp--preset--color--tertiary, var(--color-surface-alt, #f5f5f5));
+	--gll-text: var(--wp--preset--color--contrast, var(--color-text, #333));
+	--gll-text-muted: var(--color-muted, #666);
+	--gll-heading: var(--color-heading, var(--gll-text));
+	--gll-border: var(--color-border, #e0e0e0);
+	--gll-accent: var(--wp--preset--color--primary, var(--color-link, #667eea));
+	--gll-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+
+	// Derived tokens. Kept here so blocks never re-derive them inconsistently.
+	--gll-radius: 8px;
+	--gll-padding: 20px;
+
+	// The Three.js wrapper and chart containers read the same surface, so
+	// `transparent` below propagates to them without extra rules.
+	--gll-three-bg: var(--gll-surface-muted);
+	--gll-three-text: var(--gll-text);
+	--gll-three-text-muted: var(--gll-text-muted);
+	--gll-three-spinner-track: var(--gll-border);
+	--gll-three-spinner: var(--gll-accent);
+
+	color: var(--gll-text);
+	background: var(--gll-surface);
+	border: 1px solid var(--gll-border);
+	border-radius: var(--gll-radius);
+	padding: var(--gll-padding);
+	box-shadow: var(--gll-shadow);
+}
+
+/**
+ * Appearance variants, selected per block instance via the `appearance`
+ * attribute. `auto` is the default and needs no overrides.
+ */
+
+.gll-block.gll-appearance--plain {
+	--gll-radius: 0;
+	--gll-shadow: none;
+}
+
+.gll-block.gll-appearance--transparent {
+	--gll-surface: transparent;
+	--gll-surface-muted: transparent;
+	--gll-radius: 0;
+	--gll-padding: 0;
+	--gll-shadow: none;
+
+	border: 0;
+}

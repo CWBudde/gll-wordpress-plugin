@@ -47,6 +47,11 @@
 		"showResponses": {
 			"type": "boolean",
 			"default": true
+		},
+		"appearance": {
+			"type": "string",
+			"enum": [ "auto", "plain", "transparent" ],
+			"default": "auto"
 		}
 	},
 	"example": {

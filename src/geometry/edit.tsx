@@ -41,8 +41,11 @@ import {
 	computeBounds,
 	computeScaleFactor,
 	attachManualOrbitControls,
+	AppearanceControl,
+	appearanceClass,
 } from '../shared';
 import type { GeometryViewerRef, ManualOrbitControls } from '../shared';
+import { applyHelperTheme } from './helper-theme';
 import './editor.scss';
 
 /**
@@ -66,9 +69,12 @@ export default function Edit( { attributes, setAttributes } ) {
 		centerReference,
 		autoRotate,
 		canvasHeight,
+		appearance,
 	} = attributes;
 
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps( {
+		className: appearanceClass( appearance ),
+	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const viewerRef = useRef< GeometryViewerRef >( null );
@@ -158,6 +164,24 @@ export default function Edit( { attributes, setAttributes } ) {
 	const markerData = geometrySceneData?.markers || [];
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
+	const themedSceneRef = useRef< {
+		scene: THREE.Scene;
+		element: HTMLElement;
+	} | null >( null );
+
+	/**
+	 * Re-resolve the theme when the viewer resizes. A resize is the cheapest
+	 * signal available that the surrounding styling may have changed, and
+	 * repainting two small helper buffers costs nothing.
+	 */
+	const handleResize = useCallback( () => {
+		if ( themedSceneRef.current ) {
+			applyHelperTheme(
+				themedSceneRef.current.scene,
+				themedSceneRef.current.element
+			);
+		}
+	}, [] );
 
 	const buildGeometry = useCallback( () => {
 		const scene = viewerRef.current?.scene;
@@ -263,8 +287,15 @@ export default function Edit( { attributes, setAttributes } ) {
 	}, [] );
 
 	const handleSceneReady = useCallback(
-		( _scene, camera, renderer ) => {
+		( scene, camera, renderer ) => {
 			buildGeometry();
+
+			// The grid and axes the shared viewer creates are chrome, so they
+			// follow the block's theme tokens. `renderer.domElement` sits
+			// inside the `.gll-block` wrapper and therefore inherits them.
+			themedSceneRef.current = { scene, element: renderer.domElement };
+			applyHelperTheme( scene, renderer.domElement );
+
 			if ( controlsRef.current ) {
 				controlsRef.current.dispose();
 				controlsRef.current = null;
@@ -341,6 +372,7 @@ export default function Edit( { attributes, setAttributes } ) {
 				disposeSceneObject( geometryGroupRef.current );
 				geometryGroupRef.current = null;
 			}
+			themedSceneRef.current = null;
 		},
 		[]
 	);
@@ -348,6 +380,11 @@ export default function Edit( { attributes, setAttributes } ) {
 	useEffect( () => {
 		buildGeometry();
 	}, [ buildGeometry ] );
+
+	// Switching appearance can change what the tokens resolve to, so repaint.
+	useEffect( () => {
+		handleResize();
+	}, [ appearance, handleResize ] );
 
 	if ( ! fileUrl ) {
 		return (
@@ -516,6 +553,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 					/>
 				</PanelBody>
+
+				<AppearanceControl
+					appearance={ appearance }
+					onChange={ ( value ) =>
+						setAttributes( { appearance: value } )
+					}
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>
@@ -558,6 +602,7 @@ export default function Edit( { attributes, setAttributes } ) {
 								height={ canvasHeight }
 								onAnimate={ handleAnimate }
 								onSceneReady={ handleSceneReady }
+								onResize={ handleResize }
 							/>
 						</div>
 					) }

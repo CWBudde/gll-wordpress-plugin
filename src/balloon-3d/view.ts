@@ -19,6 +19,8 @@ import {
 	computeGlobalMaxLevel,
 } from '../shared/balloon-utils';
 import type { BalloonGridInfo } from '../shared/balloon-utils';
+import { resolveTheme } from '../shared/resolve-theme';
+import { applySceneTheme } from './theme-three';
 
 type QualityPreset = 'low' | 'medium' | 'high';
 
@@ -375,6 +377,10 @@ function initThreeScene(
 	const width = container.clientWidth;
 	const height = options.canvasHeight;
 
+	// Resolve the block's theme tokens once. Custom properties inherit, so the
+	// canvas container reports the same values as the `.gll-block` wrapper.
+	let theme = resolveTheme( container );
+
 	// Create scene
 	const scene = new THREE.Scene();
 
@@ -463,7 +469,9 @@ function initThreeScene(
 	if ( options.showReferenceSphere ) {
 		const sphereGeometry = new THREE.SphereGeometry( 1, 32, 32 );
 		const sphereMaterial = new THREE.MeshBasicMaterial( {
-			color: 0x888888,
+			// Muted text, not the border color: at opacity 0.28 the default
+			// light-grey border would be all but invisible on a light theme.
+			color: new THREE.Color( theme.textMuted ),
 			wireframe: true,
 			transparent: true,
 			opacity: 0.28,
@@ -478,6 +486,10 @@ function initThreeScene(
 		axesHelper = new THREE.AxesHelper( 1 );
 		scene.add( axesHelper );
 	}
+
+	// Recolor the helpers that were just added (the axes helper's per-vertex
+	// R/G/B is replaced with the theme's border color).
+	applySceneTheme( scene, theme );
 
 	// Build balloon mesh using new utilities with symmetry handling
 	const balloonMesh = buildBalloonMesh(
@@ -496,6 +508,18 @@ function initThreeScene(
 		camera.aspect = newWidth / height;
 		camera.updateProjectionMatrix();
 		renderer.setSize( newWidth, height );
+
+		// A resize is the cheapest hook we have for picking up a theme change
+		// (a dark-mode toggle usually reflows the layout). Re-apply only when
+		// the resolved colors actually differ.
+		const next = resolveTheme( container );
+		if (
+			next.border !== theme.border ||
+			next.textMuted !== theme.textMuted
+		) {
+			theme = next;
+			applySceneTheme( scene, theme );
+		}
 	} );
 	resizeObserver.observe( container );
 

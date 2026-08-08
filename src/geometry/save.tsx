@@ -6,8 +6,11 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 
+import { appearanceClass } from '../shared';
+
 export default function save( { attributes } ) {
 	const {
+		appearance,
 		fileUrl,
 		fileName,
 		geometryIndex,
@@ -21,7 +24,7 @@ export default function save( { attributes } ) {
 	} = attributes;
 
 	const blockProps = useBlockProps.save( {
-		className: 'gll-geometry-block',
+		className: `gll-geometry-block ${ appearanceClass( appearance ) }`,
 	} );
 
 	return (

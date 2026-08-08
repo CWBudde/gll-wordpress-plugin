@@ -75,6 +75,15 @@ return array(
 					'high'
 				),
 				'default' => 'medium'
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
 			)
 		),
 		'example' => array(
@@ -156,6 +165,15 @@ return array(
 			'chartHeight' => array(
 				'type' => 'number',
 				'default' => 400
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
 			)
 		),
 		'example' => array(
@@ -241,6 +259,15 @@ return array(
 			'canvasHeight' => array(
 				'type' => 'number',
 				'default' => 500
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
 			)
 		),
 		'example' => array(
@@ -314,6 +341,15 @@ return array(
 			'showResponses' => array(
 				'type' => 'boolean',
 				'default' => true
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
 			)
 		),
 		'example' => array(
@@ -386,6 +422,15 @@ return array(
 			'chartHeight' => array(
 				'type' => 'number',
 				'default' => 400
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
 			)
 		),
 		'example' => array(

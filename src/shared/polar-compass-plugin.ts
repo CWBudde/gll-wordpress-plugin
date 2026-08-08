@@ -5,6 +5,11 @@
  * radar chart perimeter. Horizontal slice labels are blue, vertical are red,
  * and shared labels (Front/Back) are neutral.
  *
+ * The blue and red are series encoding: they match the horizontal and vertical
+ * datasets, so they stay fixed across themes. Only the neutral Front/Back pair
+ * is chrome, and it follows the theme via the `textColor` option — which
+ * `applyChartTheme` fills in, so callers normally set nothing.
+ *
  * Ported from gll-tools web demo (visualization.js polarCompassPlugin).
  *
  * @package
@@ -12,7 +17,10 @@
 
 const polarCompassPlugin = {
 	id: 'polarCompass',
-	afterDraw( chart ) {
+	defaults: {
+		textColor: '#334155',
+	},
+	afterDraw( chart, _args, options ) {
 		const scale = chart.scales?.r;
 		if ( ! scale ) {
 			return;
@@ -25,8 +33,8 @@ const polarCompassPlugin = {
 		ctx.save();
 		ctx.font = 'bold 12px sans-serif';
 
-		// Right = Front, Left = Back (shared by both slices).
-		ctx.fillStyle = '#334155';
+		// Right = Front, Left = Back (shared by both slices, so neutral).
+		ctx.fillStyle = options?.textColor || '#334155';
 		ctx.textBaseline = 'middle';
 		ctx.textAlign = 'left';
 		ctx.fillText( 'Front', xCenter + drawingArea + sideOffset, yCenter );

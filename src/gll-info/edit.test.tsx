@@ -28,6 +28,18 @@ const mockLoaderState: {
 
 jest.mock( '../shared', () => ( {
 	useGLLLoader: () => mockLoaderState,
+	appearanceClass: ( appearance: string ) =>
+		`gll-block gll-appearance--${ appearance ?? 'auto' }`,
+	AppearanceControl: ( { appearance, onChange }: any ) => (
+		<button
+			type="button"
+			data-testid="appearance-control"
+			data-appearance={ appearance }
+			onClick={ () => onChange( 'transparent' ) }
+		>
+			appearance
+		</button>
+	),
 } ) );
 
 // Mock @wordpress/block-editor: render MediaUpload as a button that fires
@@ -144,6 +156,7 @@ const defaultAttributes = {
 	sourcesDisplayMode: 'expandable',
 	showSourceResponseCharts: false,
 	showResponses: true,
+	appearance: 'auto',
 };
 
 beforeEach( () => {
@@ -302,6 +315,56 @@ describe( 'Edit (gll-info block) — loaded with file', () => {
 		} );
 		expect( setAttributes ).toHaveBeenCalledWith( {
 			sourcesDisplayMode: 'detailed',
+		} );
+	} );
+} );
+
+describe( 'Edit (gll-info block) — appearance', () => {
+	const attributesWithFile = {
+		...defaultAttributes,
+		fileId: 42,
+		fileUrl: 'https://example.com/sample.gll',
+		fileName: 'sample.gll',
+	};
+
+	it( 'puts the appearance class on the block wrapper', () => {
+		const { container } = render(
+			<Edit
+				attributes={ { ...attributesWithFile, appearance: 'plain' } }
+				setAttributes={ jest.fn() }
+			/>
+		);
+		const wrapper = container.querySelector( '.gll-info-block' );
+		expect( wrapper ).toHaveClass( 'gll-block' );
+		expect( wrapper ).toHaveClass( 'gll-appearance--plain' );
+	} );
+
+	it( 'also classes the placeholder wrapper when no file is selected', () => {
+		const { container } = render(
+			<Edit
+				attributes={ {
+					...defaultAttributes,
+					appearance: 'transparent',
+				} }
+				setAttributes={ jest.fn() }
+			/>
+		);
+		expect(
+			container.querySelector( '.gll-appearance--transparent' )
+		).toBeInTheDocument();
+	} );
+
+	it( 'writes the appearance attribute from the Appearance control', () => {
+		const setAttributes = jest.fn();
+		render(
+			<Edit
+				attributes={ attributesWithFile }
+				setAttributes={ setAttributes }
+			/>
+		);
+		fireEvent.click( screen.getByTestId( 'appearance-control' ) );
+		expect( setAttributes ).toHaveBeenCalledWith( {
+			appearance: 'transparent',
 		} );
 	} );
 } );

@@ -5,6 +5,10 @@
  * - Polyfills Blob.prototype.arrayBuffer / .text — jsdom 26 (used by
  *   jest-environment-jsdom 30) does not implement these, but the GLL loader
  *   relies on File.prototype.arrayBuffer().
+ * - Stubs ResizeObserver, which jsdom does not implement at all. Several
+ *   WordPress components construct one on mount and throw without it. The stub
+ *   is inert: nothing under test depends on observed sizes, and the components
+ *   that do use it fall back to their unmeasured layout.
  *
  * Kept as plain CommonJS so it does not need babel transformation.
  */
@@ -22,5 +26,13 @@ if (
 			reader.onerror = () => reject( reader.error );
 			reader.readAsArrayBuffer( this );
 		} );
+	};
+}
+
+if ( typeof global.ResizeObserver === 'undefined' ) {
+	global.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	};
 }

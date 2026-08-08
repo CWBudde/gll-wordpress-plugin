@@ -26,6 +26,8 @@ import {
 	useGLLLoader,
 	ChartWrapper,
 	buildSourceResponseChartConfig,
+	AppearanceControl,
+	appearanceClass,
 } from '../shared';
 import './editor.scss';
 
@@ -49,9 +51,12 @@ export default function Edit( { attributes, setAttributes } ) {
 		showPhase,
 		showMagnitude,
 		chartHeight,
+		appearance,
 	} = attributes;
 
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps( {
+		className: appearanceClass( appearance ),
+	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
@@ -304,6 +309,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						</PanelBody>
 					</>
 				) }
+
+				<AppearanceControl
+					appearance={ appearance }
+					onChange={ ( value ) =>
+						setAttributes( { appearance: value } )
+					}
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>

@@ -21,6 +21,28 @@ export { normalizeGllData } from './gll-normalize';
 // GLL Context
 export { GLLContext, GLLProvider, useGLL, useGLLLoader } from './gll-context';
 
+// Theme token resolution (CSS custom properties -> canvas colors)
+export {
+	resolveTheme,
+	parseColor,
+	relativeLuminance,
+	withAlpha,
+	THEME_FALLBACKS,
+} from './resolve-theme';
+export type { GllTheme } from './resolve-theme';
+
+// Chart.js theming
+export { applyChartTheme, applyChartThemeFrom } from './chart-theme';
+
+// Appearance attribute (auto | plain | transparent)
+export {
+	default as AppearanceControl,
+	appearanceClass,
+	APPEARANCE_VALUES,
+	DEFAULT_APPEARANCE,
+} from './appearance-control';
+export type { GllAppearance } from './appearance-control';
+
 // Chart.js wrapper
 export { default as ChartWrapper } from './chart-wrapper';
 

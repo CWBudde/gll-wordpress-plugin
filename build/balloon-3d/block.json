@@ -72,6 +72,15 @@
         "high"
       ],
       "default": "medium"
+    },
+    "appearance": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "plain",
+        "transparent"
+      ],
+      "default": "auto"
     }
   },
   "example": {

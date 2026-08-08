@@ -14,6 +14,7 @@ import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
+import { applyChartThemeFrom } from '../shared/chart-theme';
 
 /**
  * Initialize all polar plot blocks on the page.
@@ -236,7 +237,7 @@ function renderChart( block, data, options ) {
 
 	const ctx = canvas.getContext( '2d' );
 
-	new Chart( ctx, {
+	const chartConfig = {
 		type: 'radar',
 		plugins: [ polarCompassPlugin ],
 		data: {
@@ -279,24 +280,28 @@ function renderChart( block, data, options ) {
 					suggestedMin,
 					suggestedMax,
 					startAngle: 90,
+					// Chrome colors are intentionally omitted: the shared
+					// chart theme fills them from the block's resolved
+					// tokens, and `applyChartTheme` never overwrites a color
+					// that is already set.
 					ticks: {
 						backdropColor: 'transparent',
-						color: '#64748b',
 					},
-					grid: {
-						color: 'rgba(148, 163, 184, 0.25)',
-					},
-					angleLines: {
-						color: 'rgba(148, 163, 184, 0.25)',
-					},
+					grid: {},
+					angleLines: {},
 					pointLabels: {
-						color: '#64748b',
 						font: { size: 10 },
 					},
 				},
 			},
 		},
-	} );
+	};
+
+	// Custom properties inherit, so any descendant of the block wrapper
+	// resolves the same tokens.
+	applyChartThemeFrom( chartConfig, chartWrapper );
+
+	new Chart( ctx, chartConfig as any );
 }
 
 /**

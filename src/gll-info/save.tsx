@@ -8,6 +8,7 @@
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
+import { appearanceClass } from '../shared';
 
 /**
  * Save component for GLL Info block.
@@ -24,6 +25,7 @@ export default function save( { attributes } ) {
 		showOverview,
 		showSources,
 		showResponses,
+		appearance,
 	} = attributes;
 
 	// If no file selected, don't render anything.
@@ -32,7 +34,7 @@ export default function save( { attributes } ) {
 	}
 
 	const blockProps = useBlockProps.save( {
-		className: 'gll-info-block',
+		className: `gll-info-block ${ appearanceClass( appearance ) }`,
 		'data-file-url': fileUrl,
 		'data-file-id': fileId || '',
 		'data-file-name': fileName || '',

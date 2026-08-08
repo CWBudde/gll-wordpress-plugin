@@ -22,7 +22,12 @@ import {
 } from '@wordpress/components';
 import { useEffect, useState, useMemo } from '@wordpress/element';
 
-import { useGLLLoader, ChartWrapper } from '../shared';
+import {
+	useGLLLoader,
+	ChartWrapper,
+	AppearanceControl,
+	appearanceClass,
+} from '../shared';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
 import { formatFrequency } from '../shared/charting-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
@@ -145,18 +150,16 @@ function buildPolarChartConfig(
 					suggestedMin,
 					suggestedMax,
 					startAngle: 90,
+					// Chrome colors are intentionally omitted: the shared
+					// chart theme fills them from the block's resolved
+					// tokens, and `applyChartTheme` never overwrites a color
+					// that is already set.
 					ticks: {
 						backdropColor: 'transparent',
-						color: '#64748b',
 					},
-					grid: {
-						color: 'rgba(148, 163, 184, 0.25)',
-					},
-					angleLines: {
-						color: 'rgba(148, 163, 184, 0.25)',
-					},
+					grid: {},
+					angleLines: {},
 					pointLabels: {
-						color: '#64748b',
 						font: { size: 10 },
 					},
 				},
@@ -184,9 +187,12 @@ export default function Edit( { attributes, setAttributes } ) {
 		showVertical,
 		normalized,
 		chartHeight,
+		appearance,
 	} = attributes;
 
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps( {
+		className: appearanceClass( appearance ),
+	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
@@ -476,6 +482,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						</PanelBody>
 					</>
 				) }
+
+				<AppearanceControl
+					appearance={ appearance }
+					onChange={ ( value ) =>
+						setAttributes( { appearance: value } )
+					}
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>

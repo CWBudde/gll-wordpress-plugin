@@ -9,6 +9,8 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 
+import { appearanceClass } from '../shared';
+
 /**
  * Save component for 3D Balloon block.
  *
@@ -31,6 +33,7 @@ export default function save( { attributes } ) {
 		showAxesHelper,
 		canvasHeight,
 		qualityPreset,
+		appearance,
 	} = attributes;
 
 	if ( ! fileUrl ) {
@@ -38,7 +41,7 @@ export default function save( { attributes } ) {
 	}
 
 	const blockProps = useBlockProps.save( {
-		className: 'gll-balloon-3d-block',
+		className: `gll-balloon-3d-block ${ appearanceClass( appearance ) }`,
 		'data-file-url': fileUrl,
 		'data-file-id': fileId || '',
 		'data-file-name': fileName || '',

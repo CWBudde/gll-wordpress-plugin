@@ -1,16 +1,19 @@
 /**
  * 3D Balloon Block - Frontend Styles
  *
+ * The card frame (background, border, radius, padding, shadow) comes from
+ * `.gll-block` in the shared token layer, so the appearance variants can strip
+ * it. Everything below paints through tokens instead of fixed greys — except
+ * the error state, which stays hardcoded so it reads even when theming is what
+ * broke, and the color bar gradient, which encodes dB level and is data.
+ *
  * @package GllInfo
  */
 
+@use "../shared/tokens";
+
 .gll-balloon-3d-block {
 	margin: 20px 0;
-	padding: 20px;
-	background: #fff;
-	border: 1px solid #e0e0e0;
-	border-radius: 8px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
 	.gll-balloon-3d-header {
 		display: flex;
@@ -18,12 +21,12 @@
 		gap: 12px;
 		margin-bottom: 20px;
 		padding-bottom: 15px;
-		border-bottom: 1px solid #e0e0e0;
+		border-bottom: 1px solid var(--gll-border);
 
 		svg {
 			width: 32px;
 			height: 32px;
-			color: var(--wp--preset--color--primary, #0073aa);
+			color: var(--gll-accent);
 			flex-shrink: 0;
 		}
 
@@ -34,13 +37,13 @@
 				margin: 0 0 4px;
 				font-size: 20px;
 				font-weight: 600;
-				color: var(--wp--preset--color--foreground, #1e1e1e);
+				color: var(--gll-heading);
 			}
 
 			.gll-loading-text {
 				margin: 0;
 				font-size: 14px;
-				color: #666;
+				color: var(--gll-text-muted);
 			}
 		}
 	}
@@ -51,21 +54,21 @@
 		justify-content: center;
 		gap: 12px;
 		padding: 40px;
-		background: #f9f9f9;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
 
 		.gll-spinner {
 			display: inline-block;
 			width: 20px;
 			height: 20px;
-			border: 3px solid #e0e0e0;
-			border-top-color: var(--wp--preset--color--primary, #0073aa);
+			border: 3px solid var(--gll-border);
+			border-top-color: var(--gll-accent);
 			border-radius: 50%;
 			animation: gll-spin 0.8s linear infinite;
 		}
 
 		span:not(.gll-spinner) {
-			color: #666;
+			color: var(--gll-text-muted);
 			font-size: 14px;
 		}
 	}
@@ -76,34 +79,34 @@
 		gap: 8px;
 		margin-bottom: 16px;
 		padding: 12px;
-		background: #f8f9fa;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
-		border: 1px solid #e9ecef;
+		border: 1px solid var(--gll-border);
 
 		.gll-meta-badge {
 			display: inline-flex;
 			align-items: center;
 			padding: 6px 12px;
-			background: #fff;
-			border: 1px solid #dee2e6;
+			background: var(--gll-surface);
+			border: 1px solid var(--gll-border);
 			border-radius: 4px;
 			font-size: 13px;
 			line-height: 1.4;
-			color: #495057;
+			color: var(--gll-text);
 
 			strong {
 				margin-right: 4px;
 				font-weight: 600;
-				color: #212529;
+				color: var(--gll-heading);
 			}
 
 			&.gll-meta-badge-highlight {
-				background: #e7f3ff;
-				border-color: #0073aa;
-				color: #0073aa;
+				background: color-mix(in srgb, var(--gll-accent) 12%, transparent);
+				border-color: var(--gll-accent);
+				color: var(--gll-accent);
 
 				strong {
-					color: #0073aa;
+					color: var(--gll-accent);
 				}
 			}
 		}
@@ -114,16 +117,17 @@
 		flex-direction: column;
 		margin-bottom: 16px;
 		padding: 12px;
-		background: #f8f9fa;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
-		border: 1px solid #e9ecef;
+		border: 1px solid var(--gll-border);
 
 		.gll-colorbar-gradient {
 			height: 16px;
 			border-radius: 4px;
-			// HSL color scale: Hue 240 (blue) at min, Hue 0 (red) at max
+			// HSL color scale: Hue 240 (blue) at min, Hue 0 (red) at max.
+			// These stops encode the dB colormap — do not theme them.
 			background: linear-gradient(to right, hsl(240, 75%, 50%) 0%, hsl(180, 75%, 50%) 25%, hsl(120, 75%, 50%) 50%, hsl(60, 75%, 50%) 75%, hsl(0, 75%, 50%) 100%);
-			border: 1px solid #dee2e6;
+			border: 1px solid var(--gll-border);
 		}
 
 		.gll-colorbar-labels {
@@ -131,7 +135,7 @@
 			justify-content: space-between;
 			margin-top: 6px;
 			font-size: 12px;
-			color: #666;
+			color: var(--gll-text-muted);
 
 			span {
 				font-weight: 500;
@@ -141,13 +145,13 @@
 
 	.gll-balloon-3d-canvas {
 		margin-top: 0;
-		background: #fff;
+		background: var(--gll-surface);
 		border-radius: 4px;
 
 		.gll-three-container {
-			background: #f8fafc;
+			background: var(--gll-three-bg);
 			border-radius: 4px;
-			border: 1px solid #e0e0e0;
+			border: 1px solid var(--gll-border);
 			overflow: hidden;
 
 			canvas {
@@ -163,6 +167,7 @@
 		}
 	}
 
+	// Error colors stay fixed: they must survive a broken theme.
 	.gll-error {
 		padding: 20px;
 		background: #fff8f8;
@@ -191,7 +196,7 @@
 @media (max-width: 768px) {
 
 	.gll-balloon-3d-block {
-		padding: 15px;
+		--gll-padding: 15px;
 
 		.gll-balloon-3d-header {
 

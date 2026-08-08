@@ -56,6 +56,11 @@
 		"canvasHeight": {
 			"type": "number",
 			"default": 500
+		},
+		"appearance": {
+			"type": "string",
+			"enum": [ "auto", "plain", "transparent" ],
+			"default": "auto"
 		}
 	},
 	"example": {

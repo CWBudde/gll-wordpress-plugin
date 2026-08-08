@@ -17,6 +17,7 @@ import {
 	buildSourceResponseSeries,
 	formatFrequency,
 } from '../shared/charting-utils';
+import { applyChartThemeFrom } from '../shared/chart-theme';
 
 /**
  * Initialize all frequency response blocks on the page.
@@ -343,7 +344,7 @@ function renderChart( block, data, options ) {
 	}
 
 	// Create the chart
-	new Chart( ctx, {
+	const chartConfig: Record< string, any > = {
 		type: 'line',
 		data: {
 			datasets,
@@ -376,7 +377,14 @@ function renderChart( block, data, options ) {
 				},
 			},
 		},
-	} );
+	};
+
+	// Chart.js chrome (ticks, grid, legend, tooltip) defaults to near-black and
+	// would vanish on a dark theme. Dataset colors are left alone — they encode
+	// which series is which.
+	applyChartThemeFrom( chartConfig, chartWrapper );
+
+	new Chart( ctx, chartConfig );
 }
 
 /**

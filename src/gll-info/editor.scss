@@ -1,26 +1,27 @@
 /**
  * GLL Info Block - Editor Styles
  *
+ * Colors resolve through the shared token layer; the card frame itself comes
+ * from `.gll-block`, which the appearance class puts on the same element.
+ *
  * @package GllInfo
  */
 
+@use "../shared/tokens";
+
 .gll-info-block {
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	padding: 16px;
-	background: #fff;
 
 	.gll-info-header {
 		display: flex;
 		align-items: center;
 		gap: 12px;
 		padding-bottom: 12px;
-		border-bottom: 1px solid #eee;
+		border-bottom: 1px solid var(--gll-border);
 		margin-bottom: 16px;
 
 		svg {
 			flex-shrink: 0;
-			color: #667eea;
+			color: var(--gll-accent);
 		}
 
 		h3 {
@@ -31,7 +32,7 @@
 
 		p {
 			margin: 4px 0 0;
-			color: #666;
+			color: var(--gll-text-muted);
 			font-size: 13px;
 		}
 	}
@@ -41,7 +42,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 16px;
-		color: #666;
+		color: var(--gll-text-muted);
 	}
 
 	.gll-info-error {
@@ -84,12 +85,12 @@
 			margin: 0 0 8px;
 			font-size: 14px;
 			font-weight: 600;
-			color: #333;
+			color: var(--gll-text);
 		}
 
 		p {
 			margin: 0;
-			color: #666;
+			color: var(--gll-text-muted);
 			font-size: 13px;
 			line-height: 1.5;
 		}
@@ -97,8 +98,8 @@
 
 	.gll-section-muted {
 		padding-top: 12px;
-		border-top: 1px solid #eee;
-		color: #999;
+		border-top: 1px solid var(--gll-border);
+		color: var(--gll-text-muted);
 
 		small {
 			font-size: 11px;
@@ -115,17 +116,17 @@
 	td {
 		padding: 6px 8px;
 		text-align: left;
-		border-bottom: 1px solid #f0f0f0;
+		border-bottom: 1px solid var(--gll-border);
 	}
 
 	th {
 		width: 120px;
 		font-weight: 500;
-		color: #666;
+		color: var(--gll-text-muted);
 	}
 
 	td {
-		color: #333;
+		color: var(--gll-text);
 	}
 
 	tr:last-child th,
@@ -140,15 +141,15 @@
 		margin: 0 0 12px;
 		font-size: 14px;
 		font-weight: 600;
-		color: #333;
+		color: var(--gll-text);
 	}
 
 	.gll-empty-state {
 		padding: 16px;
 		text-align: center;
-		color: #999;
+		color: var(--gll-text-muted);
 		font-size: 13px;
-		background: #f9f9f9;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
 	}
 
@@ -177,7 +178,7 @@
 		align-items: center;
 		gap: 8px;
 		padding: 8px 12px;
-		background: #f9f9f9;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
 		font-size: 13px;
 	}
@@ -185,19 +186,19 @@
 	.gll-source-label {
 		flex: 1;
 		font-weight: 500;
-		color: #333;
+		color: var(--gll-text);
 	}
 
 	.gll-source-key {
-		color: #999;
+		color: var(--gll-text-muted);
 		font-size: 11px;
 		font-family: monospace;
 	}
 
 	.gll-source-bandwidth {
-		color: #666;
+		color: var(--gll-text-muted);
 		font-size: 12px;
-		background: #fff;
+		background: var(--gll-surface);
 		padding: 2px 8px;
 		border-radius: 3px;
 	}
@@ -205,7 +206,7 @@
 
 // Detailed & Expandable modes
 .gll-source-card {
-	border: 1px solid #e5e7eb;
+	border: 1px solid var(--gll-border);
 	border-radius: 4px;
 	overflow: hidden;
 
@@ -214,8 +215,8 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 10px 12px;
-		background: #f9fafb;
-		border-bottom: 1px solid #e5e7eb;
+		background: var(--gll-surface-muted);
+		border-bottom: 1px solid var(--gll-border);
 	}
 
 	.gll-source-title {
@@ -225,20 +226,20 @@
 
 		.gll-source-label {
 			font-weight: 500;
-			color: #111827;
+			color: var(--gll-text);
 			font-size: 14px;
 		}
 	}
 
 	.gll-source-key {
-		color: #9ca3af;
+		color: var(--gll-text-muted);
 		font-size: 11px;
 		font-family: monospace;
 	}
 
 	.gll-source-content {
 		padding: 12px;
-		background: #fff;
+		background: var(--gll-surface);
 	}
 
 	.gll-source-details {
@@ -249,10 +250,10 @@
 
 	.gll-source-detail {
 		font-size: 13px;
-		color: #4b5563;
+		color: var(--gll-text-muted);
 
 		strong {
-			color: #111827;
+			color: var(--gll-text);
 			font-weight: 500;
 			margin-right: 4px;
 		}
@@ -261,7 +262,7 @@
 	.gll-source-response {
 		margin-top: 12px;
 		padding-top: 12px;
-		border-top: 1px solid #e5e7eb;
+		border-top: 1px solid var(--gll-border);
 	}
 
 	.gll-source-response-controls {
@@ -273,7 +274,7 @@
 
 	.gll-source-response-empty {
 		font-style: italic;
-		color: #6b7280;
+		color: var(--gll-text-muted);
 	}
 
 	.gll-response-controls-row {
@@ -288,7 +289,7 @@
 		align-items: center;
 		gap: 6px;
 		font-size: 12px;
-		color: #374151;
+		color: var(--gll-text);
 
 		label {
 			font-weight: 500;
@@ -298,9 +299,9 @@
 		select {
 			padding: 4px 6px;
 			font-size: 12px;
-			border: 1px solid #d1d5db;
+			border: 1px solid var(--gll-border);
 			border-radius: 4px;
-			background: #fff;
+			background: var(--gll-surface);
 			max-width: 280px;
 		}
 	}
@@ -328,7 +329,7 @@
 		gap: 8px;
 		align-items: center;
 		font-size: 12px;
-		color: #374151;
+		color: var(--gll-text);
 
 		label {
 			font-weight: 500;
@@ -344,15 +345,15 @@
 	.gll-response-angle-value {
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		text-align: right;
-		color: #111827;
+		color: var(--gll-text);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.gll-source-response-chart {
 		margin-top: 12px;
 		min-height: 280px;
-		background: #fff;
-		border: 1px solid #e5e7eb;
+		background: var(--gll-surface);
+		border: 1px solid var(--gll-border);
 		border-radius: 6px;
 		padding: 8px;
 	}
@@ -366,11 +367,11 @@
 		.gll-meta-badge {
 			display: inline-block;
 			padding: 2px 8px;
-			background: #f3f4f6;
-			border: 1px solid #e5e7eb;
+			background: var(--gll-surface-muted);
+			border: 1px solid var(--gll-border);
 			border-radius: 999px;
 			font-size: 11px;
-			color: #374151;
+			color: var(--gll-text);
 
 			&.gll-meta-badge-highlight {
 				background: #eff6ff;
@@ -399,18 +400,18 @@
 	.gll-source-placements {
 		margin-top: 12px;
 		padding-top: 12px;
-		border-top: 1px solid #e5e7eb;
+		border-top: 1px solid var(--gll-border);
 
 		details {
-			background: #f9fafb;
-			border: 1px solid #e5e7eb;
+			background: var(--gll-surface-muted);
+			border: 1px solid var(--gll-border);
 			border-radius: 4px;
 			padding: 8px 10px;
 
 			summary {
 				cursor: pointer;
 				font-size: 12px;
-				color: #374151;
+				color: var(--gll-text);
 				font-weight: 600;
 				list-style: none;
 			}
@@ -428,19 +429,19 @@
 		}
 
 		.gll-source-placement {
-			background: #fff;
-			border: 1px solid #e5e7eb;
+			background: var(--gll-surface);
+			border: 1px solid var(--gll-border);
 			border-radius: 4px;
 			padding: 8px 10px;
 		}
 
 		.gll-source-placement-detail {
 			font-size: 12px;
-			color: #4b5563;
+			color: var(--gll-text-muted);
 			margin-bottom: 4px;
 
 			strong {
-				color: #111827;
+				color: var(--gll-text);
 				font-weight: 500;
 				margin-right: 4px;
 			}
@@ -468,17 +469,17 @@
 		transition: background-color 0.15s ease;
 
 		&:hover {
-			background: #f3f4f6;
+			background: var(--gll-surface-muted);
 		}
 
 		&:focus {
-			outline: 2px solid #3b82f6;
+			outline: 2px solid var(--gll-accent);
 			outline-offset: -2px;
 		}
 	}
 
 	.gll-source-toggle {
-		color: #6b7280;
+		color: var(--gll-text-muted);
 		font-size: 10px;
 		display: inline-flex;
 		align-items: center;
@@ -490,7 +491,7 @@
 	&.is-expanded {
 
 		.gll-source-header {
-			border-bottom: 1px solid #e5e7eb;
+			border-bottom: 1px solid var(--gll-border);
 		}
 	}
 
@@ -506,6 +507,6 @@
 .gll-source-detailed {
 
 	.gll-source-header {
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--gll-border);
 	}
 }

@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useRef } from '@wordpress/element';
 import Chart from 'chart.js/auto';
+import { applyChartThemeFrom } from './chart-theme';
 import './chart.scss';
 
 interface ChartWrapperProps {
@@ -54,6 +55,9 @@ export default function ChartWrapper( {
 		if ( chartRef.current ) {
 			chartRef.current.destroy();
 		}
+
+		// Resolved after mount so the block's tokens are in the cascade.
+		applyChartThemeFrom( mergedConfig, containerRef.current );
 
 		chartRef.current = new Chart( canvasRef.current, mergedConfig );
 

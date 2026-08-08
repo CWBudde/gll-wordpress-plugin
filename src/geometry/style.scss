@@ -1,25 +1,28 @@
 /**
  * Geometry Viewer Block - Frontend Styles
  *
+ * The card itself — background, border, radius, padding, shadow — comes from
+ * `.gll-block` in `tokens.scss`. Repeating it here would override the
+ * `plain` and `transparent` appearance variants, so only the block's own
+ * internals are styled below.
+ *
  * @package GllInfo
  */
 
+@use "../shared/tokens";
+
 .gll-geometry-block {
-	padding: 20px;
-	border: 1px solid #e5e7eb;
-	border-radius: 6px;
-	background: #fff;
 
 	.gll-geometry-header {
 		margin-bottom: 16px;
 		padding-bottom: 12px;
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--gll-border);
 
 		h3 {
 			margin: 0;
 			font-size: 18px;
 			font-weight: 600;
-			color: #111827;
+			color: var(--gll-heading);
 		}
 	}
 
@@ -28,9 +31,9 @@
 		align-items: center;
 		justify-content: center;
 		padding: 32px;
-		background: #f9fafb;
+		background: var(--gll-surface-muted);
 		border-radius: 4px;
-		color: #6b7280;
+		color: var(--gll-text-muted);
 		font-size: 14px;
 	}
 

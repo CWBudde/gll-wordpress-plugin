@@ -100,20 +100,9 @@
 	color: var(--gll-three-text-muted, #64748b);
 }
 
-// Theme support
-.is-dark-theme,
-[data-wp-dark-mode="true"] {
-
-	.gll-three-wrapper {
-		--gll-three-bg: #1e293b;
-		--gll-three-text: #f1f5f9;
-		--gll-three-text-muted: #94a3b8;
-		--gll-three-spinner-track: #334155;
-		--gll-three-spinner: #60a5fa;
-	}
-
-	.gll-three-wrapper--no-webgl {
-		--gll-three-fallback-bg: #450a0a;
-		--gll-three-warning: #fca5a5;
-	}
-}
+// Theme support comes from `tokens.scss`: `.gll-block` maps the --gll-three-*
+// variables onto the resolved theme tokens, so this wrapper follows any theme.
+// The class-based dark-mode detection that used to live here (`.is-dark-theme`
+// / `[data-wp-dark-mode]`) is gone — most themes never set either.
+// The no-WebGL fallback keeps its own fixed red palette on purpose. It has to
+// stay legible precisely when the surrounding styling has gone wrong.

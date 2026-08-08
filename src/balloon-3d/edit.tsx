@@ -29,8 +29,16 @@ import {
 } from '@wordpress/element';
 import * as THREE from 'three';
 
-import { useGLLLoader, ThreeWrapper, isWebGLSupported } from '../shared';
+import {
+	useGLLLoader,
+	ThreeWrapper,
+	isWebGLSupported,
+	AppearanceControl,
+	appearanceClass,
+	resolveTheme,
+} from '../shared';
 import type { ThreeWrapperRef } from '../shared';
+import { applySceneTheme } from './theme-three';
 import { formatFrequency } from '../shared/charting-utils';
 import {
 	getBalloonGrid,
@@ -63,9 +71,12 @@ export default function Edit( { attributes, setAttributes } ) {
 		showAxesHelper,
 		canvasHeight,
 		qualityPreset,
+		appearance,
 	} = attributes;
 
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps( {
+		className: appearanceClass( appearance ),
+	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const threeRef = useRef< ThreeWrapperRef >( null );
@@ -294,12 +305,29 @@ export default function Edit( { attributes, setAttributes } ) {
 		syncFillLight();
 	}, [ syncFillLight, data ] );
 
+	// Tint the scene chrome (axes helper, reference sphere) with the block's
+	// resolved theme tokens. Lights and the balloon colormap stay untouched.
+	const themeScene = useCallback( () => {
+		const scene = threeRef.current?.scene;
+		if ( ! scene ) {
+			return;
+		}
+		applySceneTheme( scene, resolveTheme( visibilityRef.current ) );
+	}, [] );
+
+	// Re-resolve when the appearance variant changes, since `transparent`
+	// swaps the surface the helpers are read against.
+	useEffect( () => {
+		themeScene();
+	}, [ themeScene, appearance, data ] );
+
 	// Handle scene ready
 	const handleSceneReady = useCallback( () => {
 		syncFillLight();
 		// Build initial mesh
 		buildBalloonMesh();
-	}, [ buildBalloonMesh, syncFillLight ] );
+		themeScene();
+	}, [ buildBalloonMesh, syncFillLight, themeScene ] );
 
 	// Pause animation when the block is scrolled offscreen in the editor.
 	useEffect( () => {
@@ -594,6 +622,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						</PanelBody>
 					</>
 				) }
+
+				<AppearanceControl
+					appearance={ appearance }
+					onChange={ ( value ) =>
+						setAttributes( { appearance: value } )
+					}
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>
@@ -720,6 +755,7 @@ export default function Edit( { attributes, setAttributes } ) {
 											presetSettings.directionalLightIntensity,
 									} }
 									onSceneReady={ handleSceneReady }
+									onResize={ themeScene }
 								/>
 							</div>
 						</>

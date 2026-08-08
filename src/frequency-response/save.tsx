@@ -10,6 +10,11 @@
 import { useBlockProps } from '@wordpress/block-editor';
 
 /**
+ * Internal dependencies
+ */
+import { appearanceClass } from '../shared';
+
+/**
  * Save component for Frequency Response block.
  *
  * @param {Object} props            Component props.
@@ -28,6 +33,7 @@ export default function save( { attributes } ) {
 		showPhase,
 		showMagnitude,
 		chartHeight,
+		appearance,
 	} = attributes;
 
 	// If no file selected, don't render anything.
@@ -36,7 +42,9 @@ export default function save( { attributes } ) {
 	}
 
 	const blockProps = useBlockProps.save( {
-		className: 'gll-frequency-response-block',
+		className: `gll-frequency-response-block ${ appearanceClass(
+			appearance
+		) }`,
 		'data-file-url': fileUrl,
 		'data-file-id': fileId || '',
 		'data-file-name': fileName || '',

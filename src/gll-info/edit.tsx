@@ -31,6 +31,8 @@ import {
 	computeResponseAngles,
 	buildSourceResponseChartConfig,
 	ChartWrapper,
+	AppearanceControl,
+	appearanceClass,
 } from '../shared';
 import './editor.scss';
 
@@ -1066,12 +1068,13 @@ export default function Edit( { attributes, setAttributes } ) {
 		sourcesDisplayMode,
 		showSourceResponseCharts,
 		showResponses,
+		appearance,
 	} = attributes;
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
 	const blockProps = useBlockProps( {
-		className: 'gll-info-block',
+		className: `gll-info-block ${ appearanceClass( appearance ) }`,
 	} );
 
 	// Load file when URL changes.
@@ -1252,6 +1255,13 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 					/>
 				</PanelBody>
+
+				<AppearanceControl
+					appearance={ appearance }
+					onChange={ ( value ) =>
+						setAttributes( { appearance: value } )
+					}
+				/>
 			</InspectorControls>
 
 			<div { ...blockProps }>
