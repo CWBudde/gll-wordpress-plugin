@@ -4,7 +4,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	InspectorControls,
 	useBlockProps,
@@ -150,7 +150,11 @@ export default function Edit( { attributes, setAttributes } ) {
 					label:
 						source.Definition?.Label ||
 						source.Label ||
-						`Source ${ index + 1 }`,
+						sprintf(
+							/* translators: %d: source number. */
+							__( 'Source %d', 'gll-info' ),
+							index + 1
+						),
 					value: index,
 				} ) ),
 		[ data ]

@@ -6,6 +6,8 @@
  * @package
  */
 
+import { __, sprintf } from '@wordpress/i18n';
+
 import { buildLogFrequencies, frequenciesMatch } from './polar-utils';
 
 /**
@@ -89,10 +91,12 @@ export function getPhaseSeries( mode, frequencies, phase, unwrapped ) {
 	switch ( mode ) {
 		case 'wrapped': {
 			const wrapped = phase.map( ( value ) => wrapPhase( value ) );
+			// The unit stays inside the string so a translator can move or
+			// re-spell it; splitting it out would force English word order.
 			return {
 				values: wrapped,
-				label: 'Phase (rad)',
-				axisTitle: 'Phase (rad)',
+				label: __( 'Phase (rad)', 'gll-info' ),
+				axisTitle: __( 'Phase (rad)', 'gll-info' ),
 				format: ( value ) => formatNumber( value, 4 ),
 			};
 		}
@@ -100,8 +104,8 @@ export function getPhaseSeries( mode, frequencies, phase, unwrapped ) {
 			const delayMs = computeGroupDelayMs( frequencies, unwrapped );
 			return {
 				values: delayMs,
-				label: 'Group Delay (ms)',
-				axisTitle: 'Group Delay (ms)',
+				label: __( 'Group Delay (ms)', 'gll-info' ),
+				axisTitle: __( 'Group Delay (ms)', 'gll-info' ),
 				format: ( value ) => formatNumber( value, 3 ),
 			};
 		}
@@ -109,8 +113,8 @@ export function getPhaseSeries( mode, frequencies, phase, unwrapped ) {
 		default:
 			return {
 				values: unwrapped,
-				label: 'Phase (rad)',
-				axisTitle: 'Phase (rad)',
+				label: __( 'Phase (rad)', 'gll-info' ),
+				axisTitle: __( 'Phase (rad)', 'gll-info' ),
 				format: ( value ) => formatNumber( value, 4 ),
 			};
 	}
@@ -453,16 +457,20 @@ export function buildSourceResponseChartConfig(
 	const xScale = buildLogFrequencyScale(
 		levelData.minFrequency,
 		levelData.maxFrequency,
-		'Frequency'
+		__( 'Frequency', 'gll-info' )
 	);
 
 	const phaseLabel = series.canCombinePhase
-		? `${ series.phaseLabel } (on-axis + directivity)`
+		? sprintf(
+				/* translators: %s: phase series label, already translated, e.g. "Phase (rad)". */
+				__( '%s (on-axis + directivity)', 'gll-info' ),
+				series.phaseLabel
+		  )
 		: series.phaseLabel;
 
 	const levelLabel = series.canCombineOnAxis
-		? 'Level (dB, on-axis + directivity)'
-		: 'Level (dB)';
+		? __( 'Level (dB, on-axis + directivity)', 'gll-info' )
+		: __( 'Level (dB)', 'gll-info' );
 
 	return {
 		type: 'line',
@@ -502,7 +510,7 @@ export function buildSourceResponseChartConfig(
 					position: 'left',
 					title: {
 						display: true,
-						text: 'Level (dB)',
+						text: __( 'Level (dB)', 'gll-info' ),
 					},
 				},
 				y1: {

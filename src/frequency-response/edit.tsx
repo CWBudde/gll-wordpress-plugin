@@ -1,7 +1,7 @@
 /**
  * WordPress dependencies
  */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	InspectorControls,
 	useBlockProps,
@@ -29,6 +29,7 @@ import {
 	AppearanceControl,
 	appearanceClass,
 } from '../shared';
+import { formatFrequency } from '../shared/charting-utils';
 import './editor.scss';
 
 /**
@@ -92,7 +93,13 @@ export default function Edit( { attributes, setAttributes } ) {
 	// Build source options from parsed data
 	const sourceOptions =
 		data?.Database?.SourceDefinitions?.map( ( source, index ) => ( {
-			label: source.Label || `Source ${ index + 1 }`,
+			label:
+				source.Label ||
+				sprintf(
+					/* translators: %d: source number. */
+					__( 'Source %d', 'gll-info' ),
+					index + 1
+				),
 			value: index,
 		} ) ) || [];
 
@@ -156,6 +163,24 @@ export default function Edit( { attributes, setAttributes } ) {
 		showMagnitude,
 		showPhase,
 	] );
+
+	// The badge used to advertise a hardcoded "20 Hz - 20 kHz" regardless of the
+	// file, which is a claim the data does not support. Derive it from the
+	// frequency axis of the selected response instead, and drop the badge when
+	// the response carries no frequencies at all.
+	const rangeLabel = useMemo( () => {
+		const frequencies = currentSource?.Responses?.[ responseIndex ]
+			?.Frequencies as number[] | undefined;
+		if ( ! Array.isArray( frequencies ) || frequencies.length === 0 ) {
+			return null;
+		}
+		return sprintf(
+			/* translators: 1: lowest frequency in the response, 2: highest frequency. */
+			__( '%1$s - %2$s', 'gll-info' ),
+			formatFrequency( frequencies[ 0 ] ),
+			formatFrequency( frequencies[ frequencies.length - 1 ] )
+		);
+	}, [ currentSource, responseIndex ] );
 
 	// Render file selection placeholder if no file is selected
 	if ( ! fileUrl ) {
@@ -349,12 +374,14 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ data && chartConfig && (
 						<>
 							<div className="gll-frequency-response-metadata">
-								<span className="gll-meta-badge">
-									<strong>
-										{ __( 'Range:', 'gll-info' ) }
-									</strong>{ ' ' }
-									20 Hz - 20 kHz
-								</span>
+								{ rangeLabel && (
+									<span className="gll-meta-badge">
+										<strong>
+											{ __( 'Range:', 'gll-info' ) }
+										</strong>{ ' ' }
+										{ rangeLabel }
+									</span>
+								) }
 								{ showPhase && (
 									<span className="gll-meta-badge">
 										<strong>

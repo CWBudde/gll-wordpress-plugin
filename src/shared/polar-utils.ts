@@ -6,6 +6,8 @@
  * @package
  */
 
+import { _x } from '@wordpress/i18n';
+
 /**
  * Build array of angles for polar plot (0, -10, -20, ... -180, 170, 160, ... 10).
  *
@@ -119,12 +121,16 @@ export function getBalloonGrid( source ) {
 
 	const symmetry = ang?.Symmetry ?? ang?.symmetry ?? 0;
 	const frontHalfOnly = !! ( ang?.FrontHalfOnly ?? ang?.front_half_only );
+	// Built inside the function rather than at module scope: WordPress may not
+	// have installed the locale data yet when this module is first evaluated.
+	// The 'symmetry' context disambiguates single words such as "None" and
+	// "Axial", which have unrelated translations in other UI positions.
 	const symmetryNames = [
-		'None',
-		'Vertical',
-		'Horizontal',
-		'Quarter',
-		'Axial',
+		_x( 'None', 'symmetry', 'gll-info' ),
+		_x( 'Vertical', 'symmetry', 'gll-info' ),
+		_x( 'Horizontal', 'symmetry', 'gll-info' ),
+		_x( 'Quarter', 'symmetry', 'gll-info' ),
+		_x( 'Axial', 'symmetry', 'gll-info' ),
 	];
 
 	const fullMeridianCount = Math.max( 1, Math.round( 360 / meridianStep ) );
@@ -170,7 +176,9 @@ export function getBalloonGrid( source ) {
 		responseCount,
 		fullMeridianCount,
 		fullParallelCount,
-		symmetryName: symmetryNames[ symmetry ] || 'Unknown',
+		symmetryName:
+			symmetryNames[ symmetry ] ||
+			_x( 'Unknown', 'symmetry', 'gll-info' ),
 	};
 }
 

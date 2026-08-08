@@ -4,7 +4,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	InspectorControls,
@@ -59,6 +59,24 @@ function GLLIcon() {
 }
 
 /**
+ * Format the system type enum to a readable label.
+ *
+ * The table lives inside the function rather than at module scope so `__()`
+ * runs after WordPress has loaded the locale, not at import time.
+ *
+ * @param {number} systemType System type enum value.
+ * @return {string} Translated system type label.
+ */
+function formatSystemType( systemType ) {
+	const types = [
+		__( 'Line Array', 'gll-info' ),
+		__( 'Cluster', 'gll-info' ),
+		__( 'Loudspeaker', 'gll-info' ),
+	];
+	return types[ systemType ] || __( 'Unknown', 'gll-info' );
+}
+
+/**
  * Overview display component.
  *
  * @param {Object} props      Component props.
@@ -95,11 +113,9 @@ function GLLOverview( { data } ) {
 								<tr>
 									<th>{ __( 'Type', 'gll-info' ) }</th>
 									<td>
-										{ [
-											'Line Array',
-											'Cluster',
-											'Loudspeaker',
-										][ GenSystem.SystemType ] || 'Unknown' }
+										{ formatSystemType(
+											GenSystem.SystemType
+										) }
 									</td>
 								</tr>
 							) }
@@ -126,9 +142,17 @@ function GLLOverview( { data } ) {
 			{ Header && (
 				<div className="gll-section gll-section-muted">
 					<small>
-						{ __( 'Format Version:', 'gll-info' ) }{ ' ' }
-						{ Header.FormatVersion } |{ __( 'Valid:', 'gll-info' ) }{ ' ' }
-						{ Header.ChecksumValid ? 'Yes' : 'No' }
+						{ sprintf(
+							/* translators: 1: GLL format version, 2: checksum validity, "Yes" or "No". */
+							__(
+								'Format Version: %1$s | Valid: %2$s',
+								'gll-info'
+							),
+							Header.FormatVersion,
+							Header.ChecksumValid
+								? __( 'Yes', 'gll-info' )
+								: __( 'No', 'gll-info' )
+						) }
 					</small>
 				</div>
 			) }
@@ -159,13 +183,15 @@ function formatFrequency( hz ) {
  * @return {string} Formatted data type.
  */
 function formatDataType( dataType ) {
+	// Built per call rather than as a module constant so `__()` runs after the
+	// locale is loaded.
 	const types = {
-		0: 'Unknown',
-		1: 'Pressure',
-		2: 'Velocity',
-		3: 'Intensity',
+		0: __( 'Unknown', 'gll-info' ),
+		1: __( 'Pressure', 'gll-info' ),
+		2: __( 'Velocity', 'gll-info' ),
+		3: __( 'Intensity', 'gll-info' ),
 	};
-	return types[ dataType ] || 'Unknown';
+	return types[ dataType ] || __( 'Unknown', 'gll-info' );
 }
 
 /**
@@ -421,12 +447,22 @@ function SourceResponseControls( { source, index } ) {
 		return Array.from( { length: responseCount }, ( _, i ) => {
 			const angle = computeResponseAngles( source, i );
 			const label = angle
-				? `Response ${ i + 1 } • Az ${ formatAngleDegrees(
-						wrapAzimuth180( angle.meridianDeg )
-				  ) } / El ${ formatAngleDegrees(
-						parallelToElevation( angle.parallelDeg )
-				  ) }`
-				: `Response ${ i + 1 }`;
+				? sprintf(
+						/* translators: 1: response number, 2: azimuth angle, 3: elevation angle. */
+						__( 'Response %1$d • Az %2$s / El %3$s', 'gll-info' ),
+						i + 1,
+						formatAngleDegrees(
+							wrapAzimuth180( angle.meridianDeg )
+						),
+						formatAngleDegrees(
+							parallelToElevation( angle.parallelDeg )
+						)
+				  )
+				: sprintf(
+						/* translators: %d: response number. */
+						__( 'Response %d', 'gll-info' ),
+						i + 1
+				  );
 			return { value: String( i ), label };
 		} );
 	}, [ source, responseCount ] );
@@ -592,9 +628,12 @@ function SourceResponseControls( { source, index } ) {
 					</div>
 					<div className="gll-source-response-meta">
 						<span className="gll-meta-badge">
-							{ __( 'Response', 'gll-info' ) }{ ' ' }
-							{ responseIndex + 1 } { __( 'of', 'gll-info' ) }{ ' ' }
-							{ responseCount }
+							{ sprintf(
+								/* translators: 1: current response number, 2: total number of responses. */
+								__( 'Response %1$d of %2$d', 'gll-info' ),
+								responseIndex + 1,
+								responseCount
+							) }
 						</span>
 						{ currentAngle && (
 							<>
@@ -713,7 +752,11 @@ function SourceCard( {
 		<div className="gll-source-placements">
 			<details>
 				<summary>
-					{ __( 'Placements', 'gll-info' ) } ({ placementCount })
+					{ sprintf(
+						/* translators: %d: number of placements. */
+						__( 'Placements (%d)', 'gll-info' ),
+						placementCount
+					) }
 				</summary>
 				<div className="gll-source-placements-list">
 					{ placementCount === 0 && (
@@ -753,13 +796,17 @@ function SourceCard( {
 								<div className="gll-source-placement-detail">
 									<strong>
 										{ __( 'Rotation:', 'gll-info' ) }
-									</strong>
-									{ __( 'H', 'gll-info' ) }:{ ' ' }
-									{ placement.headingLabel },
-									{ __( 'V', 'gll-info' ) }:{ ' ' }
-									{ placement.verticalLabel },
-									{ __( 'R', 'gll-info' ) }:{ ' ' }
-									{ placement.rollLabel }
+									</strong>{ ' ' }
+									{ sprintf(
+										/* translators: 1: heading angle, 2: vertical angle, 3: roll angle. */
+										__(
+											'H: %1$s, V: %2$s, R: %3$s',
+											'gll-info'
+										),
+										placement.headingLabel,
+										placement.verticalLabel,
+										placement.rollLabel
+									) }
 								</div>
 							</div>
 						)
@@ -795,7 +842,7 @@ function SourceCard( {
 				<div className="gll-source-header">
 					<div className="gll-source-title">
 						<span className="gll-source-label">
-							{ def.Label || 'Unknown' }
+							{ def.Label || __( 'Unknown', 'gll-info' ) }
 						</span>
 					</div>
 					<span className="gll-source-key">{ source.Key }</span>
@@ -865,7 +912,7 @@ function SourceCard( {
 						{ isExpanded ? '▼' : '▶' }
 					</span>
 					<span className="gll-source-label">
-						{ def.Label || 'Unknown' }
+						{ def.Label || __( 'Unknown', 'gll-info' ) }
 					</span>
 				</div>
 				<span className="gll-source-key">{ source.Key }</span>
@@ -1019,7 +1066,11 @@ function GLLSources( {
 	return (
 		<div className="gll-sources">
 			<h4>
-				{ __( 'Acoustic Sources', 'gll-info' ) } ({ totalSources })
+				{ sprintf(
+					/* translators: %d: number of acoustic sources. */
+					__( 'Acoustic Sources (%d)', 'gll-info' ),
+					totalSources
+				) }
 			</h4>
 			<div className="gll-sources-list">
 				{ visibleSources.map( ( source, index ) => (
@@ -1042,7 +1093,12 @@ function GLLSources( {
 					>
 						{ __( 'Loading more sources…', 'gll-info' ) }{ ' ' }
 						<span className="gll-sources-sentinel-progress">
-							({ visibleCount } / { totalSources })
+							{ sprintf(
+								/* translators: 1: number of sources rendered so far, 2: total number of sources. */
+								__( '(%1$d / %2$d)', 'gll-info' ),
+								visibleCount,
+								totalSources
+							) }
 						</span>
 					</div>
 				) }

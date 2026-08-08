@@ -7,6 +7,8 @@
  * @package
  */
 
+import { __, sprintf } from '@wordpress/i18n';
+
 import { normalizeGllData } from './gll-normalize';
 
 // Module state
@@ -77,7 +79,9 @@ function loadWasmExec(): Promise< void > {
 		script.src = getWasmExecUrl();
 		script.onload = () => resolve( undefined );
 		script.onerror = () =>
-			reject( new Error( 'Failed to load wasm_exec.js' ) );
+			reject(
+				new Error( __( 'Failed to load wasm_exec.js', 'gll-info' ) )
+			);
 		document.head.appendChild( script );
 	} );
 }
@@ -109,7 +113,10 @@ export async function initWasm() {
 			// Check browser support.
 			if ( ! isWasmSupported() ) {
 				throw new Error(
-					'WebAssembly is not supported in this browser'
+					__(
+						'WebAssembly is not supported in this browser',
+						'gll-info'
+					)
 				);
 			}
 
@@ -123,7 +130,12 @@ export async function initWasm() {
 			const response = await fetch( getWasmUrl() );
 			if ( ! response.ok ) {
 				throw new Error(
-					`Failed to fetch WASM: ${ response.status } ${ response.statusText }`
+					sprintf(
+						/* translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found". */
+						__( 'Failed to fetch WASM: %1$d %2$s', 'gll-info' ),
+						response.status,
+						response.statusText
+					)
 				);
 			}
 
@@ -139,7 +151,10 @@ export async function initWasm() {
 			// Verify the parseGLL function is available.
 			if ( typeof window.parseGLL !== 'function' ) {
 				throw new Error(
-					'WASM module did not export parseGLL function'
+					__(
+						'WASM module did not export parseGLL function',
+						'gll-info'
+					)
 				);
 			}
 
@@ -192,7 +207,11 @@ export async function parseGLL( data ) {
 	const result = JSON.parse( resultJson );
 
 	if ( ! result.success ) {
-		throw new Error( result.error || 'Failed to parse GLL file' );
+		// The parser's own error text arrives from WASM already formatted and is
+		// not translatable; only our generic fallback can be localized.
+		throw new Error(
+			result.error || __( 'Failed to parse GLL file', 'gll-info' )
+		);
 	}
 
 	// The parser speaks snake_case; the blocks speak PascalCase.
@@ -207,7 +226,9 @@ export async function parseGLL( data ) {
  */
 export async function parseGLLFile( file ) {
 	if ( ! file.name.toLowerCase().endsWith( '.gll' ) ) {
-		throw new Error( 'Invalid file type. Please select a .gll file.' );
+		throw new Error(
+			__( 'Invalid file type. Please select a .gll file.', 'gll-info' )
+		);
 	}
 
 	const arrayBuffer = await file.arrayBuffer();
@@ -224,7 +245,12 @@ export async function parseGLLFromUrl( url ) {
 	const response = await fetch( url );
 	if ( ! response.ok ) {
 		throw new Error(
-			`Failed to fetch GLL file: ${ response.status } ${ response.statusText }`
+			sprintf(
+				/* translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found". */
+				__( 'Failed to fetch GLL file: %1$d %2$s', 'gll-info' ),
+				response.status,
+				response.statusText
+			)
 		);
 	}
 

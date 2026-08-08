@@ -4,7 +4,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, _x, sprintf } from '@wordpress/i18n';
 import {
 	InspectorControls,
 	useBlockProps,
@@ -79,12 +79,24 @@ function buildPolarChartConfig(
 		levelRange.max !== null ? levelRange.max - 40 : undefined;
 
 	const freqLabel = formatFrequency( frequency );
-	const normSuffix = normalized ? ' (normalized)' : '';
 	const datasets = [];
 
+	// The normalized variant is a whole sentence rather than a translated
+	// suffix glued on, so translators can place the qualifier where their
+	// language needs it.
 	if ( showHorizontal ) {
 		datasets.push( {
-			label: `Horizontal @ ${ freqLabel }${ normSuffix }`,
+			label: normalized
+				? sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Horizontal @ %s (normalized)', 'gll-info' ),
+						freqLabel
+				  )
+				: sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Horizontal @ %s', 'gll-info' ),
+						freqLabel
+				  ),
 			data: horizontalLevels,
 			borderColor: '#2563eb',
 			backgroundColor: 'rgba(37, 99, 235, 0.12)',
@@ -97,7 +109,17 @@ function buildPolarChartConfig(
 
 	if ( showVertical ) {
 		datasets.push( {
-			label: `Vertical @ ${ freqLabel }${ normSuffix }`,
+			label: normalized
+				? sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Vertical @ %s (normalized)', 'gll-info' ),
+						freqLabel
+				  )
+				: sprintf(
+						/* translators: %s: frequency label, for example "1 kHz". */
+						__( 'Vertical @ %s', 'gll-info' ),
+						freqLabel
+				  ),
 			data: verticalLevels,
 			borderColor: '#dc2626',
 			backgroundColor: 'rgba(220, 38, 38, 0.12)',
@@ -129,18 +151,34 @@ function buildPolarChartConfig(
 					callbacks: {
 						title: ( items ) => {
 							const label = items?.[ 0 ]?.label;
-							return label ? `Angle ${ label }` : '';
+							return label
+								? sprintf(
+										/* translators: %s: angle label of the hovered point, for example "45°". */
+										__( 'Angle %s', 'gll-info' ),
+										label
+								  )
+								: '';
 						},
 						label: ( item ) => {
+							const seriesLabel =
+								item.dataset?.label ||
+								_x( 'Level', 'chart series', 'gll-info' );
 							if (
 								item?.raw === null ||
 								item?.raw === undefined
 							) {
-								return `${ item.dataset?.label || 'Level' }: -`;
+								return sprintf(
+									/* translators: %s: chart series name. */
+									__( '%s: -', 'gll-info' ),
+									seriesLabel
+								);
 							}
-							return `${
-								item.dataset?.label || 'Level'
-							}: ${ item.raw.toFixed( 1 ) } dB`;
+							return sprintf(
+								/* translators: 1: chart series name, 2: level in dB. */
+								__( '%1$s: %2$s dB', 'gll-info' ),
+								seriesLabel,
+								item.raw.toFixed( 1 )
+							);
 						},
 					},
 				},
@@ -227,7 +265,11 @@ export default function Edit( { attributes, setAttributes } ) {
 					label:
 						source.Definition?.Label ||
 						source.Label ||
-						`Source ${ index + 1 }`,
+						sprintf(
+							/* translators: %d: source number. */
+							__( 'Source %d', 'gll-info' ),
+							index + 1
+						),
 					value: index,
 				} ) ),
 		[ data ]

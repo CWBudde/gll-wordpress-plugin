@@ -13,6 +13,8 @@ import {
 	useCallback,
 	useMemo,
 } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
+
 import {
 	initWasm,
 	parseGLL,
@@ -104,7 +106,9 @@ export function GLLProvider( { children } ) {
 			try {
 				const ready = await ensureWasmReady();
 				if ( ! ready ) {
-					throw new Error( 'WASM failed to initialize' );
+					throw new Error(
+						__( 'WASM failed to initialize', 'gll-info' )
+					);
 				}
 
 				const arrayBuffer = await file.arrayBuffer();
@@ -141,7 +145,9 @@ export function GLLProvider( { children } ) {
 			try {
 				const ready = await ensureWasmReady();
 				if ( ! ready ) {
-					throw new Error( 'WASM failed to initialize' );
+					throw new Error(
+						__( 'WASM failed to initialize', 'gll-info' )
+					);
 				}
 
 				const parsedData = await parseGLLFromUrl( url );
@@ -214,6 +220,9 @@ export function GLLProvider( { children } ) {
 export function useGLL() {
 	const context = useContext( GLLContext );
 	if ( context === undefined ) {
+		// Deliberately untranslated: this fires only when a developer wires the
+		// hook up outside a provider, so it never reaches a site visitor and is
+		// most useful verbatim in a bug report.
 		throw new Error( 'useGLL must be used within a GLLProvider' );
 	}
 	return context;

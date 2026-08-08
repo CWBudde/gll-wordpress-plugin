@@ -4,6 +4,8 @@
  * @package
  */
 
+import { __ } from '@wordpress/i18n';
+
 export interface GeometryVertex {
 	x: number;
 	y: number;
@@ -428,19 +430,19 @@ export function buildGeometryMarkers(
 	} > = [
 		{
 			key: 'ref',
-			label: 'Reference Point',
+			label: __( 'Reference Point', 'gll-info' ),
 			color: '#ef4444',
 			point: getReferencePoint( geometry ),
 		},
 		{
 			key: 'com',
-			label: 'Center of Mass',
+			label: __( 'Center of Mass', 'gll-info' ),
 			color: '#22c55e',
 			point: getCenterOfMassPoint( geometry ),
 		},
 		{
 			key: 'pivot',
-			label: 'Next Pivot',
+			label: __( 'Next Pivot', 'gll-info' ),
 			color: '#f59e0b',
 			point: getNextPivotPoint( geometry ),
 		},
