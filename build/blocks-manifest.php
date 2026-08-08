@@ -145,14 +145,6 @@ return array(
 				'type' => 'boolean',
 				'default' => false
 			),
-			'azimuth' => array(
-				'type' => 'number',
-				'default' => 0
-			),
-			'elevation' => array(
-				'type' => 'number',
-				'default' => 0
-			),
 			'showPhase' => array(
 				'type' => 'boolean',
 				'default' => true

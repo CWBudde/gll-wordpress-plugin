@@ -38,14 +38,6 @@
 			"type": "boolean",
 			"default": false
 		},
-		"azimuth": {
-			"type": "number",
-			"default": 0
-		},
-		"elevation": {
-			"type": "number",
-			"default": 0
-		},
 		"showPhase": {
 			"type": "boolean",
 			"default": true

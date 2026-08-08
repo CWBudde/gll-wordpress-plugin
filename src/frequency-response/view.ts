@@ -57,8 +57,6 @@ async function initializeBlock( block ) {
 	const responseIndex = parseInt( block.dataset.responseIndex, 10 ) || 0;
 	const phaseMode = block.dataset.phaseMode || 'unwrapped';
 	const normalized = block.dataset.normalized === 'true';
-	const azimuth = parseFloat( block.dataset.azimuth ) || 0;
-	const elevation = parseFloat( block.dataset.elevation ) || 0;
 	const showPhase = block.dataset.showPhase !== 'false';
 	const showMagnitude = block.dataset.showMagnitude !== 'false';
 	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
@@ -94,8 +92,6 @@ async function initializeBlock( block ) {
 			responseIndex,
 			phaseMode,
 			normalized,
-			azimuth,
-			elevation,
 			showPhase,
 			showMagnitude,
 			chartHeight,
@@ -160,17 +156,6 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 	badges.push(
 		`<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>`
 	);
-
-	// Angular position badge
-	if ( options.azimuth !== 0 || options.elevation !== 0 ) {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Position:</strong> Az ${ options.azimuth }° / El ${ options.elevation }°</span>`
-		);
-	} else {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Position:</strong> On-axis (0° / 0°)</span>`
-		);
-	}
 
 	// Phase mode badge
 	if ( phaseSeries ) {

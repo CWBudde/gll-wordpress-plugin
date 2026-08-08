@@ -46,8 +46,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		responseIndex,
 		phaseMode,
 		normalized,
-		azimuth,
-		elevation,
 		showPhase,
 		showMagnitude,
 		chartHeight,
@@ -304,35 +302,6 @@ export default function Edit( { attributes, setAttributes } ) {
 								step={ 50 }
 							/>
 						</PanelBody>
-
-						<PanelBody
-							title={ __( 'Angular Position', 'gll-info' ) }
-							initialOpen={ false }
-						>
-							<RangeControl
-								label={ __( 'Azimuth (degrees)', 'gll-info' ) }
-								value={ azimuth }
-								onChange={ ( value ) =>
-									setAttributes( { azimuth: value } )
-								}
-								min={ -180 }
-								max={ 180 }
-								step={ 5 }
-							/>
-							<RangeControl
-								label={ __(
-									'Elevation (degrees)',
-									'gll-info'
-								) }
-								value={ elevation }
-								onChange={ ( value ) =>
-									setAttributes( { elevation: value } )
-								}
-								min={ -90 }
-								max={ 90 }
-								step={ 5 }
-							/>
-						</PanelBody>
 					</>
 				) }
 			</InspectorControls>
@@ -374,21 +343,6 @@ export default function Edit( { attributes, setAttributes } ) {
 									</strong>{ ' ' }
 									20 Hz - 20 kHz
 								</span>
-								{ azimuth !== 0 || elevation !== 0 ? (
-									<span className="gll-meta-badge">
-										<strong>
-											{ __( 'Position:', 'gll-info' ) }
-										</strong>{ ' ' }
-										Az { azimuth }° / El { elevation }°
-									</span>
-								) : (
-									<span className="gll-meta-badge">
-										<strong>
-											{ __( 'Position:', 'gll-info' ) }
-										</strong>{ ' ' }
-										On-axis (0° / 0°)
-									</span>
-								) }
 								{ showPhase && (
 									<span className="gll-meta-badge">
 										<strong>
