@@ -1,29 +1,94 @@
-=== Gll Info ===
-Contributors:      The WordPress Contributors
-Tags:              block
+=== GLL Info ===
+Contributors:
+Tags:              loudspeaker, acoustics, gll, audio, blocks
+Requires at least: 6.7
 Tested up to:      6.7
+Requires PHP:      7.4
 Stable tag:        0.1.0
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
-Example block scaffolded with Create Block tool.
+Display GLL loudspeaker data in Gutenberg blocks: overview, frequency response, polar plots, 3D balloon, geometry, resources and configuration.
 
 == Description ==
 
-This is the long description. No limit, and you can use Markdown (as well as in the following sections).
+GLL Info turns a GLL (Generic Loudspeaker Library) file into a set of Gutenberg
+blocks. Upload the `.gll` file to the WordPress media library, pick it in a
+block, and the block reads the file directly in the browser and renders it — no
+export step, no conversion, and no copy of the data to keep in sync.
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+Parsing happens client-side in WebAssembly. The plugin ships a Go-based GLL
+parser compiled to `gll.wasm`; the browser downloads the `.gll` file and the
+parser, and everything else — charts, meshes, tables — is built from the parsed
+result. Nothing about the file is processed on the server.
+
+= Blocks =
+
+Seven blocks are registered, all in the **Media** category of the inserter:
+
+* **GLL File Viewer** (`gll-info/gll-info`) — file selector plus the file
+  overview (label, version, system type, manufacturer, description) and the
+  list of acoustic sources, with optional per-source frequency response
+  controls and charts.
+* **GLL Frequency Response** (`gll-info/frequency-response`) — magnitude and
+  phase chart for one response of one acoustic source, with unwrapped phase,
+  wrapped phase or group delay.
+* **GLL Polar Plot** (`gll-info/polar-plot`) — horizontal and vertical
+  directivity slices at a single frequency.
+* **GLL 3D Balloon** (`gll-info/balloon-3d`) — the full radiation balloon at
+  one frequency, rendered with Three.js and orbitable with the mouse.
+* **GLL Geometry Viewer** (`gll-info/geometry`) — the cabinet geometry modelled
+  in the file, with faces, edges, source positions and reference markers.
+* **GLL Resources** (`gll-info/resources`) — the documentation and data files
+  embedded inside the GLL file, with image previews and download links.
+* **GLL Configuration** (`gll-info/config`) — box types, frames, filter groups,
+  rigging limits and rigging warnings.
+
+= Block patterns =
+
+Three ready-made layouts are registered under the **GLL Loudspeaker Data**
+pattern category: *Full GLL Viewer*, *Quick GLL Overview* and *GLL Acoustic
+Analysis*. A pattern cannot know which file you want, so every block it inserts
+starts with no file selected — pick the file per block after inserting.
+
+= Block variations =
+
+Thirteen variations appear in the inserter alongside the plain blocks, each one
+a block preset with different toggles: magnitude-only and normalized frequency
+response, horizontal/vertical/normalized polar plots, wireframe and minimal
+balloon, wireframe and rotating geometry, documentation-only resources, rigging
+and filter configuration, and an overview-only file viewer.
+
+= What this plugin does not do (yet) =
+
+* Parsed data is **not** cached in post meta. Every page view re-downloads the
+  `.gll` file and re-parses it in the visitor's browser. Large files therefore
+  cost the visitor bandwidth and CPU on every visit.
+* The 3D blocks require WebGL, and all blocks require a browser with
+  WebAssembly support. There is no non-WebAssembly fallback.
+* A `gll_file` custom post type is registered, but the blocks do not read from
+  it — they take their file from the media library.
+
+= Documentation =
+
+End-user documentation lives in the `docs/` directory of the plugin:
+`docs/getting-started.md`, `docs/blocks.md` and
+`docs/patterns-and-variations.md`.
 
 == Installation ==
 
-This section describes how to install the plugin and get it working.
+1. Upload the plugin files to `/wp-content/plugins/gll-info`, or install the
+   plugin through the WordPress plugins screen.
+1. Activate the plugin through the *Plugins* screen in WordPress.
+1. Go to *Media > Add New* and upload a `.gll` file. The plugin registers the
+   `.gll` extension as `application/x-gll`, which is what makes the upload
+   pass WordPress's file type check.
+1. Edit a post or page, insert one of the GLL blocks, and choose the uploaded
+   file with *Select GLL File*.
 
-e.g.
-
-1. Upload the plugin files to the `/wp-content/plugins/gll-info` directory, or install the plugin through the WordPress plugins screen directly.
-1. Activate the plugin through the 'Plugins' screen in WordPress
-
+WordPress 6.7 or newer and PHP 7.4 or newer are required. Visitors need a
+browser with WebAssembly support, and WebGL for the 3D Balloon and Geometry
+Viewer blocks.
 
 == Theming ==
 
@@ -31,7 +96,8 @@ The blocks take their colors from the active theme. Nothing needs configuring
 for this to work, and it applies to the charts and 3D views as well as the
 surrounding markup.
 
-Each block instance also has an **Appearance** setting in the block sidebar:
+Each block instance also has an **Appearance** panel in the block sidebar with a
+single **Frame** setting:
 
 * **Card** — background, border, rounded corners and a subtle shadow.
 * **Plain** — background and border, no shadow or rounded corners.
@@ -66,6 +132,26 @@ colormap on the 3D balloon encode meaning, so they stay stable across themes.
 
 == Frequently Asked Questions ==
 
+= WordPress refuses to upload my .gll file. =
+
+The plugin adds `application/x-gll` to the allowed upload types, so this only
+happens when the plugin is inactive, or when the host or a security plugin
+restricts uploads further. Check that GLL Info is activated, then check any
+upload-restriction plugin or the `upload_mimes` filter in your theme.
+
+= Do I have to pick the file in every block? =
+
+Yes. Each block stores its own `fileId`, `fileUrl` and `fileName`, and each one
+parses the file independently. The bundled patterns insert several blocks at
+once, but you still choose the file in each of them.
+
+= The block shows nothing on the front end. =
+
+Three common causes: the block has no file selected; the browser has no
+WebAssembly or (for the 3D blocks) no WebGL support; or the block's *Hide When
+Empty* option is on and the file genuinely contains nothing for that block —
+that option exists on the Resources and Configuration blocks.
+
 = The blocks look wrong on my theme. How do I fix the colors? =
 
 See the Theming section. In most cases nothing is needed. If your theme uses
@@ -74,23 +160,37 @@ there in your stylesheet.
 
 = Can I remove the box around a block? =
 
-Yes. Set Appearance to "None" in the block sidebar.
+Yes. Set *Appearance > Frame* to "None" in the block sidebar.
+
+= Is the GLL file public once I upload it? =
+
+Yes. It is a media library attachment like any other, and the visitor's browser
+downloads it in full in order to render the block. Do not upload a GLL file you
+are not willing to distribute.
+
+= Is there a custom post type for GLL files? =
+
+A `gll_file` post type is registered and appears in the admin menu, but no
+block reads from it. Blocks select their file from the media library.
 
 == Screenshots ==
 
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+No screenshots ship with this release. The `assets/` directory contains only the
+media library icon and the WebAssembly parser; screenshot files will be added
+before the plugin is submitted anywhere that displays them.
 
 == Changelog ==
 
 = 0.1.0 =
-* Release
+* Initial development version. Not yet released.
+* Seven blocks: GLL File Viewer, Frequency Response, Polar Plot, 3D Balloon,
+  Geometry Viewer, Resources and Configuration.
+* Client-side GLL parsing via a Go parser compiled to WebAssembly.
+* `.gll` upload support and a media library filter for GLL files.
+* Three block patterns and thirteen block variations.
+* Theme-aware styling with a per-block Appearance frame setting.
 
-== Arbitrary section ==
+== Upgrade Notice ==
 
-You may provide arbitrary sections, in the same format as the ones above. This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation." Arbitrary sections will be shown below the built-in sections outlined above.
+= 0.1.0 =
+First development version. There is no earlier release to upgrade from.

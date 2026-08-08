@@ -827,26 +827,117 @@ absent, CI included.
 ## Phase 11: Integration & Polish
 
 ### Task 11.1: Block Patterns
-- [ ] Create "Full GLL Viewer" pattern (all blocks)
-- [ ] Create "Quick Overview" pattern
-- [ ] Create "Acoustic Analysis" pattern
+- [x] Create "Full GLL Viewer" pattern (all blocks)
+- [x] Create "Quick Overview" pattern
+- [x] Create "Acoustic Analysis" pattern
 
 ### Task 11.2: Block Variations
-- [ ] Register block variations for common configurations
+- [x] Register block variations for common configurations
 
 ### Task 11.3: Internationalization
-- [ ] Add translation support
-- [ ] Extract all strings to translation functions
+- [x] Add translation support
+- [x] Extract all strings to translation functions
+- [ ] Generate `languages/gll-info.pot` (needs WP-CLI; see below)
 
 ### Task 11.4: Accessibility
-- [ ] Add ARIA labels to interactive elements
-- [ ] Ensure keyboard navigation works
+- [x] Add ARIA labels to interactive elements
+- [x] Ensure keyboard navigation works
 - [ ] Test with screen readers
 
 ### Task 11.5: Documentation
-- [ ] Add inline block help
-- [ ] Create user documentation
-- [ ] Add example patterns
+- [x] Add inline block help
+- [x] Create user documentation
+- [x] Add example patterns
+
+Patterns register from `includes/class-gll-patterns.php`. Six of the seven
+blocks serialize as self-closing comments with no file attributes set, so a
+pattern stays file-agnostic; geometry is the exception, because its `save()`
+returns markup rather than null and a bare comment would fail block validation
+on insert. That markup therefore lives verbatim in the PHP, which is a
+duplication waiting to rot — `src/geometry/pattern-content.test.tsx`
+re-serializes the real block and asserts the PHP still contains exactly that
+string, so a renamed class or a reordered attribute fails a test instead of
+silently breaking every shipped pattern.
+
+The 13 variations are declared inline in `block.json` rather than registered
+from JavaScript. Core translates them out of the block metadata catalogue, which
+keeps them off the editor bundle entirely.
+
+Internationalization was never a string problem. Roughly 300 strings were
+already wrapped before this phase and not one of them could be translated,
+because none of the loading infrastructure existed: no `load_plugin_textdomain`,
+no `wp_set_script_translations`, no `Domain Path`, no `languages/`. The wrapping
+was the visible half of the job and the smaller one.
+
+Two i18n traps are worth recording because both produce code that lints clean,
+passes tests, and silently ships English forever. The first: a translated string
+captured in a module-level constant is evaluated at import time, before
+WordPress has registered the catalogue. The normalizer's four enum label tables
+were exactly that shape, and are now call-time lookup functions
+(`getLimitTypeLabel()` and siblings) with the reasoning recorded above them.
+`IIR_SHAPE_LABELS` and `SIZE_UNITS` stay constants *because* they are not
+translated, and now say so. The second: `load_plugin_textdomain` on
+`plugins_loaded` is the conventional hook and is wrong on WordPress 6.7+, which
+fires `_doing_it_wrong` for any domain loaded before `init`. This plugin's
+declared minimum is 6.7, so it sits on `init` priority 0 — ahead of the post-type
+and pattern registrations, both of which translate at registration time.
+
+Translated text also has to survive the DOM. Several badge rows were built by
+string concatenation into `innerHTML`, which is defensible while every
+interpolated value is a number and becomes an injection the moment a translator
+supplies one containing `&` or `<`. Those now build nodes, or route through
+`escapeHtml`. English output is byte-identical.
+
+Accessibility is applied at runtime, never in `save()`. A block's `save()` output
+is serialized into post content, so adding an attribute there invalidates every
+post already containing the block unless a matching `deprecated` entry is added
+for all seven — and a demo page carrying the current markup is already
+published. That is also the more honest design: the things that need announcing
+are DOM mutations that only happen at runtime, and a live region baked into
+`save()` would sit inert until `view.ts` touched it.
+
+The single non-obvious a11y rule, which cost real time: a live region must exist
+in the document *before* its text changes, or assistive technology treats the
+text as initial content and stays silent. Creating the region and filling it in
+the same tick is the classic way to ship a live region that never announces
+anything. In `geometry/view.ts` that collides with
+`@wordpress/no-unused-vars-before-return`, whose suggested fix — move the
+binding down to its first use — would quietly destroy the feature. It carries a
+targeted suppression and an explanation instead.
+
+`--gll-accent` was `#667eea`, which gives white-on-accent **3.66:1** against the
+4.5:1 AA threshold, and 2.97:1 as text on the 12%-tinted badge fill. It is now
+`#4c51bf`: 6.49:1 and 5.01:1. The badge fill, not the white button, was the
+binding constraint — the obvious landmark `#5a67d8` clears white at 4.81:1 but
+only reaches 3.80:1 there. The focus indicator deliberately does *not* use the
+accent: it draws from the text and surface tokens, which any working theme has
+already made legible against each other, so a site owner overriding the accent
+badly costs contrast on a badge rather than the ability to see where the
+keyboard is.
+
+Found and fixed while wiring the stylesheets, all three invisible until someone
+looked: `.gll-visually-hidden` was referenced by the shared live-region helper
+and defined nowhere, so the geometry block's off-screen region and the
+frequency-response value table rendered as visible page content. `.gll-error`
+was missing from two blocks that had just been moved onto the shared error
+panel, leaving both unstyled. And balloon-3d's error panel carried an inline
+`#fff8f8` background that rendered white-on-white under a dark theme.
+
+Not done, and deliberately: `languages/gll-info.pot` does not exist. There is no
+local WP-CLI, so generating it needs the server's installation, and it has to
+happen after the wrapping rather than alongside it. Until it does, `languages/`
+is empty and every string falls back to English — which is the correct
+pre-translation state, not a defect. Screen-reader testing is also outstanding
+for the same reason Phases 8, 9 and 10 record: no local WordPress environment,
+and staging is outward-facing. ARIA structure is verified in jsdom; how NVDA and
+VoiceOver actually narrate it is not.
+
+Two pre-existing defects surfaced here and were left alone as out of scope.
+`gll_info_enqueue_frontend_assets()` gates on `has_block()`, which only inspects
+main post content — a GLL block in a template part, widget or reusable block
+gets neither the WASM settings nor the translations. And `showResponses` on the
+main block is a no-op: it serializes to `data-show-responses` and nothing reads
+it.
 
 ---
 

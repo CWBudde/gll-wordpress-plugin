@@ -141,9 +141,11 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
 - ✅ Phase 8: Geometry viewer block (Three.js, OrbitControls)
 - ✅ Phase 9: Resources block (embedded documentation and data files)
 - ✅ Phase 10: Configuration block (box types, frames, filters, limits, warnings)
-- 🔶 Phase 7: Sources list (integrated into main block; Task 7.3 outstanding)
-- ⏳ Phase 6: 3D balloon block
-- ⏳ Phases 11-12: Integration, polish, testing and release
+- ✅ Phase 7: Sources list (integrated into main block, placements included)
+- ✅ Phase 6: 3D balloon block (Three.js, quality presets, lazy init)
+- 🔶 Phase 11: Integration and polish (patterns, variations, i18n, a11y, docs;
+  the `.pot` catalogue and screen-reader testing are outstanding)
+- ⏳ Phase 12: Testing and release
 
 The main block (`gll-info/gll-info`) currently integrates overview and sources display with toggle controls in the InspectorControls panel.
 
