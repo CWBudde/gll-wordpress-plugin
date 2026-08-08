@@ -4,7 +4,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	InspectorControls,
 	useBlockProps,
@@ -16,6 +16,7 @@ import {
 	Button,
 	ToggleControl,
 	RangeControl,
+	SelectControl,
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
@@ -37,6 +38,7 @@ import {
 	buildGeometryMarkers,
 	getCaseGeometryVertices,
 	getReferencePoint,
+	getCenterOfMassPoint,
 	toViewPoint,
 	computeBounds,
 	computeScaleFactor,
@@ -61,6 +63,32 @@ import './editor.scss';
  * make that effect tear the whole scene down and rebuild it on every render.
  */
 const NO_MARKERS: readonly GeometryMarker[] = Object.freeze( [] );
+
+/**
+ * Format a number with up to one decimal place.
+ *
+ * @param {number} value Numeric value.
+ * @return {string} Formatted number, or a dash when there is no number.
+ */
+function formatNumber( value ) {
+	if ( typeof value !== 'number' || ! Number.isFinite( value ) ) {
+		return '-';
+	}
+	const rounded = Math.round( value * 10 ) / 10;
+	return Number.isInteger( rounded ) ? `${ rounded }` : rounded.toFixed( 1 );
+}
+
+/**
+ * Format a point as a comma-separated coordinate triple.
+ *
+ * @param {Object} point Point with x/y/z in raw GLL units.
+ * @return {string} Formatted coordinates.
+ */
+function formatPoint( point ) {
+	return `${ formatNumber( point.x ) }, ${ formatNumber(
+		point.y
+	) }, ${ formatNumber( point.z ) }`;
+}
 
 /**
  * Edit component for the Geometry Viewer block.
@@ -119,11 +147,23 @@ export default function Edit( { attributes, setAttributes } ) {
 		setLoadAttempted( false );
 	};
 
-	const geometryCount = useMemo(
-		() => data?.Database?.CaseGeometries?.length || 0,
-		[ data ]
-	);
-	const geometryMax = geometryCount > 0 ? geometryCount - 1 : 10;
+	const geometryOptions = useMemo( () => {
+		const geometries = data?.Database?.CaseGeometries;
+		if ( ! Array.isArray( geometries ) ) {
+			return [];
+		}
+		return geometries.map( ( geometry, index ) => ( {
+			value: String( index ),
+			label:
+				geometry?.BoxLabel ||
+				geometry?.BoxKey ||
+				sprintf(
+					/* translators: %d: geometry number. */
+					__( 'Geometry %d', 'gll-info' ),
+					index + 1
+				),
+		} ) );
+	}, [ data ] );
 
 	const caseGeometry = useMemo( () => {
 		const geometries = data?.Database?.CaseGeometries;
@@ -166,6 +206,7 @@ export default function Edit( { attributes, setAttributes } ) {
 
 		return {
 			meshData,
+			bounds,
 			markers: buildGeometryMarkers( caseGeometry, {
 				center,
 				scale,
@@ -176,6 +217,29 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	const geometryData = geometrySceneData?.meshData || null;
 	const markerData = geometrySceneData?.markers ?? NO_MARKERS;
+
+	const geometryStats = geometrySceneData?.meshData?.stats || null;
+	const geometryBounds = geometrySceneData?.bounds || null;
+	const largestDimension = geometryBounds
+		? Math.max(
+				geometryBounds.size.x,
+				geometryBounds.size.y,
+				geometryBounds.size.z
+		  )
+		: null;
+	const isSymmetric = caseGeometry?.IsSymmetric;
+	const sourcePlacementCount = Array.isArray( caseGeometry?.SourcePlacements )
+		? caseGeometry.SourcePlacements.length
+		: 0;
+
+	const referencePoint = useMemo(
+		() => ( caseGeometry ? getReferencePoint( caseGeometry ) : null ),
+		[ caseGeometry ]
+	);
+	const centerOfMassPoint = useMemo(
+		() => ( caseGeometry ? getCenterOfMassPoint( caseGeometry ) : null ),
+		[ caseGeometry ]
+	);
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
 	const themedSceneRef = useRef< {
@@ -408,19 +472,29 @@ export default function Edit( { attributes, setAttributes } ) {
 					title={ __( 'Geometry Options', 'gll-info' ) }
 					initialOpen={ true }
 				>
-					<RangeControl
-						label={ __( 'Geometry Index', 'gll-info' ) }
-						value={ geometryIndex }
-						onChange={ ( value ) =>
-							setAttributes( { geometryIndex: value } )
-						}
-						min={ 0 }
-						max={ geometryMax }
-						help={ __(
-							'Select which case geometry to display (if multiple).',
-							'gll-info'
-						) }
-					/>
+					{ geometryOptions.length > 1 && (
+						<SelectControl
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							label={ __( 'Geometry', 'gll-info' ) }
+							value={ String(
+								Math.min(
+									geometryIndex,
+									geometryOptions.length - 1
+								)
+							) }
+							options={ geometryOptions }
+							onChange={ ( value ) =>
+								setAttributes( {
+									geometryIndex: parseInt( value, 10 ),
+								} )
+							}
+							help={ __(
+								'Select which case geometry to display.',
+								'gll-info'
+							) }
+						/>
+					) }
 					<ToggleControl
 						label={ __( 'Show Faces', 'gll-info' ) }
 						checked={ showFaces }
@@ -539,6 +613,109 @@ export default function Edit( { attributes, setAttributes } ) {
 									'gll-info'
 								) }
 							</p>
+						</div>
+					) }
+
+					{ ! isLoading && ! error && geometrySceneData && (
+						<div className="gll-geometry-metadata">
+							{ geometryStats?.vertexCount > 0 && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __( 'Vertices:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ geometryStats.vertexCount }
+								</span>
+							) }
+							{ geometryStats?.edgeCount > 0 && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __( 'Edges:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ geometryStats.edgeCount }
+								</span>
+							) }
+							{ geometryStats?.faceCount > 0 && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __( 'Faces:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ geometryStats.faceCount }
+								</span>
+							) }
+							{ typeof isSymmetric === 'boolean' && (
+								<span
+									className={
+										isSymmetric
+											? 'gll-meta-badge gll-meta-badge-highlight'
+											: 'gll-meta-badge'
+									}
+								>
+									<strong>
+										{ __( 'Symmetry:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ isSymmetric
+										? __( 'Symmetric', 'gll-info' )
+										: __( 'Asymmetric', 'gll-info' ) }
+								</span>
+							) }
+							{ largestDimension !== null && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __(
+											'Largest Dimension:',
+											'gll-info'
+										) }
+									</strong>{ ' ' }
+									{ formatNumber( largestDimension ) }
+									{ ' mm' }
+								</span>
+							) }
+							{ geometryBounds && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __(
+											'Bounds (W × H × D):',
+											'gll-info'
+										) }
+									</strong>{ ' ' }
+									{ formatNumber( geometryBounds.size.x ) }
+									{ ' × ' }
+									{ formatNumber( geometryBounds.size.y ) }
+									{ ' × ' }
+									{ formatNumber( geometryBounds.size.z ) }
+									{ ' mm' }
+								</span>
+							) }
+							{ referencePoint && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __(
+											'Reference Point (mm):',
+											'gll-info'
+										) }
+									</strong>{ ' ' }
+									{ formatPoint( referencePoint ) }
+								</span>
+							) }
+							{ centerOfMassPoint && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __(
+											'Center of Mass (mm):',
+											'gll-info'
+										) }
+									</strong>{ ' ' }
+									{ formatPoint( centerOfMassPoint ) }
+								</span>
+							) }
+							{ showSources && sourcePlacementCount > 0 && (
+								<span className="gll-meta-badge">
+									<strong>
+										{ __( 'Sources:', 'gll-info' ) }
+									</strong>{ ' ' }
+									{ sourcePlacementCount }
+								</span>
+							) }
 						</div>
 					) }
 

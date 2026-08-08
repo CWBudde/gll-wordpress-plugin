@@ -14,9 +14,13 @@ import {
 	buildGeometryMarkers,
 	getCaseGeometryVertices,
 	getReferencePoint,
+	getCenterOfMassPoint,
 	toViewPoint,
 	computeBounds,
 	computeScaleFactor,
+	type GeometryBounds,
+	type GeometryBuildResult,
+	type GeometryVertex,
 } from '../shared/geometry-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 import {
@@ -82,6 +86,7 @@ async function initializeBlock( block: HTMLElement ) {
 		pivot: block.dataset.showMarkersPivot === 'true',
 	};
 	const centerReference = block.dataset.centerReference === 'true';
+	const showSources = block.dataset.showSources === 'true';
 
 	const loadingEl = block.querySelector( '.gll-geometry-loading' );
 	if ( loadingEl ) {
@@ -101,12 +106,14 @@ async function initializeBlock( block: HTMLElement ) {
 		const geometry =
 			geometries[ Math.min( geometryIndex, geometries.length - 1 ) ];
 		let geometryData = null;
+		let geometryBounds: GeometryBounds | null = null;
 		let markerData: ReturnType< typeof buildGeometryMarkers > = [];
 		if ( geometry ) {
 			const vertices = getCaseGeometryVertices( geometry );
 			if ( vertices.length > 0 ) {
 				const viewVertices = vertices.map( toViewPoint );
 				const bounds = computeBounds( viewVertices );
+				geometryBounds = bounds;
 				const reference = centerReference
 					? getReferencePoint( geometry )
 					: null;
@@ -137,6 +144,16 @@ async function initializeBlock( block: HTMLElement ) {
 			return;
 		}
 
+		const metadataElement = buildMetadataElement( {
+			geometry,
+			stats: geometryData.stats,
+			bounds: geometryBounds,
+			showSources,
+		} );
+		if ( metadataElement ) {
+			block.insertBefore( metadataElement, canvasContainer );
+		}
+
 		const canvasHeight = parseInt(
 			block.dataset.canvasHeight || '500',
 			10
@@ -158,6 +175,134 @@ async function initializeBlock( block: HTMLElement ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, ( error as Error ).message );
 	}
+}
+
+/**
+ * Format a number with up to one decimal place.
+ *
+ * @param value Numeric value.
+ * @return Formatted number, or a dash when there is no number.
+ */
+function formatNumber( value: unknown ): string {
+	if ( typeof value !== 'number' || ! Number.isFinite( value ) ) {
+		return '-';
+	}
+	const rounded = Math.round( value * 10 ) / 10;
+	return Number.isInteger( rounded ) ? `${ rounded }` : rounded.toFixed( 1 );
+}
+
+/**
+ * Format a point as a comma-separated coordinate triple.
+ *
+ * @param point Point with x/y/z in raw GLL units.
+ * @return Formatted coordinates.
+ */
+function formatPoint( point: GeometryVertex ): string {
+	return `${ formatNumber( point.x ) }, ${ formatNumber(
+		point.y
+	) }, ${ formatNumber( point.z ) }`;
+}
+
+/**
+ * Build the metadata badge row shown above the viewer.
+ *
+ * Badges whose data the file does not carry are left out entirely rather than
+ * rendered empty. Bounds and point coordinates are in raw GLL units (mm).
+ *
+ * @param options             Metadata inputs.
+ * @param options.geometry    Normalized case geometry.
+ * @param options.stats       Vertex/edge/face counts from the mesh build.
+ * @param options.bounds      Bounding box of the untransformed view vertices.
+ * @param options.showSources Whether source placements are being displayed.
+ * @return The badge row element, or null when there is nothing to show.
+ */
+function buildMetadataElement( options: {
+	geometry: any;
+	stats: GeometryBuildResult[ 'stats' ];
+	bounds: GeometryBounds | null;
+	showSources: boolean;
+} ): HTMLElement | null {
+	const { geometry, stats, bounds, showSources } = options;
+	const badges: string[] = [];
+
+	if ( stats.vertexCount > 0 ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Vertices:</strong> ${ stats.vertexCount }</span>`
+		);
+	}
+	if ( stats.edgeCount > 0 ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Edges:</strong> ${ stats.edgeCount }</span>`
+		);
+	}
+	if ( stats.faceCount > 0 ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Faces:</strong> ${ stats.faceCount }</span>`
+		);
+	}
+
+	const isSymmetric = geometry?.IsSymmetric;
+	if ( typeof isSymmetric === 'boolean' ) {
+		const className = isSymmetric
+			? 'gll-meta-badge gll-meta-badge-highlight'
+			: 'gll-meta-badge';
+		const label = isSymmetric ? 'Symmetric' : 'Asymmetric';
+		badges.push(
+			`<span class="${ className }"><strong>Symmetry:</strong> ${ label }</span>`
+		);
+	}
+
+	if ( bounds ) {
+		const largest = Math.max( bounds.size.x, bounds.size.y, bounds.size.z );
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Largest Dimension:</strong> ${ formatNumber(
+				largest
+			) } mm</span>`
+		);
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Bounds (W × H × D):</strong> ${ formatNumber(
+				bounds.size.x
+			) } × ${ formatNumber( bounds.size.y ) } × ${ formatNumber(
+				bounds.size.z
+			) } mm</span>`
+		);
+	}
+
+	const reference = getReferencePoint( geometry );
+	if ( reference ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Reference Point (mm):</strong> ${ escapeHtml(
+				formatPoint( reference )
+			) }</span>`
+		);
+	}
+
+	const centerOfMass = getCenterOfMassPoint( geometry );
+	if ( centerOfMass ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Center of Mass (mm):</strong> ${ escapeHtml(
+				formatPoint( centerOfMass )
+			) }</span>`
+		);
+	}
+
+	const placements = Array.isArray( geometry?.SourcePlacements )
+		? geometry.SourcePlacements
+		: [];
+	if ( showSources && placements.length > 0 ) {
+		badges.push(
+			`<span class="gll-meta-badge"><strong>Sources:</strong> ${ placements.length }</span>`
+		);
+	}
+
+	if ( badges.length === 0 ) {
+		return null;
+	}
+
+	const element = document.createElement( 'div' );
+	element.className = 'gll-geometry-metadata';
+	element.innerHTML = badges.join( '' );
+	return element;
 }
 
 function initThreeScene(
