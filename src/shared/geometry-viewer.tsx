@@ -41,6 +41,13 @@ export interface GeometryViewerProps {
 	) => void;
 	onResize?: ( width: number, height: number ) => void;
 	fallback?: React.ReactNode;
+	/**
+	 * Stop the render loop. Mirrors the prop of the same name on
+	 * `ThreeWrapper`, so a caller can park an offscreen viewer instead of
+	 * rendering it forever. Defaults to false, leaving existing callers
+	 * unchanged.
+	 */
+	paused?: boolean;
 }
 
 const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
@@ -52,6 +59,7 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 			onAnimate,
 			onResize,
 			fallback,
+			paused = false,
 		},
 		ref
 	) {
@@ -213,6 +221,7 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 
 		useEffect( () => {
 			if (
+				paused ||
 				! sceneRef.current ||
 				! cameraRef.current ||
 				! rendererRef.current
@@ -245,7 +254,7 @@ const GeometryViewer = forwardRef< GeometryViewerRef, GeometryViewerProps >(
 					animationIdRef.current = null;
 				}
 			};
-		}, [ onAnimate ] );
+		}, [ onAnimate, paused ] );
 
 		useEffect( () => {
 			if (

@@ -145,6 +145,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const { data, isLoading, error, load, clear } = useGLLLoader();
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const viewerRef = useRef< GeometryViewerRef >( null );
+	const canvasWrapperRef = useRef< HTMLDivElement >( null );
 	const controlsRef = useRef< OrbitControls | null >( null );
 	const fallbackControlsRef = useRef< ManualOrbitControls | null >( null );
 
@@ -284,6 +285,33 @@ export default function Edit( { attributes, setAttributes } ) {
 		() => ( caseGeometry ? getCenterOfMassPoint( caseGeometry ) : null ),
 		[ caseGeometry ]
 	);
+
+	/**
+	 * Park the render loop while the viewer is scrolled out of the editor
+	 * canvas. Browsers only throttle rAF for background tabs, so an offscreen
+	 * viewer would otherwise keep rendering for as long as the post is open.
+	 */
+	const [ paused, setPaused ] = useState( false );
+
+	useEffect( () => {
+		const element = canvasWrapperRef.current;
+		if ( ! element || typeof IntersectionObserver === 'undefined' ) {
+			return undefined;
+		}
+
+		const observer = new IntersectionObserver(
+			( entries ) => {
+				const entry = entries[ entries.length - 1 ];
+				if ( entry ) {
+					setPaused( ! entry.isIntersecting );
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe( element );
+
+		return () => observer.disconnect();
+	}, [ isLoading, error, webGLSupported ] );
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
 	const themedSceneRef = useRef< {
@@ -798,10 +826,14 @@ export default function Edit( { attributes, setAttributes } ) {
 					) }
 
 					{ ! isLoading && ! error && webGLSupported && (
-						<div className="gll-geometry-canvas">
+						<div
+							className="gll-geometry-canvas"
+							ref={ canvasWrapperRef }
+						>
 							<GeometryViewer
 								ref={ viewerRef }
 								height={ canvasHeight }
+								paused={ paused }
 								onAnimate={ handleAnimate }
 								onSceneReady={ handleSceneReady }
 								onResize={ handleResize }

@@ -540,60 +540,88 @@ Based on the web demo, these Gutenberg blocks will be created:
 - [x] Position markers in world space using toViewPoint conversion
 
 ### Task 8.7: Acoustic Source Visualization
-- [ ] Create cone meshes for each acoustic source
-- [ ] Position cones at source reference points
-- [ ] Orient cones using source rotation quaternions
-- [ ] Color cones with distinct hues per source
-- [ ] Add source labels (TextSprite or HTML overlay)
-- [ ] Toggle source visibility with `showSources` attribute
-- [ ] Show source coverage angles visually
+- [x] Create cone meshes for each acoustic source
+- [x] Position cones at source reference points
+- [x] Orient cones using source rotation quaternions
+- [x] Color cones with distinct hues per source
+- [x] Add source labels (TextSprite via CanvasTexture)
+- [x] Toggle source visibility with `showSources` attribute
+- [x] Show source coverage angles visually
+
+Cone apertures come from the file rather than being fixed: the source
+definition's `RatedHorizontalAngle`/`RatedVerticalAngle` first, then the box
+`HorizontalOpeningAngle`/`VerticalOpeningAngle`, then the reference demo's
+fixed ~46° silhouette. H and V are applied as a non-uniform scale, so an
+asymmetric source reads as an elliptical cone. This is a deliberate divergence
+from the reference, which draws fixed cones unrelated to real coverage and has
+no labels at all.
+
+Placement angles are radians and GLL's forward axis is +Y (gll-tools
+`docs/format.md:175`). `sourcePlacementOrientation()` returns the full
+view-space basis rather than a minimal-arc rotation, because roll about the aim
+axis is otherwise undefined — harmless for a circular cone, wrong for an
+elliptical one.
 
 ### Task 8.8: Theme-Aware Grid Colors
-- [ ] Read CSS variables for grid colors:
-  - `--geom-grid-major` (default: #94a3b8)
-  - `--geom-grid-minor` (default: #e2e8f0)
-  - `--geom-grid-opacity` (default: 0.45)
-  - `--geom-edge-default` (fallback edge color)
-  - `--geom-face-default` (fallback face color)
-- [ ] Apply theme colors to GridHelper materials
-- [ ] Update on WordPress theme change (if applicable)
-- [ ] Support dark mode variants
+- [x] Read theme colors for grid, edge and face defaults
+- [x] Apply theme colors to GridHelper materials
+- [x] Apply themed grid opacity
+- [x] Support dark mode variants
+
+**Superseded:** the `--geom-*` variables this task originally specified were
+replaced by the plugin-wide `--gll-*` token layer introduced in `c410415`; see
+`docs/plans/2026-08-08-block-theming-design.md`. Colors resolve at runtime via
+`resolveTheme()` rather than by light/dark detection, so there is no separate
+dark-mode branch. Marker colors and the axes helper stay hardcoded: that doc
+classifies them as data, not chrome.
 
 ### Task 8.9: Geometry Controls (InspectorControls)
-- [ ] Geometry selector dropdown (if multiple case geometries)
-- [ ] Show Faces toggle (ToggleControl)
-- [ ] Show Edges toggle (ToggleControl)
-- [ ] Marker visibility controls (separate toggles for ref/com/pivot)
-- [ ] Show Sources toggle (ToggleControl)
-- [ ] Center on Reference toggle (ToggleControl)
-- [ ] Auto-rotate toggle (ToggleControl)
-- [ ] Canvas height slider (RangeControl 200-800px)
+- [x] Geometry selector dropdown (if multiple case geometries)
+- [x] Show Faces toggle (ToggleControl)
+- [x] Show Edges toggle (ToggleControl)
+- [x] Marker visibility controls (separate toggles for ref/com/pivot)
+- [x] Show Sources toggle (ToggleControl)
+- [x] Center on Reference toggle (ToggleControl)
+- [x] Auto-rotate toggle (ToggleControl)
+- [x] Canvas height slider (RangeControl 200-800px)
 
 ### Task 8.10: Geometry Metadata Display
-- [ ] Show geometry bounds (min/max X/Y/Z)
-- [ ] Display geometry size (largest dimension)
-- [ ] Show vertex/face/edge counts
-- [ ] Display reference point coordinates (if available)
-- [ ] Show center of mass coordinates (if available)
-- [ ] Display source count (if showSources enabled)
-- [ ] Style metadata badges with responsive layout
+- [x] Show geometry bounds
+- [x] Display geometry size (largest dimension)
+- [x] Show vertex/face/edge counts
+- [x] Display reference point coordinates (if available)
+- [x] Show center of mass coordinates (if available)
+- [x] Display source count (if showSources enabled)
+- [x] Style metadata badges with responsive layout
+
+Bounds are labelled W × H × D rather than X × Y × Z: `computeBounds` runs on
+view-space vertices, which have already swapped the GLL y and z axes.
 
 ### Task 8.11: Performance Optimization
-- [ ] Implement lazy loading (IntersectionObserver)
-- [ ] Dispose geometry/materials on rebuild
-- [ ] Pause animation when not visible
-- [ ] Limit pixel ratio to 2× for performance
-- [ ] Implement proper cleanup in useEffect:
-  ```javascript
-  return () => {
-    geometry.dispose();
-    material.dispose();
-    renderer.dispose();
-    controls?.dispose();
-    cancelAnimationFrame(animationId);
-  }
-  ```
-- [ ] Cache resolved vertices to avoid recomputation
+- [x] Implement lazy loading (IntersectionObserver)
+- [x] Dispose geometry/materials on rebuild
+- [x] Pause animation when not visible
+- [x] Limit pixel ratio to 2× for performance
+- [x] Implement proper cleanup in useEffect
+- [x] Cache resolved vertices to avoid recomputation
+
+The frontend now defers the fetch, the WASM init and the WebGL context until a
+block comes within 200px of the viewport, and keeps teardown in a
+`blockCleanups` WeakMap drained by a single `beforeunload` listener rather than
+one listener per scene. Both the frontend loop and the editor's park themselves
+when scrolled out of view; the editor side needed a `paused` prop on the shared
+`GeometryViewer`, mirroring the one `ThreeWrapper` already had.
+
+Disposal is the part that needed the most care. `disposeSceneObject` previously
+matched on `Mesh` and `LineSegments` via `instanceof`, so it silently skipped
+`Points` and `Line` and would have leaked every sprite material and canvas
+texture on each editor attribute change. It now drains an explicit owned-resource
+list, duck-types geometry and material, handles material arrays, and never
+disposes a sprite's geometry, which three.js shares process-wide.
+
+Vertex caching needed no separate cache: the editor memoizes the resolved
+vertices already, and that memo no longer churns now that the empty-marker case
+returns a stable reference.
 
 ---
 
@@ -732,7 +760,7 @@ gll-info/
 │   │   └── style.scss          # [DONE]
 │   ├── polar-plot/             # DONE Phase 5
 │   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.4 done)
-│   ├── geometry/               # TODO Phase 8
+│   ├── geometry/               # [DONE]
 │   ├── resources/              # TODO Phase 9
 │   └── config/                 # TODO Phase 10
 ├── assets/
@@ -787,7 +815,7 @@ gll-info/
 | 5. Polar Plot | 6 | Medium-High | DONE |
 | 6. 3D Balloon | 9 | Very High | TODO |
 | 7. Sources List | 9 | Medium-High | PARTIAL (5/9 tasks complete, 1 partial) |
-| 8. Geometry Viewer | 11 | Very High | TODO |
+| 8. Geometry Viewer | 11 | Very High | DONE |
 | 9. Resources | 4 | Medium | TODO |
 | 10. Configuration | 4 | Medium | TODO |
 | 11. Integration | 5 | Medium | TODO |
@@ -822,7 +850,9 @@ Phases 6 (3D Balloon) and 8 (Geometry Viewer) both use Three.js and can share:
 - Animation loop patterns
 - WebGL context management
 
-Consider implementing Phase 6 before Phase 8 to establish the Three.js foundation.
+Phase 8 shipped first and established that foundation: `src/geometry/scene-builder.ts`
+(object-graph construction and disposal) and `src/geometry/helper-theme.ts`
+(theming Three.js chrome) are the patterns Phase 6 should follow.
 
 ### Reference Files by Phase
 - **Phase 5:** `gll-tools/web/modules/visualization.js` (lines 1-842), `charting.js`

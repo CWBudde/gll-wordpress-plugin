@@ -35,8 +35,21 @@ import {
 	type SourceConeOptions,
 } from './scene-builder';
 
+/**
+ * Per-block teardown callbacks, keyed by the block element. Used so that
+ * `beforeunload` can release every Three.js scene that was lazily initialized.
+ * The companion `Set` exists only because a `WeakMap` is not enumerable.
+ */
+const blockCleanups = new WeakMap< HTMLElement, () => void >();
+const liveBlocks = new Set< HTMLElement >();
+
+/**
+ * Initialize all geometry blocks on the page (lazily).
+ */
 document.addEventListener( 'DOMContentLoaded', () => {
-	const blocks = document.querySelectorAll( '.gll-geometry-block' );
+	const blocks = document.querySelectorAll< HTMLElement >(
+		'.gll-geometry-block'
+	);
 
 	if ( blocks.length === 0 ) {
 		return;
@@ -45,28 +58,70 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	if ( ! isWebGLSupported() ) {
 		blocks.forEach( ( block ) => {
 			showError(
-				block as HTMLElement,
+				block,
 				'WebGL is not supported in your browser. Please use a modern browser to view 3D content.'
 			);
 		} );
 		return;
 	}
 
-	ensureWasmReady()
-		.then( () => {
-			blocks.forEach( ( block ) => {
-				initializeBlock( block as HTMLElement );
-			} );
-		} )
-		.catch( ( error ) => {
+	const initializedBlocks = new WeakSet< HTMLElement >();
+
+	const initOnce = async ( block: HTMLElement ) => {
+		if ( initializedBlocks.has( block ) ) {
+			return;
+		}
+		initializedBlocks.add( block );
+
+		// WASM is only paid for once a block actually approaches the viewport,
+		// not on every page that merely contains the block.
+		try {
+			await ensureWasmReady();
+		} catch ( error ) {
 			console.error( 'Failed to initialize WASM:', error );
-			blocks.forEach( ( block ) => {
-				showError(
-					block as HTMLElement,
-					'Failed to initialize WASM parser'
-				);
-			} );
+			showError( block, 'Failed to initialize WASM parser' );
+			return;
+		}
+
+		await initializeBlock( block );
+	};
+
+	if ( typeof IntersectionObserver === 'undefined' ) {
+		// Fallback: initialize eagerly when IntersectionObserver isn't available.
+		blocks.forEach( ( block ) => {
+			liveBlocks.add( block );
+			void initOnce( block );
 		} );
+	} else {
+		const observer = new IntersectionObserver(
+			( entries ) => {
+				for ( const entry of entries ) {
+					if ( entry.isIntersecting ) {
+						const target = entry.target as HTMLElement;
+						// Unobserve first so a re-entry cannot double-init.
+						observer.unobserve( target );
+						void initOnce( target );
+					}
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		blocks.forEach( ( block ) => {
+			liveBlocks.add( block );
+			observer.observe( block );
+		} );
+	}
+
+	// Tear down every initialized scene on page unload so that a back/forward
+	// navigation does not leak detached canvases.
+	window.addEventListener( 'beforeunload', () => {
+		for ( const block of liveBlocks ) {
+			const cleanup = blockCleanups.get( block );
+			if ( cleanup ) {
+				cleanup();
+			}
+		}
+	} );
 } );
 
 async function initializeBlock( block: HTMLElement ) {
@@ -196,7 +251,7 @@ async function initializeBlock( block: HTMLElement ) {
 		threeContainer.style.minHeight = canvasHeight + 'px';
 		canvasContainer.appendChild( threeContainer );
 
-		initThreeScene( threeContainer, {
+		initThreeScene( block, threeContainer, {
 			canvasHeight,
 			autoRotate,
 			showFaces,
@@ -339,7 +394,23 @@ function buildMetadataElement( options: {
 	return element;
 }
 
+/**
+ * Build the Three.js scene for one block and start its render loop.
+ *
+ * @param block                The block element, used for visibility tracking
+ *                             and as the key of the teardown registry.
+ * @param container            The container the renderer canvas is appended to.
+ * @param options              Scene contents and viewer options.
+ * @param options.canvasHeight Viewer height in pixels.
+ * @param options.autoRotate   Whether the camera orbits on its own.
+ * @param options.showFaces    Whether to render the mesh faces.
+ * @param options.showEdges    Whether to render the mesh edges.
+ * @param options.markerData   Reference/center-of-mass/pivot markers.
+ * @param options.geometryData Built mesh buffers for the case geometry.
+ * @param options.sourceCones  Source cone options, or null when hidden.
+ */
 function initThreeScene(
+	block: HTMLElement,
 	container: HTMLElement,
 	options: {
 		canvasHeight: number;
@@ -456,14 +527,36 @@ function initThreeScene(
 	} );
 	resizeObserver.observe( container );
 
+	// Visibility tracking: pause animation work when the block is offscreen.
+	// Browsers only throttle rAF for background tabs, not offscreen elements.
+	let isVisible = true;
+	let visibilityObserver: IntersectionObserver | null = null;
+	if ( typeof IntersectionObserver !== 'undefined' ) {
+		visibilityObserver = new IntersectionObserver(
+			( entries ) => {
+				for ( const entry of entries ) {
+					isVisible = entry.isIntersecting;
+				}
+			},
+			{ rootMargin: '0px' }
+		);
+		visibilityObserver.observe( block );
+	}
+
 	let animationId: number;
 	let lastFrameTime = performance.now();
 	const animate = () => {
 		animationId = requestAnimationFrame( animate );
 
+		// The clock is advanced even while paused, so the manual fallback
+		// controls resume with a normal frame delta instead of one long jump.
 		const now = performance.now();
 		const deltaTime = ( now - lastFrameTime ) / 1000;
 		lastFrameTime = now;
+
+		if ( ! isVisible ) {
+			return;
+		}
 
 		if ( controls ) {
 			controls.autoRotate = options.autoRotate;
@@ -477,9 +570,13 @@ function initThreeScene(
 	};
 	animate();
 
-	window.addEventListener( 'beforeunload', () => {
+	const cleanup = () => {
 		cancelAnimationFrame( animationId );
 		resizeObserver.disconnect();
+		if ( visibilityObserver ) {
+			visibilityObserver.disconnect();
+			visibilityObserver = null;
+		}
 		if ( controls ) {
 			controls.dispose();
 			controls = null;
@@ -496,7 +593,9 @@ function initThreeScene(
 		disposeMaterial( gridHelper.material );
 		axesHelper.geometry.dispose();
 		disposeMaterial( axesHelper.material );
-	} );
+	};
+
+	blockCleanups.set( block, cleanup );
 }
 
 /**
