@@ -44,9 +44,23 @@ import {
 	AppearanceControl,
 	appearanceClass,
 } from '../shared';
-import type { GeometryViewerRef, ManualOrbitControls } from '../shared';
+import type {
+	GeometryViewerRef,
+	ManualOrbitControls,
+	GeometryMarker,
+} from '../shared';
 import { applyHelperTheme } from './helper-theme';
+import { buildGeometryGroup, disposeSceneObject } from './scene-builder';
 import './editor.scss';
+
+/**
+ * Stable stand-in for "this geometry has no markers".
+ *
+ * `markerData` feeds the dependency array of `buildGeometry`, which in turn
+ * feeds the effect that (re)builds the scene. A fresh `[]` per render would
+ * make that effect tear the whole scene down and rebuild it on every render.
+ */
+const NO_MARKERS: readonly GeometryMarker[] = Object.freeze( [] );
 
 /**
  * Edit component for the Geometry Viewer block.
@@ -161,7 +175,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	}, [ caseGeometry, centerReference, showMarkers ] );
 
 	const geometryData = geometrySceneData?.meshData || null;
-	const markerData = geometrySceneData?.markers || [];
+	const markerData = geometrySceneData?.markers ?? NO_MARKERS;
 
 	const geometryGroupRef = useRef< THREE.Group | null >( null );
 	const themedSceneRef = useRef< {
@@ -194,83 +208,16 @@ export default function Edit( { attributes, setAttributes } ) {
 			geometryGroupRef.current = null;
 		}
 
-		if ( ! geometryData ) {
+		const group = buildGeometryGroup( {
+			geometryData,
+			markers: markerData,
+			showFaces,
+			showEdges,
+		} );
+
+		if ( ! group ) {
 			return;
 		}
-
-		const group = new THREE.Group();
-
-		if ( showFaces && geometryData.indices.length > 0 ) {
-			const geometry = new THREE.BufferGeometry();
-			geometry.setAttribute(
-				'position',
-				new THREE.Float32BufferAttribute( geometryData.positions, 3 )
-			);
-			geometry.setAttribute(
-				'color',
-				new THREE.Float32BufferAttribute( geometryData.colors, 3 )
-			);
-			geometry.setIndex( geometryData.indices );
-			geometry.computeVertexNormals();
-
-			const material = new THREE.MeshStandardMaterial( {
-				vertexColors: true,
-				flatShading: true,
-				metalness: 0.05,
-				roughness: 0.75,
-				side: THREE.DoubleSide,
-			} );
-
-			const mesh = new THREE.Mesh( geometry, material );
-			group.add( mesh );
-		}
-
-		if ( showEdges && geometryData.edgePositions.length > 0 ) {
-			const edgeGeometry = new THREE.BufferGeometry();
-			edgeGeometry.setAttribute(
-				'position',
-				new THREE.Float32BufferAttribute(
-					geometryData.edgePositions,
-					3
-				)
-			);
-			edgeGeometry.setAttribute(
-				'color',
-				new THREE.Float32BufferAttribute( geometryData.edgeColors, 3 )
-			);
-
-			const edgeMaterial = new THREE.LineBasicMaterial( {
-				vertexColors: true,
-				transparent: true,
-				opacity: 0.9,
-			} );
-
-			const edges = new THREE.LineSegments( edgeGeometry, edgeMaterial );
-			group.add( edges );
-		}
-
-		markerData.forEach( ( marker ) => {
-			const markerGeometry = new THREE.SphereGeometry(
-				marker.radius,
-				16,
-				12
-			);
-			const markerMaterial = new THREE.MeshBasicMaterial( {
-				color: marker.color,
-			} );
-			const markerMesh = new THREE.Mesh( markerGeometry, markerMaterial );
-			markerMesh.name = `gll-marker-${ marker.key }`;
-			markerMesh.userData = {
-				gllMarkerKey: marker.key,
-				gllMarkerLabel: marker.label,
-			};
-			markerMesh.position.set(
-				marker.position.x,
-				marker.position.y,
-				marker.position.z
-			);
-			group.add( markerMesh );
-		} );
 
 		scene.add( group );
 		geometryGroupRef.current = group;
@@ -610,28 +557,4 @@ export default function Edit( { attributes, setAttributes } ) {
 			</div>
 		</>
 	);
-}
-
-function disposeSceneObject( object: THREE.Object3D ) {
-	object.traverse( ( child ) => {
-		if ( child instanceof THREE.Mesh ) {
-			child.geometry.dispose();
-			disposeMaterial( child.material );
-		}
-		if ( child instanceof THREE.LineSegments ) {
-			child.geometry.dispose();
-			disposeMaterial( child.material );
-		}
-	} );
-	if ( object.parent ) {
-		object.parent.remove( object );
-	}
-}
-
-function disposeMaterial( material: THREE.Material | THREE.Material[] ) {
-	if ( Array.isArray( material ) ) {
-		material.forEach( ( item ) => item.dispose() );
-		return;
-	}
-	material.dispose();
 }

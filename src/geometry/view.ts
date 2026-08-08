@@ -24,6 +24,7 @@ import {
 	type ManualOrbitControls,
 } from '../shared/manual-orbit-controls';
 import { applyHelperTheme } from './helper-theme';
+import { buildGeometryGroup, disposeSceneObject } from './scene-builder';
 
 document.addEventListener( 'DOMContentLoaded', () => {
 	const blocks = document.querySelectorAll( '.gll-geometry-block' );
@@ -214,12 +215,12 @@ function initThreeScene(
 	// stay white and the clear color stays transparent.
 	applyHelperTheme( scene, container );
 
-	const geometryGroup = buildGeometryGroup(
-		options.geometryData,
-		options.showFaces,
-		options.showEdges,
-		options.markerData
-	);
+	const geometryGroup = buildGeometryGroup( {
+		geometryData: options.geometryData,
+		markers: options.markerData,
+		showFaces: options.showFaces,
+		showEdges: options.showEdges,
+	} );
 	if ( geometryGroup ) {
 		scene.add( geometryGroup );
 	}
@@ -317,112 +318,21 @@ function initThreeScene(
 	} );
 }
 
+/**
+ * Dispose a material, or every material of a multi-material object.
+ *
+ * Kept local: the geometry group is disposed by `disposeSceneObject`, but the
+ * grid and axes helpers this file creates itself are not part of that group and
+ * still need tearing down by hand.
+ *
+ * @param material Material or material array.
+ */
 function disposeMaterial( material: THREE.Material | THREE.Material[] ) {
 	if ( Array.isArray( material ) ) {
 		material.forEach( ( item ) => item.dispose() );
 		return;
 	}
 	material.dispose();
-}
-
-function buildGeometryGroup(
-	geometryData: ReturnType< typeof buildCaseGeometryData >,
-	showFaces: boolean,
-	showEdges: boolean,
-	markerData: ReturnType< typeof buildGeometryMarkers >
-) {
-	if ( ! geometryData ) {
-		return null;
-	}
-
-	const group = new THREE.Group();
-
-	if ( showFaces && geometryData.indices.length > 0 ) {
-		const geometry = new THREE.BufferGeometry();
-		geometry.setAttribute(
-			'position',
-			new THREE.Float32BufferAttribute( geometryData.positions, 3 )
-		);
-		geometry.setAttribute(
-			'color',
-			new THREE.Float32BufferAttribute( geometryData.colors, 3 )
-		);
-		geometry.setIndex( geometryData.indices );
-		geometry.computeVertexNormals();
-
-		const material = new THREE.MeshStandardMaterial( {
-			vertexColors: true,
-			flatShading: true,
-			metalness: 0.05,
-			roughness: 0.75,
-			side: THREE.DoubleSide,
-		} );
-
-		const mesh = new THREE.Mesh( geometry, material );
-		group.add( mesh );
-	}
-
-	if ( showEdges && geometryData.edgePositions.length > 0 ) {
-		const edgeGeometry = new THREE.BufferGeometry();
-		edgeGeometry.setAttribute(
-			'position',
-			new THREE.Float32BufferAttribute( geometryData.edgePositions, 3 )
-		);
-		edgeGeometry.setAttribute(
-			'color',
-			new THREE.Float32BufferAttribute( geometryData.edgeColors, 3 )
-		);
-
-		const edgeMaterial = new THREE.LineBasicMaterial( {
-			vertexColors: true,
-			transparent: true,
-			opacity: 0.9,
-		} );
-
-		const edges = new THREE.LineSegments( edgeGeometry, edgeMaterial );
-		group.add( edges );
-	}
-
-	markerData.forEach( ( marker ) => {
-		const markerGeometry = new THREE.SphereGeometry(
-			marker.radius,
-			16,
-			12
-		);
-		const markerMaterial = new THREE.MeshBasicMaterial( {
-			color: marker.color,
-		} );
-		const markerMesh = new THREE.Mesh( markerGeometry, markerMaterial );
-		markerMesh.name = `gll-marker-${ marker.key }`;
-		markerMesh.userData = {
-			gllMarkerKey: marker.key,
-			gllMarkerLabel: marker.label,
-		};
-		markerMesh.position.set(
-			marker.position.x,
-			marker.position.y,
-			marker.position.z
-		);
-		group.add( markerMesh );
-	} );
-
-	return group;
-}
-
-function disposeSceneObject( object: THREE.Object3D ) {
-	object.traverse( ( child ) => {
-		if ( child instanceof THREE.Mesh ) {
-			child.geometry.dispose();
-			disposeMaterial( child.material );
-		}
-		if ( child instanceof THREE.LineSegments ) {
-			child.geometry.dispose();
-			disposeMaterial( child.material );
-		}
-	} );
-	if ( object.parent ) {
-		object.parent.remove( object );
-	}
 }
 
 function showError( block: HTMLElement, message: string ) {
