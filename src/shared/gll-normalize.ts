@@ -15,6 +15,70 @@
  */
 
 /**
+ * Limit type labels, keyed by the raw `type` integer of a `limits[]` entry.
+ *
+ * Go's `LimitType.String()` never crosses the JSON boundary — the parser
+ * marshals the bare int32 — so the label table has to live here.
+ *
+ * This table is deliberately SEPARATE from `WARNING_TYPE_LABELS` below and the
+ * two must not be merged: the numbering genuinely differs. Limit 1 is
+ * 'Max Count Type' while warning 1 is 'Min Count Warning'. Value 3 is unused in
+ * the limit numbering.
+ */
+export const LIMIT_TYPE_LABELS = {
+	0: 'Max Count',
+	1: 'Max Count Type',
+	2: 'Max Weight',
+	4: 'Max Tilt Angle',
+	5: 'Min Tilt Angle',
+	6: 'Min Count',
+};
+
+/**
+ * Warning type labels, keyed by the raw `type` integer of a `warnings[]` entry.
+ *
+ * Separate from `LIMIT_TYPE_LABELS` above on purpose — see the note there. As
+ * with limits, Go's `String()` does not cross the JSON boundary, so the bare
+ * integer arrives and is mapped here.
+ */
+export const WARNING_TYPE_LABELS = {
+	0: 'Max Count Warning',
+	1: 'Min Count Warning',
+	2: 'Max Weight Warning',
+	3: 'Max Tilt Warning',
+	4: 'Min Tilt Warning',
+};
+
+/**
+ * Filter kind labels, keyed by the raw `filter_type` of a generic filter.
+ */
+export const FILTER_KIND_LABELS = {
+	0: 'LogSpectrum',
+	1: 'IIR',
+	2: 'FIR',
+};
+
+/**
+ * IIR filter shape labels, keyed by the raw `filter_shape` of `iir_params`.
+ */
+export const IIR_SHAPE_LABELS = {
+	0: 'Butterworth',
+	1: 'Linkwitz-Riley',
+	2: 'Bessel',
+	3: 'Sallen-Key',
+};
+
+/**
+ * IIR crossover alignment labels, keyed by the raw `alignment` of `iir_params`.
+ */
+export const FILTER_ALIGN_LABELS = {
+	0: 'None',
+	1: '-3 dB',
+	2: '-6 dB',
+	3: 'Phase-Matched',
+};
+
+/**
  * Detect data that is already normalized, so the function is idempotent.
  *
  * @param {Object} raw Parsed GLL data.
@@ -341,17 +405,35 @@ function normalizeFace( face ) {
  *
  * The geometry is made self-describing: the blocks address geometries by their
  * position in the flat `Database.CaseGeometries` list, which does not line up
- * with `Database.BoxTypes` once a box lacks a `case_geometry`. Carrying the box
- * identity and its placements along removes the need to correlate by index.
- * `SourcePlacements` is shared by reference with the normalized box type.
+ * with `Database.BoxTypes` once a box lacks a `case_geometry`. Carrying the
+ * owner identity and its placements along removes the need to correlate by
+ * index. `SourcePlacements` is shared by reference with the normalized box
+ * type.
  *
- * @param {Object} geometry      Raw `case_geometry` block.
- * @param {Object} box           Owning raw box type, for reference points.
- * @param {Object} normalizedBox Owning normalized box type, for placements.
- * @param {number} boxIndex      Index of the owning box in `box_types`.
+ * Both box types and frames own a case geometry, so the owner is generic. The
+ * legacy `BoxIndex`/`BoxKey`/`BoxLabel` fields are set for boxes ONLY and left
+ * undefined for frames — `src/geometry/edit.tsx` reads `BoxLabel || BoxKey` and
+ * repurposing them for frames would relabel existing box geometries. Use
+ * `OwnerKind`/`OwnerIndex`/`OwnerKey`/`OwnerLabel` for new code.
+ *
+ * Frames carry no `reference_point`, no `source_placements` and no opening
+ * angles; `normalizePoint` returns null for the missing points, which is what
+ * the render layer already expects.
+ *
+ * @param {Object} geometry        Raw `case_geometry` block.
+ * @param {Object} owner           Owning raw box type or frame.
+ * @param {Object} normalizedOwner Owning normalized record, for placements.
+ * @param {number} ownerIndex      Index of the owner in its own raw list.
+ * @param {string} ownerKind       Either 'box' or 'frame'.
  * @return {Object|null} Normalized geometry or null.
  */
-function normalizeCaseGeometry( geometry, box, normalizedBox, boxIndex ) {
+function normalizeCaseGeometry(
+	geometry,
+	owner,
+	normalizedOwner,
+	ownerIndex,
+	ownerKind
+) {
 	if ( ! geometry ) {
 		return null;
 	}
@@ -364,20 +446,29 @@ function normalizeCaseGeometry( geometry, box, normalizedBox, boxIndex ) {
 		? geometry.faces.map( normalizeFace ).filter( Boolean )
 		: [];
 
+	const isBox = ownerKind === 'box';
+
 	return {
 		Vertices: geometry.vertices || [],
 		Edges: edges,
 		Faces: faces,
 		IsSymmetric: geometry.is_symmetric,
-		ReferencePoint: normalizePoint( box && box.reference_point ),
-		CenterOfMass: normalizePoint( box && box.center_of_mass ),
-		NextPivot: normalizePoint( box && box.next_pivot ),
-		BoxIndex: boxIndex,
-		BoxKey: box && box.key,
-		BoxLabel: box && box.label,
-		SourcePlacements: normalizedBox ? normalizedBox.SourcePlacements : [],
-		HorizontalOpeningAngle: box && box.horizontal_opening_angle,
-		VerticalOpeningAngle: box && box.vertical_opening_angle,
+		SymmetryAxis: geometry.symmetry_axis,
+		ReferencePoint: normalizePoint( owner && owner.reference_point ),
+		CenterOfMass: normalizePoint( owner && owner.center_of_mass ),
+		NextPivot: normalizePoint( owner && owner.next_pivot ),
+		OwnerKind: ownerKind,
+		OwnerIndex: ownerIndex,
+		OwnerKey: owner && owner.key,
+		OwnerLabel: owner && owner.label,
+		BoxIndex: isBox ? ownerIndex : undefined,
+		BoxKey: isBox ? owner && owner.key : undefined,
+		BoxLabel: isBox ? owner && owner.label : undefined,
+		SourcePlacements: normalizedOwner
+			? normalizedOwner.SourcePlacements || []
+			: [],
+		HorizontalOpeningAngle: owner && owner.horizontal_opening_angle,
+		VerticalOpeningAngle: owner && owner.vertical_opening_angle,
 	};
 }
 
@@ -421,6 +512,220 @@ function normalizeBoxType( box ) {
 		SourcePlacements: ( box.source_placements || [] ).map(
 			normalizePlacement
 		),
+		HorizontalOpeningAngle: box.horizontal_opening_angle,
+		VerticalOpeningAngle: box.vertical_opening_angle,
+	};
+}
+
+/**
+ * Normalize one frame pin point.
+ *
+ * @param {Object} pin Raw `pin_points[]` entry.
+ * @return {Object} Normalized pin point.
+ */
+function normalizePinPoint( pin ) {
+	return {
+		Label: pin.label,
+		Vector: normalizePoint( pin.vector ),
+	};
+}
+
+/**
+ * Normalize a frame entry.
+ *
+ * `CaseGeometryIndex` is filled in by `normalizeGllData`, which alone knows
+ * where the frame's geometry landed in the combined `CaseGeometries` list.
+ *
+ * The raw `type_flown` field is a byte describing the frame type; the name
+ * describes the storage, not the meaning, so it is surfaced as the boolean
+ * `IsFlown`.
+ *
+ * @param {Object} frame Raw `frames[]` entry.
+ * @return {Object} Normalized frame.
+ */
+function normalizeFrame( frame ) {
+	return {
+		Label: frame.label,
+		Key: frame.key,
+		IsFlown: Boolean( frame.type_flown ),
+		Weight: frame.weight,
+		CenterOfMass: normalizePoint( frame.center_of_mass ),
+		NextPivot: normalizePoint( frame.next_pivot ),
+		PinPoints: ( frame.pin_points || [] ).map( normalizePinPoint ),
+		CaseGeometryIndex: -1,
+	};
+}
+
+/**
+ * Normalize a rigging limit entry.
+ *
+ * @param {Object} limit Raw `limits[]` entry.
+ * @return {Object} Normalized limit.
+ */
+function normalizeLimit( limit ) {
+	const type = limit.type;
+	return {
+		Frame: limit.frame,
+		BoxType: limit.box_type,
+		Type: type,
+		TypeLabel: LIMIT_TYPE_LABELS[ type ] || `Limit Type ${ type }`,
+		Value: limit.limit_value,
+	};
+}
+
+/**
+ * Normalize a rigging warning entry.
+ *
+ * @param {Object} warning Raw `warnings[]` entry.
+ * @return {Object} Normalized warning.
+ */
+function normalizeWarning( warning ) {
+	const type = warning.type;
+	return {
+		Frame: warning.frame,
+		Type: type,
+		TypeLabel: WARNING_TYPE_LABELS[ type ] || `Warning Type ${ type }`,
+		Text: warning.text,
+		Value: warning.limit_value,
+	};
+}
+
+/**
+ * Normalize the IIR parameter block of a generic filter.
+ *
+ * @param {Object} iir Raw `iir_params` block.
+ * @return {Object|null} Normalized parameters, or null when absent.
+ */
+function normalizeIirParams( iir ) {
+	if ( ! iir ) {
+		return null;
+	}
+
+	return {
+		FilterType: iir.filter_type,
+		FilterShape: iir.filter_shape,
+		FilterShapeLabel: IIR_SHAPE_LABELS[ iir.filter_shape ],
+		Order: iir.order,
+		FreqCritHz: iir.freq_crit_hz,
+		Alignment: iir.alignment,
+		AlignmentLabel: FILTER_ALIGN_LABELS[ iir.alignment ],
+		QFactor: iir.q_factor,
+	};
+}
+
+/**
+ * Normalize the FIR data block of a generic filter.
+ *
+ * PAYLOAD GUARD: `fir_data.data_irm` and `fir_data.data_dip` are 8193 float64
+ * EACH, roughly 131 KB per FIR filter, and the only thing any UI shows of them
+ * is how many coefficients there are. Only that count is carried; the arrays
+ * themselves are never referenced from the normalized shape, so they can be
+ * collected with the raw parser output. This is the same reasoning that dropped
+ * `raw.resources` in Phase 9: a large payload with no consumer is not data, it
+ * is retained memory.
+ *
+ * @param {Object} fir Raw `fir_data` block.
+ * @return {Object|null} Normalized FIR data, or null when absent.
+ */
+function normalizeFirData( fir ) {
+	if ( ! fir ) {
+		return null;
+	}
+
+	return {
+		IsTimeResponse: fir.is_time_response,
+		IsComplex: fir.is_complex,
+		IsEven: fir.is_even,
+		SampleRate: fir.sample_rate,
+		CoefficientCount: ( fir.data_irm || [] ).length,
+	};
+}
+
+/**
+ * Normalize the log-spectrum block of a generic filter.
+ *
+ * PAYLOAD GUARD: `level` and `phase` are reduced to presence booleans for the
+ * same reason the FIR coefficient arrays are dropped — Phase 10 renders no
+ * filter response chart, so the arrays have no consumer and carrying them would
+ * pin the raw spectra in memory for every filter of every group.
+ *
+ * @param {Object} spectrum Raw `log_spectrum` block.
+ * @return {Object|null} Normalized log spectrum, or null when absent.
+ */
+function normalizeFilterLogSpectrum( spectrum ) {
+	if ( ! spectrum ) {
+		return null;
+	}
+
+	return {
+		BandsPerOctave: spectrum.bands_per_octave,
+		LowestFrequency: spectrum.lowest_frequency,
+		NumberOfBands: spectrum.number_of_bands,
+		Delay: spectrum.delay,
+		HasLevel: Boolean( spectrum.level ),
+		HasPhase: Boolean( spectrum.phase ),
+	};
+}
+
+/**
+ * Normalize one generic filter inside a filter bank.
+ *
+ * @param {Object} filter Raw filter entry.
+ * @return {Object} Normalized filter.
+ */
+function normalizeGenericFilter( filter ) {
+	return {
+		Kind: filter.filter_type,
+		KindLabel: FILTER_KIND_LABELS[ filter.filter_type ],
+		Label: filter.label,
+		Key: filter.key,
+		Bypass: filter.bypass,
+		InvertPolarity: filter.invert_polarity,
+		Gain: filter.gain,
+		Delay: filter.delay,
+		IIR: normalizeIirParams( filter.iir_params ),
+		FIR: normalizeFirData( filter.fir_data ),
+		LogSpectrum: normalizeFilterLogSpectrum( filter.log_spectrum ),
+	};
+}
+
+/**
+ * Normalize a generic filter bank.
+ *
+ * @param {Object} bank Raw filter bank (`filters[].filter`).
+ * @return {Object|null} Normalized bank, or null when the filter is absent.
+ */
+function normalizeFilterBank( bank ) {
+	if ( ! bank ) {
+		return null;
+	}
+
+	return {
+		Bypass: bank.bypass,
+		InvertPolarity: bank.invert_polarity,
+		MuteInput: bank.mute_input,
+		Gain: bank.gain,
+		Delay: bank.delay,
+		Filters: ( bank.filters || [] ).map( normalizeGenericFilter ),
+	};
+}
+
+/**
+ * Normalize a filter group entry.
+ *
+ * @param {Object} group Raw `filter_groups[]` entry.
+ * @return {Object} Normalized filter group.
+ */
+function normalizeFilterGroup( group ) {
+	return {
+		Label: group.label,
+		Key: group.key,
+		IsOverridable: group.is_overridable,
+		Filters: ( group.filters || [] ).map( ( entry ) => ( {
+			Label: entry.label,
+			Key: entry.key,
+			Bank: normalizeFilterBank( entry.filter ),
+		} ) ),
 	};
 }
 
@@ -446,21 +751,49 @@ export function normalizeGllData( raw ) {
 	const metadata = raw.metadata || {};
 	const database = raw.database || {};
 	const boxTypes = database.box_types || [];
+	const frames = database.frames || [];
 
 	// The blocks address geometries by a flat index, but the parser nests one
 	// geometry per box type — and boxes without a geometry drop out, so the two
 	// lists do not line up. Each geometry therefore carries its owning box.
 	const normalizedBoxTypes = boxTypes.map( normalizeBoxType );
-	const caseGeometries = boxTypes
+	const boxGeometries = boxTypes
 		.map( ( box, i ) =>
 			normalizeCaseGeometry(
 				box.case_geometry,
 				box,
 				normalizedBoxTypes[ i ],
-				i
+				i,
+				'box'
 			)
 		)
 		.filter( Boolean );
+
+	// Frames own a case geometry too, and they are APPENDED rather than
+	// interleaved. `src/geometry/view.ts:167` and `src/geometry/edit.tsx:199`
+	// index `CaseGeometries` POSITIONALLY against a `geometryIndex` block
+	// attribute saved in existing posts, so every box geometry has to keep the
+	// position it had before frames were carried — otherwise a saved post would
+	// silently start showing a different geometry.
+	const normalizedFrames = frames.map( normalizeFrame );
+	const frameGeometries = [];
+	frames.forEach( ( frame, i ) => {
+		const geometry = normalizeCaseGeometry(
+			frame.case_geometry,
+			frame,
+			normalizedFrames[ i ],
+			i,
+			'frame'
+		);
+		if ( ! geometry ) {
+			return;
+		}
+		normalizedFrames[ i ].CaseGeometryIndex =
+			boxGeometries.length + frameGeometries.length;
+		frameGeometries.push( geometry );
+	} );
+
+	const caseGeometries = [ ...boxGeometries, ...frameGeometries ];
 
 	// `raw.resources` — the parser's heuristic byte scan for embedded PNG and
 	// zlib blobs — is deliberately not carried over. Across the reference
@@ -473,6 +806,14 @@ export function normalizeGllData( raw ) {
 	// `database.author_files` never reaches us at all: the WASM layer drops it
 	// on purpose, as those are encrypted licence blobs whose names leak the
 	// author's absolute paths.
+	//
+	// A box type's `input_config` is likewise not normalized: it is populated in
+	// 0 of the 29 corpus files, so normalizing it would ship translation code no
+	// test could exercise behind a UI branch no reviewer could see rendered.
+	//
+	// `database.connectors`, `database.cluster_setups` and
+	// `database.transformers` also remain dropped; they are understood and
+	// available whenever a later phase grows a consumer for them.
 	return {
 		Header: {
 			Magic: header.magic,
@@ -507,6 +848,12 @@ export function normalizeGllData( raw ) {
 			),
 			BoxTypes: normalizedBoxTypes,
 			CaseGeometries: caseGeometries,
+			Frames: normalizedFrames,
+			Limits: ( database.limits || [] ).map( normalizeLimit ),
+			Warnings: ( database.warnings || [] ).map( normalizeWarning ),
+			FilterGroups: ( database.filter_groups || [] ).map(
+				normalizeFilterGroup
+			),
 			IncludeFiles: normalizeEmbeddedFiles( database.include_files ),
 			DataFiles: normalizeEmbeddedFiles( database.data_files ),
 		},

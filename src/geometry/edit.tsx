@@ -181,8 +181,8 @@ export default function Edit( { attributes, setAttributes } ) {
 		return geometries.map( ( geometry, index ) => ( {
 			value: String( index ),
 			label:
-				geometry?.BoxLabel ||
-				geometry?.BoxKey ||
+				geometry?.OwnerLabel ||
+				geometry?.OwnerKey ||
 				sprintf(
 					/* translators: %d: geometry number. */
 					__( 'Geometry %d', 'gll-info' ),

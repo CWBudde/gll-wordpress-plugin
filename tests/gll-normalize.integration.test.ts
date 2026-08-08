@@ -147,7 +147,13 @@ maybeDescribe( 'normalizeGllData against the real parser', () => {
 		const geometries = normalized.Database.CaseGeometries;
 		const boxTypes = normalized.Database.BoxTypes;
 
-		geometries.forEach( ( geometry: any ) => {
+		// Frame geometries are appended after the box ones and carry no
+		// BoxIndex, so this box-ownership check has to select its own subset.
+		const boxGeometries = geometries.filter(
+			( geometry: any ) => geometry.OwnerKind === 'box'
+		);
+
+		boxGeometries.forEach( ( geometry: any ) => {
 			// The flat geometry index is not the box index, so the geometry has
 			// to name its own box.
 			expect( boxTypes[ geometry.BoxIndex ].Key ).toBe( geometry.BoxKey );
@@ -185,5 +191,97 @@ maybeDescribe( 'normalizeGllData against the real parser', () => {
 
 	it( 'is idempotent', () => {
 		expect( normalizeGllData( normalized ) ).toBe( normalized );
+	} );
+} );
+
+/**
+ * The committed fixture carries no frames, so the frame half of the geometry
+ * list can only be exercised against the reference corpus. Five of its files
+ * have frames and every one of those frames has geometry, which is exactly the
+ * case the appended-geometry design exists to serve.
+ */
+const CORPUS_PATH =
+	process.env.GLL_CORPUS || '/mnt/projekte/Code/gll-tools/testdata/gll';
+const hasCorpus = existsSync( CORPUS_PATH );
+const maybeDescribeCorpus = hasCorpus ? describe : describe.skip;
+
+jest.setTimeout( 300000 );
+
+maybeDescribeCorpus( 'frame geometry across the reference corpus', () => {
+	let parse: ( bytes: Uint8Array ) => string;
+
+	beforeAll( async () => {
+		require( WASM_EXEC_PATH );
+
+		const wasmBytes = await fs.readFile( WASM_PATH );
+		const go = new ( globalThis as any ).Go();
+		const { instance } = await WebAssembly.instantiate(
+			wasmBytes,
+			go.importObject
+		);
+		void go.run( instance );
+
+		parse = ( globalThis as any ).parseGLL;
+	} );
+
+	it( 'resolves every frame back-pointer to a real geometry', async () => {
+		const files = ( await fs.readdir( CORPUS_PATH ) ).filter( ( name ) =>
+			name.toLowerCase().endsWith( '.gll' )
+		);
+		expect( files.length ).toBeGreaterThan( 0 );
+
+		let filesWithFrames = 0;
+		let framesWithGeometry = 0;
+
+		for ( const name of files ) {
+			const bytes = await fs.readFile( path.join( CORPUS_PATH, name ) );
+			const result = JSON.parse( parse( new Uint8Array( bytes ) ) );
+			if ( ! result.success ) {
+				continue;
+			}
+
+			const data = normalizeGllData( result.data );
+			const frames = data.Database.Frames;
+			const geometries = data.Database.CaseGeometries;
+
+			expect( Array.isArray( frames ) ).toBe( true );
+			if ( frames.length === 0 ) {
+				continue;
+			}
+			filesWithFrames++;
+
+			frames.forEach( ( frame: any ) => {
+				expect( typeof frame.CaseGeometryIndex ).toBe( 'number' );
+
+				if ( frame.CaseGeometryIndex < 0 ) {
+					return;
+				}
+
+				const geometry = geometries[ frame.CaseGeometryIndex ];
+				expect( geometry ).toBeDefined();
+				expect( geometry.OwnerKind ).toBe( 'frame' );
+				expect( geometry.OwnerKey ).toBe( frame.Key );
+
+				// The whole point of appending rather than nesting: the 3D
+				// geometry block's reader has to work on a frame unchanged.
+				expect(
+					getCaseGeometryVertices( geometry ).length
+				).toBeGreaterThan( 0 );
+
+				framesWithGeometry++;
+			} );
+
+			// Appending must not disturb the box geometries the saved
+			// geometryIndex attributes already point at.
+			const boxGeometries = geometries.filter(
+				( geometry: any ) => geometry.OwnerKind === 'box'
+			);
+			boxGeometries.forEach( ( geometry: any, index: number ) => {
+				expect( geometries[ index ] ).toBe( geometry );
+			} );
+		}
+
+		expect( filesWithFrames ).toBe( 5 );
+		expect( framesWithGeometry ).toBeGreaterThan( 0 );
 	} );
 } );
