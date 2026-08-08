@@ -250,11 +250,13 @@ function normalizeFace( face ) {
  * Normalize a case geometry.
  *
  * Edges arrive as `{v1, v2}` vertex-index pairs, which none of the spellings
- * `parseEdge` accepts; they are re-expressed as 0-based `{A, B}`. Faces are
- * emitted by
- * the parser for case-geometry sub-version >= 1 and are folded to the 0-based
- * index shape `parseFace` expects; older files carry none, so `Faces` is empty
- * and consumers fall back to the edge wireframe.
+ * `parseEdge` accepts; they are re-expressed as 0-based `{A, B}`.
+ *
+ * Faces are handled the same way, for sub-version >= 1 where the parser emits
+ * them. In practice none of the 54 case geometries in the gll-tools test corpus
+ * carries a face list, so the rendered geometry is the edge wireframe and the
+ * `showFaces` toggle has nothing to show. The mapping is kept because the
+ * format allows faces and the parser reads them.
  *
  * The geometry is made self-describing: the blocks address geometries by their
  * position in the flat `Database.CaseGeometries` list, which does not line up

@@ -560,7 +560,23 @@ Placement angles are radians and GLL's forward axis is +Y (gll-tools
 `docs/format.md:175`). `sourcePlacementOrientation()` returns the full
 view-space basis rather than a minimal-arc rotation, because roll about the aim
 axis is otherwise undefined — harmless for a circular cone, wrong for an
-elliptical one.
+elliptical one. Its rotation matrix and its local-to-world column convention
+match `buildRotationMatrix`/`rotateVector` in gll-tools `cmd/gllpy/main.go:556`
+entry for entry, so the cones aim exactly where the acoustic engine radiates.
+
+Verified end to end against the 54 case geometries in the gll-tools test
+corpus: apertures track the rated angles (`APS-V1_1.gll` renders its 60°/90°/120°
+variants as `0.14·tan(H/2)` = 0.081/0.140/0.242 world units), splayed cluster
+elements pick up their ±20° heading, and every cone apex lands on its cabinet.
+
+**Caveat on `showFaces`:** no geometry in that corpus carries a face list, so
+the toggle currently has nothing to draw and the visible geometry is the edge
+wireframe. The face path is implemented because the format permits faces.
+
+Two index-base bugs were fixed on the way. `buildCaseGeometryData` indexes the
+vertex list directly, but edges reached it as raw 1-based GLL references, so
+every edge in the wireframe joined the wrong pair of vertices and mirrored
+(negative) references were dropped outright.
 
 ### Task 8.8: Theme-Aware Grid Colors
 - [x] Read theme colors for grid, edge and face defaults
