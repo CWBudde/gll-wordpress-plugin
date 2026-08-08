@@ -89,15 +89,20 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 		expect( files.length ).toBeGreaterThan( 0 );
 	} );
 
-	it( 'yields well-formed entries for every file in the corpus', async () => {
+	// One sweep, not two: the corpus is 180 MB and parsing it takes about a
+	// minute, so the per-entry invariants and the aggregate counts share a
+	// single pass rather than each paying for their own.
+	it( 'holds its invariants and its distribution across the whole corpus', async () => {
+		let withDocs = 0;
+		let withDataFiles = 0;
+		let withNeither = 0;
+
 		for ( const file of files ) {
 			const data = await parseCorpusFile( file );
-			const entries = [
-				...data.Database.IncludeFiles,
-				...data.Database.DataFiles,
-			];
+			const docs = data.Database.IncludeFiles;
+			const dataFiles = data.Database.DataFiles;
 
-			for ( const entry of entries ) {
+			for ( const entry of [ ...docs, ...dataFiles ] ) {
 				// Blank table slots must never reach a consumer.
 				expect( entry.Filename.trim() ).not.toBe( '' );
 				expect( entry.Size ).toBeGreaterThan( 0 );
@@ -112,7 +117,23 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 					expect( decodedLength( entry.DataUri ) ).toBe( entry.Size );
 				}
 			}
+
+			if ( docs.length > 0 ) {
+				withDocs++;
+			}
+			if ( dataFiles.length > 0 ) {
+				withDataFiles++;
+			}
+			if ( docs.length === 0 && dataFiles.length === 0 ) {
+				withNeither++;
+			}
 		}
+
+		// If these move, either the parser changed or the blank-slot filter
+		// did. Both are worth a deliberate look rather than a silent pass.
+		expect( withDocs ).toBe( 3 );
+		expect( withDataFiles ).toBe( 24 );
+		expect( withNeither ).toBe( 5 );
 	} );
 
 	it( 'reads the four labelled datasheets out of the Coda G-Series', async () => {
@@ -163,33 +184,5 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 
 		expect( data.Database.DataFiles ).toEqual( [] );
 		expect( data.Database.IncludeFiles ).toEqual( [] );
-	} );
-
-	it( 'matches the known corpus-wide distribution', async () => {
-		// If these move, either the parser changed or the blank-slot filter
-		// did. Both are worth a deliberate look rather than a silent pass.
-		let withDocs = 0;
-		let withDataFiles = 0;
-		let withNeither = 0;
-
-		for ( const file of files ) {
-			const data = await parseCorpusFile( file );
-			const docs = data.Database.IncludeFiles.length;
-			const dataFiles = data.Database.DataFiles.length;
-
-			if ( docs > 0 ) {
-				withDocs++;
-			}
-			if ( dataFiles > 0 ) {
-				withDataFiles++;
-			}
-			if ( docs === 0 && dataFiles === 0 ) {
-				withNeither++;
-			}
-		}
-
-		expect( withDocs ).toBe( 3 );
-		expect( withDataFiles ).toBe( 24 );
-		expect( withNeither ).toBe( 5 );
 	} );
 } );

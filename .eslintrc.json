@@ -12,6 +12,15 @@
 		{
 			"files": [ "*.config.js", "jest.setup.js" ],
 			"env": { "node": true, "browser": true }
+		},
+		{
+			"files": [ "**/*.test.ts", "**/*.test.tsx" ],
+			"rules": {
+				"jsdoc/check-tag-names": [
+					"error",
+					{ "definedTags": [ "jest-environment" ] }
+				]
+			}
 		}
 	]
 }

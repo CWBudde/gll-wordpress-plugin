@@ -12,6 +12,8 @@
  * this file overrides the environment for itself. Skips when the corpus is
  * absent.
  *
+ * The pragma has to live in this first docblock — Jest reads it nowhere else.
+ *
  * @jest-environment jsdom
  */
 
@@ -101,9 +103,7 @@ maybeDescribe( 'rendering real GLL files', () => {
 	} );
 
 	it( 'renders the Coda datasheets as working PDF downloads', async () => {
-		const block = await renderCorpusFile(
-			'Coda-Audio G-Series-V1_2.gll'
-		);
+		const block = await renderCorpusFile( 'Coda-Audio G-Series-V1_2.gll' );
 
 		const links = Array.from(
 			block.querySelectorAll< HTMLAnchorElement >(
