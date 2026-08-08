@@ -644,22 +644,81 @@ returns a stable reference.
 ## Phase 9: Resources Block
 
 ### Task 9.1: Resources Block Structure
-- [ ] Create block registration (`gll-info/resources`)
-- [ ] Define attributes (resource types to show)
+- [x] Create block registration (`gll-info/resources`)
+- [x] Define attributes (resource types to show)
 
 ### Task 9.2: Documentation Display
-- [ ] List embedded PDFs with download links
-- [ ] Preview images inline
-- [ ] Show file sizes
+- [x] List embedded PDFs with download links
+- [x] Preview images inline
+- [x] Show file sizes
 
 ### Task 9.3: Data Files Display
-- [ ] List geometry files (XED)
-- [ ] Show data file metadata
+- [x] List geometry files (XED)
+- [x] Show data file metadata
 
 ### Task 9.4: Download Handling
-- [ ] Generate data URIs for downloads
-- [ ] Add download buttons
-- [ ] Handle large file downloads gracefully
+- [x] Generate data URIs for downloads
+- [x] Add download buttons
+- [x] Handle large file downloads gracefully
+
+The reference pointer below was wrong for this phase: `web/modules/exporters.js`
+builds geometry export formats (XED/STL/OBJ) and has nothing to do with the
+resources tab. The actual reference is `web/app.js:5390-5561`
+(`displayResources`), plus `formatBytes` at `app.js:7659` and `cleanFilename` at
+`app.js:5557`.
+
+Most of the work turned out to be in the normalizer rather than the block. It
+dropped `database.include_files` and `database.data_files` outright while
+passing through `raw.resources` — the parser's heuristic byte scan — as the only
+resource-shaped key, which is exactly inverted. Measured across the corpus, that
+heuristic list contributes nothing: its PNG entries duplicate `data_files` byte
+for byte including the base64 payload, and all 104 of its zlib entries lie
+inside embedded PDFs, being those PDFs' own object and font streams. It is no
+longer carried, so a parse no longer retains a second copy of every embedded
+image. `database.author_files` never reaches the browser at all — the WASM layer
+withholds it deliberately, as those are encrypted licence blobs whose names leak
+the author's absolute paths.
+
+Two format concerns moved into the normalizer, alongside the 1-based indices and
+rotation spelling it already translates: file names carry Windows authoring
+paths (`.\Drawings\...`, and one two-level case in HOPS7-Pro), so each record
+gains a folded `Name` beside the raw `Filename`; and the tables are emitted at
+their on-disk length with unused slots left blank, which a third of the corpus
+does and `3Way-LR.gll` does for both of its slots. Those blanks are padding, not
+data, and are filtered out the way unrenderable edges and faces already are.
+
+What the corpus actually contains, which drove the UX: 3 of 29 files carry
+documentation, 24 carry data files, 5 carry neither. Because documentation is
+absent from 26 of 29, the front end drops an empty section entirely rather than
+rendering the reference's "No documentation files found" line — that placeholder
+would be the common case and would teach readers to skip the block. The editor
+still renders it, because an author toggling a control needs to see why the
+preview did not change.
+
+**Task 9.3 is done generically, not as specified.** There is no XED file
+anywhere in the corpus; every non-empty data file is a PNG logo between 337 B
+and 14.7 KB. Rather than build XED-specific handling for a case that has never
+been observed, classification is extension-driven, so an XED renders correctly
+as a plain file if one ever appears.
+
+For 9.4, "gracefully" ended up meaning no size cap. Both entry points already
+fetch and parse the whole GLL client-side, so the bytes are paid for either way
+and a `data:` URI download costs nothing extra — no REST endpoint, no Blob, no
+object URL to revoke. The one hard rule is that a data URI must never reach
+`save()` output: the largest embedded datasheet is 2.17 MB, about 2.9 MB of
+base64, and that does not belong in post content.
+
+Rendering was split out of `view.ts` into `resource-render.ts` so it can run
+under jsdom without the WASM loader; this is the first block whose front-end
+output is tested at all. An end-to-end test drives the real parser and asserts
+the rendered download links carry genuine `%PDF` bytes and the previews genuine
+PNG signatures.
+
+Not done: browser verification, for the same reason as Phase 8 — there is no
+local WordPress environment and staging is outward-facing. The committed fixture
+`sample.gll` is `example-vis.gll` and carries no resources, so the corpus tests
+skip wherever the external corpus is absent, CI included; the corpus files are
+third-party manufacturer GLLs and were not vendored.
 
 ---
 
@@ -777,7 +836,7 @@ gll-info/
 │   ├── polar-plot/             # DONE Phase 5
 │   ├── balloon-3d/             # PARTIAL Phase 6 (6.1-6.4 done)
 │   ├── geometry/               # [DONE]
-│   ├── resources/              # TODO Phase 9
+│   ├── resources/              # [DONE]
 │   └── config/                 # TODO Phase 10
 ├── assets/
 │   ├── wasm/
@@ -874,5 +933,6 @@ Phase 8 shipped first and established that foundation: `src/geometry/scene-build
 - **Phase 5:** `gll-tools/web/modules/visualization.js` (lines 1-842), `charting.js`
 - **Phase 6:** `gll-tools/web/modules/visualization.js` (lines 843-1226)
 - **Phase 8:** `gll-tools/web/modules/geometry.js` (all 953 lines)
-- **Phase 9:** `gll-tools/web/modules/exporters.js`, `app.js` (resources section)
+- **Phase 9:** `gll-tools/web/app.js:5390-5561` (`displayResources`). Not
+  `exporters.js` — that builds geometry export formats and is unrelated.
 - **Phase 10:** `gll-tools/web/app.js` (configuration cards section)
