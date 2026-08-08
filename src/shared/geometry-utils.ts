@@ -311,12 +311,7 @@ export function getEulerHvr( rotation: any ): GeometryEulerHvr | null {
 			'Elevation',
 			'elevation',
 		] );
-		const roll = pickNumber( candidate, [
-			'Roll',
-			'roll',
-			'R',
-			'r',
-		] );
+		const roll = pickNumber( candidate, [ 'Roll', 'roll', 'R', 'r' ] );
 
 		if ( heading !== null || vertical !== null || roll !== null ) {
 			return {
@@ -743,6 +738,8 @@ function normalizeColor(
 		return fallback;
 	}
 
+	// Unpacking 0xRRGGBB is what bit shifts are for.
+	/* eslint-disable no-bitwise */
 	if ( typeof input === 'number' ) {
 		return [
 			( ( input >> 16 ) & 0xff ) / 255,
@@ -762,6 +759,7 @@ function normalizeColor(
 			];
 		}
 	}
+	/* eslint-enable no-bitwise */
 
 	if ( Array.isArray( input ) && input.length >= 3 ) {
 		const max = Math.max( input[ 0 ], input[ 1 ], input[ 2 ] );

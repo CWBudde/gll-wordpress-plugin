@@ -173,12 +173,13 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 
 	// Phase mode badge
 	if ( phaseSeries ) {
+		const phaseModeLabels = {
+			'group-delay': 'Group Delay',
+			wrapped: 'Wrapped Phase',
+			unwrapped: 'Unwrapped Phase',
+		};
 		const phaseLabel =
-			options.phaseMode === 'group-delay'
-				? 'Group Delay'
-				: options.phaseMode === 'wrapped'
-				? 'Wrapped Phase'
-				: 'Unwrapped Phase';
+			phaseModeLabels[ options.phaseMode ] || phaseModeLabels.unwrapped;
 		badges.push(
 			`<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>`
 		);

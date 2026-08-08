@@ -40,6 +40,7 @@
 		}
 
 		.gll-info-header-text {
+
 			h3 {
 				margin: 0;
 				font-size: 18px;
@@ -64,6 +65,7 @@
 
 	// Section styling
 	.gll-section {
+
 		h4 {
 			margin: 0 0 12px;
 			font-size: 15px;
@@ -121,6 +123,7 @@
 
 	// Sources list
 	.gll-sources {
+
 		h4 {
 			margin: 0 0 16px;
 			font-size: 15px;
@@ -143,7 +146,7 @@
 			background: #f0f7ff;
 			border: 1px solid #d1e7ff;
 			border-radius: 4px;
-			color: #0066cc;
+			color: #06c;
 			font-size: 13px;
 		}
 	}
@@ -171,6 +174,7 @@
 
 	// Compact mode
 	.gll-source-compact {
+
 		.gll-source-header {
 			display: flex;
 			align-items: center;
@@ -310,6 +314,7 @@
 		}
 
 		.gll-response-toggle {
+
 			input[type="checkbox"] {
 				margin: 0;
 			}
@@ -378,12 +383,7 @@
 				content: "";
 				position: absolute;
 				inset: 0;
-				background: linear-gradient(
-					90deg,
-					rgba(255, 255, 255, 0) 0%,
-					rgba(255, 255, 255, 0.6) 50%,
-					rgba(255, 255, 255, 0) 100%
-				);
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%);
 				transform: translateX(-100%);
 				animation: gll-chart-skeleton-shimmer 1.4s ease-in-out infinite;
 			}
@@ -394,18 +394,35 @@
 				background: var(--gll-border);
 				opacity: 0.6;
 
-				&:nth-child(1) { width: 35%; }
-				&:nth-child(2) { width: 100%; flex: 1; min-height: 80px; }
-				&:nth-child(3) { width: 70%; }
+				&:nth-child(1) {
+					width: 35%;
+				}
+
+				&:nth-child(2) {
+					width: 100%;
+					flex: 1;
+					min-height: 80px;
+				}
+
+				&:nth-child(3) {
+					width: 70%;
+				}
 			}
 		}
 
 		@keyframes gll-chart-skeleton-shimmer {
-			0% { transform: translateX(-100%); }
-			100% { transform: translateX(100%); }
+
+			0% {
+				transform: translateX(-100%);
+			}
+
+			100% {
+				transform: translateX(100%);
+			}
 		}
 
 		@media (prefers-reduced-motion: reduce) {
+
 			.gll-chart-skeleton::after {
 				animation: none;
 			}
@@ -436,6 +453,7 @@
 		}
 
 		@media (max-width: 600px) {
+
 			.gll-response-controls-row {
 				flex-direction: column;
 				align-items: stretch;
@@ -540,6 +558,7 @@
 			}
 
 			@media (max-width: 600px) {
+
 				.gll-source-placements-list {
 					margin-left: 6px;
 					padding-left: 8px;
@@ -561,6 +580,7 @@
 
 	// Expandable mode specific styles
 	.gll-source-collapsible {
+
 		.gll-source-header-toggle {
 			width: 100%;
 			text-align: left;
@@ -595,12 +615,14 @@
 		}
 
 		&.is-expanded {
+
 			.gll-source-header {
 				border-bottom: 1px solid var(--gll-border);
 			}
 		}
 
 		&:not(.is-expanded) {
+
 			.gll-source-header {
 				border-bottom: none;
 			}
@@ -609,6 +631,7 @@
 
 	// Detailed mode specific styles
 	.gll-source-detailed {
+
 		.gll-source-header {
 			border-bottom: 1px solid var(--gll-border);
 		}
@@ -655,6 +678,7 @@
 		}
 
 		.gll-info-table {
+
 			th,
 			td {
 				display: block;

@@ -18,7 +18,6 @@ import {
 	parseGLL,
 	parseGLLFromUrl,
 	isWasmReady,
-	getWasmError,
 } from './wasm-loader';
 
 /**

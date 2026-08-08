@@ -20,13 +20,7 @@ import {
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
-import {
-	useEffect,
-	useState,
-	useMemo,
-	useCallback,
-	useRef,
-} from '@wordpress/element';
+import { useEffect, useState, useMemo } from '@wordpress/element';
 
 import { useGLLLoader, ChartWrapper } from '../shared';
 import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';

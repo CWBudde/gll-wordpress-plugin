@@ -145,9 +145,11 @@
 
 // Spinner animation
 @keyframes gll-spin {
+
 	0% {
 		transform: rotate(0deg);
 	}
+
 	100% {
 		transform: rotate(360deg);
 	}
@@ -155,10 +157,12 @@
 
 // Responsive adjustments
 @media (max-width: 768px) {
+
 	.gll-frequency-response-block {
 		padding: 15px;
 
 		.gll-frequency-response-header {
+
 			h3 {
 				font-size: 18px;
 			}
@@ -168,6 +172,7 @@
 
 // Dark mode support (if theme provides)
 @media (prefers-color-scheme: dark) {
+
 	.gll-frequency-response-block {
 		background: #1e1e1e;
 		border-color: #333;

@@ -21,7 +21,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"lib": [ "ESNext", "DOM", "DOM.Iterable" ],
 		"types": [
 			"wordpress__block-editor",
 			"wordpress__blocks",
@@ -31,9 +31,9 @@
 		],
 		"baseUrl": ".",
 		"paths": {
-			"@shared/*": ["src/shared/*"]
+			"@shared/*": [ "src/shared/*" ]
 		}
 	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "build"]
+	"include": [ "src/**/*" ],
+	"exclude": [ "node_modules", "build" ]
 }

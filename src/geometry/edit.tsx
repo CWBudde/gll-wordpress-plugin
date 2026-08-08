@@ -234,10 +234,7 @@ export default function Edit( { attributes, setAttributes } ) {
 			const markerMaterial = new THREE.MeshBasicMaterial( {
 				color: marker.color,
 			} );
-			const markerMesh = new THREE.Mesh(
-				markerGeometry,
-				markerMaterial
-			);
+			const markerMesh = new THREE.Mesh( markerGeometry, markerMaterial );
 			markerMesh.name = `gll-marker-${ marker.key }`;
 			markerMesh.userData = {
 				gllMarkerKey: marker.key,
@@ -300,7 +297,7 @@ export default function Edit( { attributes, setAttributes } ) {
 					RIGHT: THREE.MOUSE.PAN,
 				};
 				controlsRef.current = controls;
-			} catch ( error ) {
+			} catch ( controlsError ) {
 				console.warn(
 					'OrbitControls unavailable, using manual orbit fallback.'
 				);

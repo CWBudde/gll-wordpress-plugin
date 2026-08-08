@@ -13,7 +13,6 @@ import { normalizeGllData } from '../shared/gll-normalize';
 
 	// WASM state
 	let wasmReady = false;
-	let wasmError = null;
 	let wasmPromise = null;
 
 	/**
@@ -61,35 +60,28 @@ import { normalizeGllData } from '../shared/gll-normalize';
 		}
 
 		wasmPromise = ( async () => {
-			try {
-				await loadWasmExec();
+			await loadWasmExec();
 
-				const go = new window.Go();
-				const response = await fetch( getSettings().wasmUrl );
+			const go = new window.Go();
+			const response = await fetch( getSettings().wasmUrl );
 
-				if ( ! response.ok ) {
-					throw new Error(
-						`Failed to fetch WASM: ${ response.status }`
-					);
-				}
-
-				const result = await WebAssembly.instantiateStreaming(
-					response,
-					go.importObject
-				);
-				go.run( result.instance );
-
-				if ( typeof window.parseGLL !== 'function' ) {
-					throw new Error(
-						'WASM module did not export parseGLL function'
-					);
-				}
-
-				wasmReady = true;
-			} catch ( error ) {
-				wasmError = error;
-				throw error;
+			if ( ! response.ok ) {
+				throw new Error( `Failed to fetch WASM: ${ response.status }` );
 			}
+
+			const result = await WebAssembly.instantiateStreaming(
+				response,
+				go.importObject
+			);
+			go.run( result.instance );
+
+			if ( typeof window.parseGLL !== 'function' ) {
+				throw new Error(
+					'WASM module did not export parseGLL function'
+				);
+			}
+
+			wasmReady = true;
 		} )();
 
 		return wasmPromise;

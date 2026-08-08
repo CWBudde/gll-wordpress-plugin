@@ -26,11 +26,6 @@ export function buildFrequencyPoints( frequencies, values ) {
 		return null;
 	}
 
-	const points = frequencies.map( ( freq, i ) => ( {
-		x: freq,
-		y: values[ i ],
-	} ) );
-
 	const minFrequency = Math.min( ...frequencies );
 	const maxFrequency = Math.max( ...frequencies );
 
@@ -40,6 +35,11 @@ export function buildFrequencyPoints( frequencies, values ) {
 	) {
 		return null;
 	}
+
+	const points = frequencies.map( ( freq, i ) => ( {
+		x: freq,
+		y: values[ i ],
+	} ) );
 
 	return { points, minFrequency, maxFrequency };
 }
@@ -205,9 +205,9 @@ export function computeGroupDelayMs( frequencies, phaseUnwrapped ) {
 /**
  * Shift phase values by a fixed delay (seconds) at each frequency.
  *
- * @param {Array}  phaseValues   Phase values in radians.
- * @param {Array}  frequencies   Matching frequency array.
- * @param {number} delaySeconds  Delay in seconds.
+ * @param {Array}  phaseValues  Phase values in radians.
+ * @param {Array}  frequencies  Matching frequency array.
+ * @param {number} delaySeconds Delay in seconds.
  * @return {Array} Delay-adjusted phase values.
  */
 export function applyDelayToPhase( phaseValues, frequencies, delaySeconds ) {
@@ -444,10 +444,11 @@ export function buildSourceResponseChartConfig(
 	}
 
 	const levelData = buildFrequencyPoints( series.frequencies, series.level );
-	const phaseData = buildFrequencyPoints( series.frequencies, series.phase );
 	if ( ! levelData ) {
 		return null;
 	}
+
+	const phaseData = buildFrequencyPoints( series.frequencies, series.phase );
 
 	const xScale = buildLogFrequencyScale(
 		levelData.minFrequency,

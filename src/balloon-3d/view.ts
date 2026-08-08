@@ -170,6 +170,12 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  */
 async function initializeBlock( block: HTMLElement ) {
 	const fileUrl = block.dataset.fileUrl;
+
+	if ( ! fileUrl ) {
+		showError( block, 'No file URL specified' );
+		return;
+	}
+
 	const fileName = block.dataset.fileName || 'GLL File';
 	const sourceIndex = parseInt( block.dataset.sourceIndex || '0', 10 );
 	const frequencyIndex = parseInt( block.dataset.frequencyIndex || '0', 10 );
@@ -183,11 +189,6 @@ async function initializeBlock( block: HTMLElement ) {
 	const presetRaw = block.dataset.qualityPreset;
 	const qualityPreset: QualityPreset =
 		presetRaw === 'low' || presetRaw === 'high' ? presetRaw : 'medium';
-
-	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
-		return;
-	}
 
 	try {
 		const response = await fetch( fileUrl );

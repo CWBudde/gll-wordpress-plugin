@@ -70,7 +70,6 @@ async function initializeBlock( block: HTMLElement ) {
 	}
 
 	const autoRotate = block.dataset.autoRotate === 'true';
-	const canvasHeight = parseInt( block.dataset.canvasHeight || '500', 10 );
 	const geometryIndex = parseInt( block.dataset.geometryIndex || '0', 10 );
 	const showFaces = block.dataset.showFaces !== 'false';
 	const showEdges = block.dataset.showEdges !== 'false';
@@ -135,6 +134,10 @@ async function initializeBlock( block: HTMLElement ) {
 			return;
 		}
 
+		const canvasHeight = parseInt(
+			block.dataset.canvasHeight || '500',
+			10
+		);
 		const threeContainer = document.createElement( 'div' );
 		threeContainer.className = 'gll-three-container';
 		threeContainer.style.minHeight = canvasHeight + 'px';

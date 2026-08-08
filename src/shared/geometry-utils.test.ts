@@ -96,9 +96,7 @@ describe( 'geometry orientation utilities', () => {
 	} );
 
 	it( 'converts identity HVR rotation to an identity quaternion', () => {
-		expect(
-			eulerHvrToQuaternion( { H: 0, V: 0, R: 0 } )
-		).toMatchObject( {
+		expect( eulerHvrToQuaternion( { H: 0, V: 0, R: 0 } ) ).toMatchObject( {
 			x: 0,
 			y: 0,
 			z: 0,

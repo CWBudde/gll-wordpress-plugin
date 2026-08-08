@@ -72,6 +72,7 @@
 }
 
 .gll-overview {
+
 	.gll-section {
 		margin-bottom: 16px;
 
@@ -134,6 +135,7 @@
 }
 
 .gll-sources {
+
 	h4 {
 		margin: 0 0 12px;
 		font-size: 14px;
@@ -156,7 +158,7 @@
 		background: #f0f7ff;
 		border: 1px solid #d1e7ff;
 		border-radius: 4px;
-		color: #0066cc;
+		color: #06c;
 		font-size: 12px;
 	}
 }
@@ -169,6 +171,7 @@
 
 // Compact mode
 .gll-source-compact {
+
 	.gll-source-header {
 		display: flex;
 		align-items: center;
@@ -303,6 +306,7 @@
 	}
 
 	.gll-response-toggle {
+
 		input[type="checkbox"] {
 			margin: 0;
 		}
@@ -378,6 +382,7 @@
 	}
 
 	@media (max-width: 600px) {
+
 		.gll-response-controls-row {
 			flex-direction: column;
 			align-items: stretch;
@@ -388,12 +393,20 @@
 		}
 	}
 
+	// Merged from two consecutive .gll-source-placements blocks that defined
+	// the same nested selectors. Where they disagreed the later block won, so
+	// its values are the ones kept here.
 	.gll-source-placements {
 		margin-top: 12px;
 		padding-top: 12px;
-		border-top: 1px dashed #e5e7eb;
+		border-top: 1px solid #e5e7eb;
 
 		details {
+			background: #f9fafb;
+			border: 1px solid #e5e7eb;
+			border-radius: 4px;
+			padding: 8px 10px;
+
 			summary {
 				cursor: pointer;
 				font-size: 12px;
@@ -415,61 +428,6 @@
 		}
 
 		.gll-source-placement {
-			background: #f9fafb;
-			border: 1px solid #e5e7eb;
-			border-radius: 4px;
-			padding: 8px;
-		}
-
-		.gll-source-placement-detail {
-			font-size: 12px;
-			color: #4b5563;
-			margin-bottom: 4px;
-
-			strong {
-				color: #111827;
-				font-weight: 600;
-				margin-right: 4px;
-			}
-
-			&:last-child {
-				margin-bottom: 0;
-			}
-		}
-
-		.gll-source-placements-empty {
-			padding: 8px;
-			font-size: 12px;
-		}
-	}
-
-	.gll-source-placements {
-		margin-top: 12px;
-		padding-top: 12px;
-		border-top: 1px solid #e5e7eb;
-
-		details {
-			background: #f9fafb;
-			border: 1px solid #e5e7eb;
-			border-radius: 4px;
-			padding: 8px 10px;
-		}
-
-		summary {
-			cursor: pointer;
-			font-weight: 500;
-			font-size: 13px;
-			color: #374151;
-		}
-
-		.gll-source-placements-list {
-			margin-top: 8px;
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-		}
-
-		.gll-source-placement {
 			background: #fff;
 			border: 1px solid #e5e7eb;
 			border-radius: 4px;
@@ -479,11 +437,16 @@
 		.gll-source-placement-detail {
 			font-size: 12px;
 			color: #4b5563;
+			margin-bottom: 4px;
 
 			strong {
 				color: #111827;
 				font-weight: 500;
 				margin-right: 4px;
+			}
+
+			&:last-child {
+				margin-bottom: 0;
 			}
 		}
 
@@ -496,6 +459,7 @@
 
 // Expandable mode specific styles
 .gll-source-collapsible {
+
 	.gll-source-header-toggle {
 		width: 100%;
 		text-align: left;
@@ -524,12 +488,14 @@
 	}
 
 	&.is-expanded {
+
 		.gll-source-header {
 			border-bottom: 1px solid #e5e7eb;
 		}
 	}
 
 	&:not(.is-expanded) {
+
 		.gll-source-header {
 			border-bottom: none;
 		}
@@ -538,6 +504,7 @@
 
 // Detailed mode specific styles
 .gll-source-detailed {
+
 	.gll-source-header {
 		border-bottom: 1px solid #e5e7eb;
 	}
