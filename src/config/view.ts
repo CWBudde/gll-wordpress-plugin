@@ -14,7 +14,7 @@
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
-import { escapeHtml } from '../shared/escape-html';
+import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 import { renderConfig } from './config-render';
 
 /**
@@ -58,6 +58,12 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  * @param {HTMLElement} block Block element.
  */
 async function initializeBlock( block ) {
+	// Before the fetch, so the header paragraph is already a live region when
+	// setBlockHeaderLabel rewrites it from "Loading configuration…" to the
+	// system label. A region created and filled in the same tick is not
+	// reliably announced.
+	initBlockLiveRegions( block );
+
 	const fileUrl = block.dataset.fileUrl;
 
 	// Booleans that default to true are read as "not explicitly false", so a
@@ -192,11 +198,7 @@ function showError( block, message ) {
 
 	const container = block.querySelector( '.gll-config-content' );
 	if ( container ) {
-		container.innerHTML = `
-			<div class="gll-error">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		renderErrorPanel( container, message );
 		container.style.display = 'block';
 	}
 }

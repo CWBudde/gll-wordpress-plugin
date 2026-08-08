@@ -28,6 +28,13 @@ import {
 	type ManualOrbitControls,
 } from '../shared/manual-orbit-controls';
 import { resolveTheme } from '../shared/resolve-theme';
+import {
+	attachKeyboardOrbit,
+	describeCanvas,
+	initBlockLiveRegions,
+	prefersReducedMotion,
+	renderErrorPanel,
+} from '../shared/a11y';
 import { applyHelperTheme, geometryFallbackColors } from './helper-theme';
 import {
 	buildGeometryGroup,
@@ -136,7 +143,28 @@ async function initializeBlock( block: HTMLElement ) {
 		return;
 	}
 
-	const autoRotate = block.dataset.autoRotate === 'true';
+	// This block's save() carries no `.gll-loading-text` paragraph, unlike the
+	// other six, so the helper appends an off-screen one and hands back the
+	// only way to speak through it. Set up before the fetch, so the region is
+	// live by the time there is anything to say — but after the guards above,
+	// which either bail silently or hand the message to the `role="alert"`
+	// panel, and so need no live region of their own.
+	//
+	// The lint rule below wants the binding moved down to its first use, some
+	// 140 lines later. That would defeat the point: a live region has to be in
+	// the document *before* its text changes, or assistive technology treats
+	// the text as initial content and stays silent. Creating the region and
+	// filling it in the same tick is the classic way to ship a live region that
+	// never announces anything.
+	// eslint-disable-next-line @wordpress/no-unused-vars-before-return
+	const announce = initBlockLiveRegions( block );
+
+	// Auto-rotation is continuous motion the reader cannot stop — there is no
+	// pause control — so the reduced-motion preference overrides the author's
+	// choice outright rather than merely slowing it down. Read once here; the
+	// animation loop re-reads `options.autoRotate` every frame.
+	const autoRotate =
+		block.dataset.autoRotate === 'true' && ! prefersReducedMotion();
 	const geometryIndex = parseInt( block.dataset.geometryIndex || '0', 10 );
 	const showFaces = block.dataset.showFaces !== 'false';
 	const showEdges = block.dataset.showEdges !== 'false';
@@ -251,6 +279,13 @@ async function initializeBlock( block: HTMLElement ) {
 		threeContainer.style.minHeight = canvasHeight + 'px';
 		canvasContainer.appendChild( threeContainer );
 
+		const { stats } = geometryData;
+		const canvasLabel =
+			`Interactive 3D view of the loudspeaker case: ` +
+			`${ stats.vertexCount } vertices, ${ stats.edgeCount } edges, ` +
+			`${ stats.faceCount } faces. ` +
+			`Use the arrow keys to rotate and the plus and minus keys to zoom.`;
+
 		initThreeScene( block, threeContainer, {
 			canvasHeight,
 			autoRotate,
@@ -259,7 +294,15 @@ async function initializeBlock( block: HTMLElement ) {
 			markerData,
 			geometryData,
 			sourceCones,
+			canvasLabel,
 		} );
+
+		// The header only ever said "Loading geometry…" and save() gives us no
+		// paragraph to overwrite, so this is the block's only announcement that
+		// the viewer finished building.
+		announce(
+			`Geometry loaded: ${ stats.vertexCount } vertices, ${ stats.faceCount } faces.`
+		);
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, ( error as Error ).message );
@@ -408,6 +451,7 @@ function buildMetadataElement( options: {
  * @param options.markerData   Reference/center-of-mass/pivot markers.
  * @param options.geometryData Built mesh buffers for the case geometry.
  * @param options.sourceCones  Source cone options, or null when hidden.
+ * @param options.canvasLabel  Text alternative for the renderer canvas.
  */
 function initThreeScene(
 	block: HTMLElement,
@@ -420,6 +464,7 @@ function initThreeScene(
 		markerData: ReturnType< typeof buildGeometryMarkers >;
 		geometryData: ReturnType< typeof buildCaseGeometryData >;
 		sourceCones: SourceConeOptions | null;
+		canvasLabel: string;
 	}
 ) {
 	const width = container.clientWidth;
@@ -438,6 +483,7 @@ function initThreeScene(
 	renderer.setSize( width, height );
 	renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2 ) );
 	renderer.setClearColor( 0x000000, 0 );
+	describeCanvas( renderer.domElement, options.canvasLabel );
 	container.appendChild( renderer.domElement );
 
 	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.7 );
@@ -487,7 +533,10 @@ function initThreeScene(
 		controls.enableZoom = true;
 		controls.enablePan = true;
 		controls.enableRotate = true;
-		controls.enableKeys = true;
+		// `controls.enableKeys` used to be set here. It was a no-op: the flag
+		// was removed from OrbitControls in three r132 and package.json pins
+		// ^0.159.0, so it never bound a single key. Keyboard support is
+		// provided below by moving the camera ourselves instead.
 		controls.minDistance = 0.25;
 		controls.maxDistance = 25;
 		controls.rotateSpeed = 0.6;
@@ -515,6 +564,47 @@ function initThreeScene(
 			}
 		);
 	}
+
+	// Keyboard operation. The camera is moved here and `controls.update()`
+	// re-derives its spherical state on the next frame, which is exactly what
+	// the pointer path does, so nothing has to be wrestled away from
+	// OrbitControls. The target is whatever the controls are orbiting, falling
+	// back to the origin for the manual fallback path.
+	const orbitTarget = new THREE.Vector3();
+	const spherical = new THREE.Spherical();
+	const detachKeyboard = attachKeyboardOrbit( renderer.domElement, {
+		orbit: ( deltaAzimuth, deltaPolar ) => {
+			orbitTarget.copy(
+				controls ? controls.target : new THREE.Vector3()
+			);
+			spherical.setFromVector3(
+				camera.position.clone().sub( orbitTarget )
+			);
+			spherical.theta += deltaAzimuth;
+			// Clamped short of the poles: straight overhead flips the up vector
+			// and the model appears to jump.
+			spherical.phi = Math.max(
+				0.05,
+				Math.min( Math.PI - 0.05, spherical.phi + deltaPolar )
+			);
+			camera.position.setFromSpherical( spherical ).add( orbitTarget );
+			camera.lookAt( orbitTarget );
+		},
+		zoom: ( factor ) => {
+			orbitTarget.copy(
+				controls ? controls.target : new THREE.Vector3()
+			);
+			spherical.setFromVector3(
+				camera.position.clone().sub( orbitTarget )
+			);
+			// Same bounds the pointer wheel obeys, so the two cannot disagree.
+			spherical.radius = Math.max(
+				0.25,
+				Math.min( 25, spherical.radius * factor )
+			);
+			camera.position.setFromSpherical( spherical ).add( orbitTarget );
+		},
+	} );
 
 	const resizeObserver = new ResizeObserver( () => {
 		const newWidth = container.clientWidth;
@@ -572,6 +662,7 @@ function initThreeScene(
 
 	const cleanup = () => {
 		cancelAnimationFrame( animationId );
+		detachKeyboard();
 		resizeObserver.disconnect();
 		if ( visibilityObserver ) {
 			visibilityObserver.disconnect();
@@ -623,10 +714,9 @@ function showError( block: HTMLElement, message: string ) {
 
 	const canvasContainer = block.querySelector( '.gll-geometry-canvas' );
 	if ( canvasContainer ) {
-		canvasContainer.innerHTML = `
-			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		// Previously an inline-styled panel, which meant a white box on a dark
+		// theme and no announcement at all. `.gll-error` now lives in
+		// style.scss like every other block's, and the panel is a live region.
+		renderErrorPanel( canvasContainer, message );
 	}
 }

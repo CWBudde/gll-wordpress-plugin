@@ -18,6 +18,13 @@ import {
 	formatFrequency,
 } from '../shared/charting-utils';
 import { applyChartThemeFrom } from '../shared/chart-theme';
+import {
+	describeCanvas,
+	initBlockLiveRegions,
+	pickThirdOctaveIndices,
+	prefersReducedMotion,
+	renderErrorPanel,
+} from '../shared/a11y';
 
 /**
  * Initialize all frequency response blocks on the page.
@@ -52,6 +59,12 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  * @param {HTMLElement} block Block element.
  */
 async function initializeBlock( block ) {
+	// Before the fetch, so the header paragraph is already a live region by the
+	// time setBlockHeaderLabel swaps "Loading frequency response…" for the
+	// system label — that swap is the only signal a screen reader gets that the
+	// spinner has given way to a chart.
+	initBlockLiveRegions( block );
+
 	const fileUrl = block.dataset.fileUrl;
 	const fileName = block.dataset.fileName || 'GLL File';
 	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
@@ -194,6 +207,128 @@ function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
 }
 
 /**
+ * Summarize the plotted curve for the canvas's text alternative.
+ *
+ * A `<canvas>` exposes nothing at all, so this is the whole of what a screen
+ * reader gets from the picture. It therefore states the figures a sighted
+ * reader takes off the axes — the frequency span and the level span — rather
+ * than the word "chart". The values are the ones already computed for the
+ * visible badge row, so the two can never disagree.
+ *
+ * @param {Object} params               Parameters object.
+ * @param {Object} params.source        Source definition.
+ * @param {Object} params.frequencyData Frequency data with min/max.
+ * @param {Array}  params.magnitudes    Plotted level values in dB.
+ * @param {Object} params.options       Chart options.
+ * @param {Object} params.phaseSeries   Phase series data, or null.
+ * @return {string} Label text.
+ */
+function buildCanvasLabel( {
+	source,
+	frequencyData,
+	magnitudes,
+	options,
+	phaseSeries,
+} ) {
+	const finite = magnitudes.filter( ( value ) => Number.isFinite( value ) );
+	const parts = [];
+
+	parts.push(
+		`Frequency response of ${ source.Label || options.fileName }` +
+			( options.normalized ? ', normalized' : '' )
+	);
+	parts.push(
+		`${ formatFrequency(
+			frequencyData.minFrequency
+		) } to ${ formatFrequency( frequencyData.maxFrequency ) }`
+	);
+
+	if ( options.showMagnitude && finite.length > 0 ) {
+		parts.push(
+			`level ${ Math.min( ...finite ).toFixed( 1 ) } to ${ Math.max(
+				...finite
+			).toFixed( 1 ) } dB`
+		);
+	}
+
+	if ( phaseSeries ) {
+		parts.push( `${ phaseSeries.label } on the right axis` );
+	}
+
+	return `${ parts.join( ', ' ) }. The plotted values follow in a table.`;
+}
+
+/**
+ * Build an off-screen table of the plotted magnitude values.
+ *
+ * The `aria-label` gives the shape of the curve; this gives the numbers, which
+ * for a response plot *are* the content — a reader deciding whether a cabinet
+ * suits a room needs the value at 2 kHz, not "it slopes down".
+ *
+ * Only the magnitude is tabulated and only at third-octave centres. A GLL
+ * response commonly carries 241 points, and reading 241 rows aloud is not
+ * access, it is obstruction; the phase curve is left out for the same reason,
+ * since a second column doubles the reading time to describe a quantity that
+ * is rarely the reason anyone opened the block.
+ *
+ * @param {Array<number>} frequencies Measured frequencies.
+ * @param {Array<number>} magnitudes  Level values in dB.
+ * @return {HTMLElement|null} Table element, or null when there is nothing to show.
+ */
+function buildDataTable( frequencies, magnitudes ) {
+	const indices = pickThirdOctaveIndices( frequencies );
+	if ( indices.length === 0 ) {
+		return null;
+	}
+
+	const table = document.createElement( 'table' );
+	table.className = 'gll-visually-hidden';
+
+	const caption = document.createElement( 'caption' );
+	caption.textContent =
+		'Frequency response level at one-third-octave band centres';
+	table.appendChild( caption );
+
+	const head = document.createElement( 'thead' );
+	const headRow = document.createElement( 'tr' );
+	[ 'Frequency', 'Level (dB)' ].forEach( ( text ) => {
+		const cell = document.createElement( 'th' );
+		cell.scope = 'col';
+		cell.textContent = text;
+		headRow.appendChild( cell );
+	} );
+	head.appendChild( headRow );
+	table.appendChild( head );
+
+	const body = document.createElement( 'tbody' );
+	indices.forEach( ( index ) => {
+		const value = magnitudes[ index ];
+		if ( ! Number.isFinite( value ) ) {
+			return;
+		}
+
+		const row = document.createElement( 'tr' );
+		const frequencyCell = document.createElement( 'th' );
+		frequencyCell.scope = 'row';
+		frequencyCell.textContent = formatFrequency( frequencies[ index ] );
+		row.appendChild( frequencyCell );
+
+		const levelCell = document.createElement( 'td' );
+		levelCell.textContent = value.toFixed( 1 );
+		row.appendChild( levelCell );
+
+		body.appendChild( row );
+	} );
+
+	if ( body.children.length === 0 ) {
+		return null;
+	}
+
+	table.appendChild( body );
+	return table;
+}
+
+/**
  * Render frequency response chart.
  *
  * @param {HTMLElement} block   Block element.
@@ -260,6 +395,16 @@ function renderChart( block, data, options ) {
 
 	// Create canvas element for chart
 	const canvas = document.createElement( 'canvas' );
+	describeCanvas(
+		canvas,
+		buildCanvasLabel( {
+			source,
+			frequencyData,
+			magnitudes,
+			options,
+			phaseSeries,
+		} )
+	);
 	chartContainer.innerHTML = metadataHtml;
 
 	const chartWrapper = document.createElement( 'div' );
@@ -269,6 +414,13 @@ function renderChart( block, data, options ) {
 	chartWrapper.style.minHeight = options.chartHeight + 'px';
 	chartWrapper.appendChild( canvas );
 	chartContainer.appendChild( chartWrapper );
+
+	// The numbers behind the picture, for readers the canvas cannot serve.
+	const dataTable = buildDataTable( frequencies, magnitudes );
+	if ( dataTable ) {
+		chartContainer.appendChild( dataTable );
+	}
+
 	chartContainer.style.display = 'block';
 
 	const ctx = canvas.getContext( '2d' );
@@ -352,6 +504,10 @@ function renderChart( block, data, options ) {
 		options: {
 			responsive: true,
 			maintainAspectRatio: false,
+			// Chart.js animates the line in over a second by default. That is
+			// the largest piece of motion this block produces, so it is the
+			// first thing to drop when motion is unwelcome.
+			animation: prefersReducedMotion() ? false : undefined,
 			interaction: {
 				mode: 'index',
 				intersect: false,
@@ -403,11 +559,10 @@ function showError( block, message ) {
 		'.gll-frequency-response-chart'
 	);
 	if ( chartContainer ) {
-		chartContainer.innerHTML = `
-			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		// The inline styles this used to carry duplicated the `.gll-error` rule
+		// in style.scss and, being literal hex, painted a white box on a dark
+		// theme. The class alone now, so there is one place to change.
+		renderErrorPanel( chartContainer, message );
 		chartContainer.style.display = 'block';
 	}
 }

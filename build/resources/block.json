@@ -62,6 +62,20 @@
       "fileName": "example-speaker.gll"
     }
   },
+  "variations": [
+    {
+      "name": "documentation",
+      "title": "GLL Documentation",
+      "description": "Only the documentation embedded in the GLL file, without the raw data files.",
+      "icon": "media-document",
+      "attributes": {
+        "showDataFiles": false
+      },
+      "scope": [
+        "inserter"
+      ]
+    }
+  ],
   "supports": {
     "html": false,
     "align": [

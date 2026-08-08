@@ -91,6 +91,33 @@ return array(
 				'fileName' => 'example-speaker.gll'
 			)
 		),
+		'variations' => array(
+			array(
+				'name' => 'wireframe',
+				'title' => 'GLL Wireframe Balloon',
+				'description' => '3D directivity balloon drawn as a wireframe mesh instead of a solid surface.',
+				'icon' => 'admin-site-alt3',
+				'attributes' => array(
+					'wireframe' => true
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'minimal',
+				'title' => 'GLL Balloon (Minimal)',
+				'description' => '3D directivity balloon without the reference sphere and axes helper, for a clean presentation view.',
+				'icon' => 'admin-site-alt3',
+				'attributes' => array(
+					'showReferenceSphere' => false,
+					'showAxesHelper' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			)
+		),
 		'supports' => array(
 			'html' => false,
 			'align' => array(
@@ -193,6 +220,37 @@ return array(
 				'fileName' => 'example-speaker.gll'
 			)
 		),
+		'variations' => array(
+			array(
+				'name' => 'rigging',
+				'title' => 'GLL Rigging Configuration',
+				'description' => 'Box types, frames, limits and warnings — the mechanical configuration, without the DSP filter groups.',
+				'icon' => 'admin-settings',
+				'attributes' => array(
+					'showFilterGroups' => false,
+					'showFilterDetails' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'filters',
+				'title' => 'GLL Filter Configuration',
+				'description' => 'Only the DSP filter groups and their filter details.',
+				'icon' => 'admin-settings',
+				'attributes' => array(
+					'showBoxTypes' => false,
+					'showFrames' => false,
+					'showLimits' => false,
+					'showWarnings' => false,
+					'showGeometrySummary' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			)
+		),
 		'supports' => array(
 			'html' => false,
 			'align' => array(
@@ -282,6 +340,32 @@ return array(
 			'attributes' => array(
 				'fileName' => 'example-speaker.gll',
 				'phaseMode' => 'unwrapped'
+			)
+		),
+		'variations' => array(
+			array(
+				'name' => 'magnitude-only',
+				'title' => 'GLL Magnitude Response',
+				'description' => 'Frequency response chart showing magnitude only, without the phase trace.',
+				'icon' => 'chart-line',
+				'attributes' => array(
+					'showPhase' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'normalized',
+				'title' => 'GLL Normalized Response',
+				'description' => 'Frequency response normalized to its on-axis maximum, for comparing shapes rather than absolute levels.',
+				'icon' => 'chart-line',
+				'attributes' => array(
+					'normalized' => true
+				),
+				'scope' => array(
+					'inserter'
+				)
 			)
 		),
 		'supports' => array(
@@ -377,6 +461,32 @@ return array(
 				'fileName' => 'example-speaker.gll'
 			)
 		),
+		'variations' => array(
+			array(
+				'name' => 'wireframe',
+				'title' => 'GLL Wireframe Geometry',
+				'description' => 'Cabinet geometry drawn as edges only, without shaded faces.',
+				'icon' => 'admin-site-alt3',
+				'attributes' => array(
+					'showFaces' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'turntable',
+				'title' => 'GLL Rotating Geometry',
+				'description' => 'Cabinet geometry that rotates on its own, for use as a display element.',
+				'icon' => 'admin-site-alt3',
+				'attributes' => array(
+					'autoRotate' => true
+				),
+				'scope' => array(
+					'inserter'
+				)
+			)
+		),
 		'supports' => array(
 			'html' => false,
 			'align' => array(
@@ -457,6 +567,21 @@ return array(
 		'example' => array(
 			'attributes' => array(
 				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'variations' => array(
+			array(
+				'name' => 'overview-only',
+				'title' => 'GLL Overview',
+				'description' => 'Manufacturer, model and format metadata only, without the acoustic source listing.',
+				'icon' => 'format-audio',
+				'attributes' => array(
+					'showSources' => false,
+					'showResponses' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
 			)
 		),
 		'supports' => array(
@@ -540,6 +665,44 @@ return array(
 				'fileName' => 'example-speaker.gll'
 			)
 		),
+		'variations' => array(
+			array(
+				'name' => 'horizontal',
+				'title' => 'GLL Horizontal Polar Plot',
+				'description' => 'Polar directivity plot showing the horizontal slice only.',
+				'icon' => 'chart-pie',
+				'attributes' => array(
+					'showVertical' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'vertical',
+				'title' => 'GLL Vertical Polar Plot',
+				'description' => 'Polar directivity plot showing the vertical slice only.',
+				'icon' => 'chart-pie',
+				'attributes' => array(
+					'showHorizontal' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
+			),
+			array(
+				'name' => 'normalized',
+				'title' => 'GLL Normalized Polar Plot',
+				'description' => 'Polar plot normalized to the on-axis level, so the coverage pattern is read directly in dB relative to the axis.',
+				'icon' => 'chart-pie',
+				'attributes' => array(
+					'normalized' => true
+				),
+				'scope' => array(
+					'inserter'
+				)
+			)
+		),
 		'supports' => array(
 			'html' => false,
 			'align' => array(
@@ -615,6 +778,20 @@ return array(
 		'example' => array(
 			'attributes' => array(
 				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'variations' => array(
+			array(
+				'name' => 'documentation',
+				'title' => 'GLL Documentation',
+				'description' => 'Only the documentation embedded in the GLL file, without the raw data files.',
+				'icon' => 'media-document',
+				'attributes' => array(
+					'showDataFiles' => false
+				),
+				'scope' => array(
+					'inserter'
+				)
 			)
 		),
 		'supports' => array(

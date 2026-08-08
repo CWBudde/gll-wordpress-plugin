@@ -10,7 +10,7 @@
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
-import { escapeHtml } from '../shared/escape-html';
+import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 import { renderResources } from './resource-render';
 
 /**
@@ -44,6 +44,11 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  * @param {HTMLElement} block Block element.
  */
 async function initializeBlock( block ) {
+	// Before the fetch: the header's "Loading resources…" paragraph becomes the
+	// live region that setBlockHeaderLabel later rewrites, and the decorative
+	// spinner and header glyph are taken out of the accessibility tree.
+	initBlockLiveRegions( block );
+
 	const fileUrl = block.dataset.fileUrl;
 	const showDocumentation = block.dataset.showDocumentation !== 'false';
 	const showDataFiles = block.dataset.showDataFiles !== 'false';
@@ -99,11 +104,7 @@ function showError( block, message ) {
 
 	const container = block.querySelector( '.gll-resources-content' );
 	if ( container ) {
-		container.innerHTML = `
-			<div class="gll-error">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		renderErrorPanel( container, message );
 		container.style.display = 'block';
 	}
 }

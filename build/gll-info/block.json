@@ -67,6 +67,21 @@
       "fileName": "example-speaker.gll"
     }
   },
+  "variations": [
+    {
+      "name": "overview-only",
+      "title": "GLL Overview",
+      "description": "Manufacturer, model and format metadata only, without the acoustic source listing.",
+      "icon": "format-audio",
+      "attributes": {
+        "showSources": false,
+        "showResponses": false
+      },
+      "scope": [
+        "inserter"
+      ]
+    }
+  ],
   "supports": {
     "html": false,
     "align": [

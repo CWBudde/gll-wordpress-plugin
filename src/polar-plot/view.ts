@@ -12,9 +12,20 @@ import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
-import { computePolarSlices, computeLevelRange } from '../shared/polar-utils';
+import {
+	buildPolarAngles,
+	computeLevelRange,
+	computePolarSlices,
+} from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
 import { applyChartThemeFrom } from '../shared/chart-theme';
+import {
+	beamwidthAtDrop,
+	describeCanvas,
+	initBlockLiveRegions,
+	prefersReducedMotion,
+	renderErrorPanel,
+} from '../shared/a11y';
 
 /**
  * Initialize all polar plot blocks on the page.
@@ -47,6 +58,11 @@ document.addEventListener( 'DOMContentLoaded', async () => {
  * @param {HTMLElement} block Block element.
  */
 async function initializeBlock( block ) {
+	// Before the fetch: the header paragraph has to be a live region already
+	// when setBlockHeaderLabel rewrites it, or the loading-to-loaded transition
+	// passes in silence.
+	initBlockLiveRegions( block );
+
 	const fileUrl = block.dataset.fileUrl;
 	const fileName = block.dataset.fileName || 'GLL File';
 	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
@@ -89,6 +105,68 @@ async function initializeBlock( block ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, error.message );
 	}
+}
+
+/**
+ * Summarize the polar pattern for the canvas's text alternative.
+ *
+ * The badge row above the plot already prints the frequency, the symmetry and
+ * the angular resolution, so those are not repeated at length here. What it
+ * cannot print — and what a sighted reader takes from the plot's shape in a
+ * glance — is how wide the pattern is, so the label leads with the −6 dB
+ * beamwidth of each plane.
+ *
+ * No off-screen table accompanies this one, unlike the frequency response
+ * block. The plotted grid is 36 angles per plane and the individual levels are
+ * not what anyone reads a polar plot for; the coverage angle is, and it is
+ * stated here directly. A 72-row table would bury that one useful number.
+ *
+ * @param {Object} params                  Parameters object.
+ * @param {Object} params.slices           Computed polar slices.
+ * @param {Array}  params.horizontalLevels Horizontal levels, post-normalization.
+ * @param {Array}  params.verticalLevels   Vertical levels, post-normalization.
+ * @param {string} params.freqLabel        Formatted frequency.
+ * @param {Object} params.options          Chart options.
+ * @return {string} Label text.
+ */
+function buildCanvasLabel( {
+	slices,
+	horizontalLevels,
+	verticalLevels,
+	freqLabel,
+	options,
+} ) {
+	const angles = buildPolarAngles( slices.meta.stepDeg );
+	const parts = [ `Polar directivity plot at ${ freqLabel }` ];
+
+	/**
+	 * Describe one plane's coverage.
+	 *
+	 * @param {string} name   Plane name.
+	 * @param {Array}  levels Levels for that plane.
+	 * @return {string} Sentence fragment.
+	 */
+	const describePlane = ( name, levels ) => {
+		const width = beamwidthAtDrop( angles, levels, 6 );
+		return width === null
+			? `${ name } coverage not determinable from the measured data`
+			: `${ name } −6 dB beamwidth ${ width }°`;
+	};
+
+	if ( options.showHorizontal ) {
+		parts.push( describePlane( 'horizontal', horizontalLevels ) );
+	}
+	if ( options.showVertical ) {
+		parts.push( describePlane( 'vertical', verticalLevels ) );
+	}
+
+	parts.push( `${ slices.meta.symmetryName } symmetry` );
+
+	if ( options.normalized ) {
+		parts.push( 'levels normalized to the on-axis maximum' );
+	}
+
+	return `${ parts.join( ', ' ) }.`;
 }
 
 /**
@@ -226,6 +304,16 @@ function renderChart( block, data, options ) {
 
 	// Create canvas
 	const canvas = document.createElement( 'canvas' );
+	describeCanvas(
+		canvas,
+		buildCanvasLabel( {
+			slices,
+			horizontalLevels,
+			verticalLevels,
+			freqLabel,
+			options,
+		} )
+	);
 	chartContainer.innerHTML = metadataHtml;
 
 	const chartWrapper = document.createElement( 'div' );
@@ -247,7 +335,9 @@ function renderChart( block, data, options ) {
 		options: {
 			responsive: true,
 			maintainAspectRatio: false,
-			animation: { duration: 700 },
+			// The 700 ms sweep-in is decorative; drop it rather than shorten it
+			// when the visitor has asked for less motion.
+			animation: prefersReducedMotion() ? false : { duration: 700 },
 			layout: {
 				padding: { top: 30, bottom: 30, left: 30, right: 30 },
 			},
@@ -318,11 +408,9 @@ function showError( block, message ) {
 
 	const chartContainer = block.querySelector( '.gll-polar-plot-chart' );
 	if ( chartContainer ) {
-		chartContainer.innerHTML = `
-			<div class="gll-error" style="padding: 20px; color: #d63638; border: 1px solid #d63638; border-radius: 4px; background: #fff8f8;">
-				<strong>Error:</strong> ${ escapeHtml( message ) }
-			</div>
-		`;
+		// The inline styles this used to carry duplicated the `.gll-error` rule
+		// in style.scss; the class alone now, so there is one place to change.
+		renderErrorPanel( chartContainer, message );
 		chartContainer.style.display = 'block';
 	}
 }
