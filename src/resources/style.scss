@@ -1,0 +1,319 @@
+/**
+ * Resources Block - Frontend Styles
+ *
+ * Styles for the rendered block on the frontend.
+ *
+ * The card frame (background, border, radius, padding, shadow) comes from
+ * `.gll-block` in the shared token layer, so the `transparent` and `plain`
+ * appearance variants can strip it. Everything here paints through tokens.
+ *
+ * Ported from the reference viewer's resources tab, but rebuilt rather than
+ * transcribed: the original leans on `:not(...):not(...)` chains to switch a
+ * row between three layouts, where here each row carries one `--{kind}`
+ * modifier chosen in resource-model.ts.
+ *
+ * @package GllInfo
+ */
+
+@use "../shared/tokens";
+
+.gll-resources-block {
+	margin: 20px 0;
+
+	.gll-resources-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 20px;
+		padding-bottom: 15px;
+		border-bottom: 1px solid var(--gll-border);
+
+		svg {
+			width: 32px;
+			height: 32px;
+			color: var(--gll-accent);
+			flex-shrink: 0;
+		}
+
+		.gll-resources-header-text {
+			flex: 1;
+
+			h3 {
+				margin: 0 0 4px;
+				font-size: 20px;
+				font-weight: 600;
+				color: var(--gll-heading);
+			}
+
+			.gll-loading-text {
+				margin: 0;
+				font-size: 14px;
+				color: var(--gll-text-muted);
+			}
+		}
+	}
+
+	.gll-resources-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		padding: 40px;
+		background: var(--gll-surface-muted);
+		border-radius: 4px;
+
+		.gll-spinner {
+			display: inline-block;
+			width: 20px;
+			height: 20px;
+			border: 3px solid var(--gll-border);
+			border-top-color: var(--gll-accent);
+			border-radius: 50%;
+			animation: gll-spin 0.8s linear infinite;
+		}
+
+		span:not(.gll-spinner) {
+			color: var(--gll-text-muted);
+			font-size: 14px;
+		}
+	}
+
+	.gll-resources-metadata {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-bottom: 16px;
+		padding: 12px;
+		background: var(--gll-surface-muted);
+		border-radius: 4px;
+		border: 1px solid var(--gll-border);
+
+		.gll-meta-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 6px 12px;
+			background: var(--gll-surface);
+			border: 1px solid var(--gll-border);
+			border-radius: 4px;
+			font-size: 13px;
+			line-height: 1.4;
+			color: var(--gll-text);
+
+			strong {
+				margin-right: 4px;
+				font-weight: 600;
+				color: var(--gll-heading);
+			}
+		}
+	}
+
+	.gll-resources-section {
+		margin-bottom: 24px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		.gll-resources-section-title {
+			margin: 0 0 4px;
+			font-size: 16px;
+			font-weight: 600;
+			color: var(--gll-heading);
+		}
+
+		.gll-resources-section-hint {
+			margin: 0 0 12px;
+			font-size: 13px;
+			color: var(--gll-text-muted);
+		}
+	}
+
+	.gll-resource-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.gll-resource-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 12px;
+		padding: 12px;
+		margin-bottom: 8px;
+		background: var(--gll-surface-muted);
+		border: 1px solid var(--gll-border);
+		border-radius: 6px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+
+		// Images stack so the preview gets the full width.
+		&.gll-resource-item--image {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
+	.gll-resource-meta {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+
+		svg {
+			width: 24px;
+			height: 24px;
+			flex-shrink: 0;
+			color: var(--gll-text-muted);
+		}
+	}
+
+	.gll-resource-details {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+
+	.gll-resource-title {
+		font-weight: 600;
+		color: var(--gll-heading);
+		overflow-wrap: anywhere;
+	}
+
+	.gll-resource-subtitle {
+		font-size: 13px;
+		color: var(--gll-text-muted);
+		overflow-wrap: anywhere;
+	}
+
+	.gll-resource-actions {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-shrink: 0;
+	}
+
+	.gll-resource-size {
+		font-size: 13px;
+		color: var(--gll-text-muted);
+
+		// Sizes read as a column, so they must not jitter between rows.
+		font-variant-numeric: tabular-nums;
+	}
+
+	.gll-resource-download {
+		display: inline-block;
+		padding: 8px 16px;
+		background: var(--gll-accent);
+		color: #fff;
+		border-radius: 6px;
+		font-size: 14px;
+		font-weight: 500;
+		text-decoration: none;
+		transition: opacity 0.2s ease;
+
+		&:hover,
+		&:focus {
+			opacity: 0.85;
+			color: #fff;
+			text-decoration: none;
+		}
+	}
+
+	.gll-resource-preview {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 8px;
+
+		// Deliberately not a theme token. These are manufacturer logos, and the
+		// corpus holds both a pure black one and a blank one; painting them on
+		// a themed surface makes one or the other vanish. A fixed light tile
+		// keeps every logo visible in either theme, the way an image viewer
+		// would show it.
+		background: #f0f0f0;
+		border: 1px solid var(--gll-border);
+		border-radius: 4px;
+
+		// The parser gives no intrinsic dimensions, so reserve a little height
+		// to blunt the layout shift when the image decodes.
+		min-height: 60px;
+
+		img {
+			max-width: 100%;
+
+			// Set inline from the previewMaxHeight attribute.
+			max-height: var(--gll-resource-preview-max, 240px);
+			width: auto;
+			height: auto;
+			object-fit: contain;
+			border-radius: 2px;
+		}
+	}
+
+	.gll-resources-empty {
+		padding: 20px;
+		background: var(--gll-surface-muted);
+		border-radius: 4px;
+		color: var(--gll-text-muted);
+		font-size: 14px;
+		text-align: center;
+	}
+
+	// Error colors stay hardcoded: they must remain legible even when the
+	// theming itself is what went wrong.
+	.gll-error {
+		padding: 20px;
+		background: #fff8f8;
+		border: 1px solid #d63638;
+		border-radius: 4px;
+		color: #d63638;
+
+		strong {
+			display: block;
+			margin-bottom: 8px;
+		}
+	}
+}
+
+// Spinner animation
+@keyframes gll-spin {
+
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+
+	.gll-resources-block {
+
+		// Tighten the card frame rather than re-declaring `padding`, so the
+		// `plain` / `transparent` variants still win.
+		--gll-padding: 15px;
+
+		.gll-resources-header {
+
+			h3 {
+				font-size: 18px;
+			}
+		}
+
+		.gll-resource-item {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.gll-resource-actions {
+			justify-content: space-between;
+		}
+	}
+}

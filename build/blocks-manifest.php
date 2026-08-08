@@ -450,5 +450,82 @@ return array(
 		'editorStyle' => 'file:./index.css',
 		'style' => 'file:./style-index.css',
 		'viewScript' => 'file:./view.js'
+	),
+	'resources' => array(
+		'$schema' => 'https://schemas.wp.org/trunk/block.json',
+		'apiVersion' => 3,
+		'name' => 'gll-info/resources',
+		'version' => '0.1.0',
+		'title' => 'GLL Resources',
+		'category' => 'media',
+		'icon' => 'media-document',
+		'description' => 'List the documentation and data files embedded in a GLL file, with previews and downloads.',
+		'keywords' => array(
+			'gll',
+			'resources',
+			'documents',
+			'downloads',
+			'datasheet'
+		),
+		'attributes' => array(
+			'fileId' => array(
+				'type' => 'number',
+				'default' => 0
+			),
+			'fileUrl' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'fileName' => array(
+				'type' => 'string',
+				'default' => ''
+			),
+			'showDocumentation' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showDataFiles' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'showPreviews' => array(
+				'type' => 'boolean',
+				'default' => true
+			),
+			'previewMaxHeight' => array(
+				'type' => 'number',
+				'default' => 240
+			),
+			'hideWhenEmpty' => array(
+				'type' => 'boolean',
+				'default' => false
+			),
+			'appearance' => array(
+				'type' => 'string',
+				'enum' => array(
+					'auto',
+					'plain',
+					'transparent'
+				),
+				'default' => 'auto'
+			)
+		),
+		'example' => array(
+			'attributes' => array(
+				'fileName' => 'example-speaker.gll'
+			)
+		),
+		'supports' => array(
+			'html' => false,
+			'align' => array(
+				'wide',
+				'full'
+			)
+		),
+		'textdomain' => 'gll-info',
+		'editorScript' => 'file:./index.js',
+		'editorStyle' => 'file:./index.css',
+		'style' => 'file:./style-index.css',
+		'viewScript' => 'file:./view.js'
 	)
 );

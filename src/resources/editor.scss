@@ -1,0 +1,56 @@
+/**
+ * Resources Block - Editor Styles
+ *
+ * Styles for the block editor (Gutenberg).
+ *
+ * The card frame comes from `.gll-block` on the block wrapper, so the
+ * appearance variants apply in the editor exactly as they do on the frontend.
+ * The list itself is styled by style.scss, which the editor also loads; only
+ * the editor-only affordances live here.
+ *
+ * @package GllInfo
+ */
+
+@use "../shared/tokens";
+
+.gll-resources-block {
+
+	.gll-resources-placeholder {
+		padding: 40px 20px;
+		text-align: center;
+		background: var(--gll-surface-muted);
+		border: 2px dashed var(--gll-border);
+		border-radius: var(--gll-radius);
+
+		svg {
+			width: 48px;
+			height: 48px;
+			color: var(--gll-text-muted);
+			margin-bottom: 12px;
+		}
+
+		p {
+			margin: 0 0 16px;
+			color: var(--gll-text-muted);
+		}
+	}
+
+	// The editor keeps rendering a section that has nothing in it, so an author
+	// toggling a control can see why the preview did not change. The frontend
+	// drops such sections entirely.
+	.gll-resources-empty {
+		font-style: italic;
+	}
+
+	// Shown in place of actually hiding the block, so an empty block stays
+	// selectable and explains itself.
+	.gll-resources-hidden-notice {
+		margin-top: 12px;
+		padding: 8px 12px;
+		background: var(--gll-surface-muted);
+		border-left: 3px solid var(--gll-accent);
+		border-radius: 2px;
+		font-size: 13px;
+		color: var(--gll-text-muted);
+	}
+}

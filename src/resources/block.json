@@ -1,0 +1,64 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "gll-info/resources",
+	"version": "0.1.0",
+	"title": "GLL Resources",
+	"category": "media",
+	"icon": "media-document",
+	"description": "List the documentation and data files embedded in a GLL file, with previews and downloads.",
+	"keywords": [ "gll", "resources", "documents", "downloads", "datasheet" ],
+	"attributes": {
+		"fileId": {
+			"type": "number",
+			"default": 0
+		},
+		"fileUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"fileName": {
+			"type": "string",
+			"default": ""
+		},
+		"showDocumentation": {
+			"type": "boolean",
+			"default": true
+		},
+		"showDataFiles": {
+			"type": "boolean",
+			"default": true
+		},
+		"showPreviews": {
+			"type": "boolean",
+			"default": true
+		},
+		"previewMaxHeight": {
+			"type": "number",
+			"default": 240
+		},
+		"hideWhenEmpty": {
+			"type": "boolean",
+			"default": false
+		},
+		"appearance": {
+			"type": "string",
+			"enum": [ "auto", "plain", "transparent" ],
+			"default": "auto"
+		}
+	},
+	"example": {
+		"attributes": {
+			"fileName": "example-speaker.gll"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "gll-info",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}
