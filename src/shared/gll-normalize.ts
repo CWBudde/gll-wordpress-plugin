@@ -307,7 +307,6 @@ export function normalizeGllData( raw ) {
 	};
 }
 
-
 /**
  * Replace a block header's "Loading …" line with the parsed system label.
  *
@@ -324,8 +323,7 @@ export function setBlockHeaderLabel( block, data ) {
 		return;
 	}
 
-	const label =
-		data?.GenSystem?.Label || data?.Metadata?.Description || '';
+	const label = data?.GenSystem?.Label || data?.Metadata?.Description || '';
 	loadingText.textContent = label;
 }
 
