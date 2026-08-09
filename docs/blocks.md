@@ -13,7 +13,13 @@ Settings below are named exactly as they appear in the block sidebar.
 `gll-info/gll-info` — the overview block. Shows what the file *is* and which
 acoustic sources it contains.
 
-Sidebar panel **File**: *Replace*, *Remove*.
+Sidebar panel **File**: *Replace*, *Remove*, *Refresh stored summary*.
+
+This block is served from a stored summary of the file rather than parsing it in
+every visitor's browser, so a published page carrying only this block never
+downloads the parser. *Refresh stored summary* rebuilds that summary from the
+file currently loaded; you should not normally need it, because replacing the
+file invalidates the summary on its own.
 
 Sidebar panel **Display Options**:
 
@@ -23,7 +29,7 @@ Sidebar panel **Display Options**:
 | **Show Sources** | on | The "Acoustic Sources" list. |
 | **Sources Display Mode** | Expandable | *Compact*, *Detailed* or *Expandable*. Expandable draws each source as a collapsible card; only the open card renders its details, which keeps files with many sources fast. |
 | **Show Response Charts** | off | Adds per-source frequency response controls and a chart inside each source card. Only offered while *Show Sources* is on. |
-| **Show Responses** | on | **Does nothing in 0.1.0.** The sidebar labels it "Coming soon: frequency response charts"; the value is stored but nothing renders from it. Use *Show Response Charts*, or the separate GLL Frequency Response block. |
+| **Show Responses** | on | The per-source text summary — how many measured responses the source carries and at what angular resolution — in the editor and on the published page. It does not draw charts; that is *Show Response Charts* in the editor, or the separate GLL Frequency Response block. |
 
 Long source lists are revealed in chunks as you scroll rather than all at once,
 so a file with dozens of sources does not stall the editor.
@@ -179,7 +185,9 @@ Every listed resource gets a **Download** link.
 frames, DSP filter groups, and the manufacturer's limits and warnings. Each
 section is a collapsible card whose summary carries the number of entries in it.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File Settings**: *Replace File*, *Remove File*, *Refresh stored
+summary*. Like the file viewer, this block is served from a stored summary of the
+file rather than parsing it in every visitor's browser.
 
 Sidebar panel **Display Settings**:
 

@@ -232,7 +232,18 @@ describe( 'useGLLLoader (standalone)', () => {
 		expect( mockParseGLL ).toHaveBeenCalledTimes( 1 );
 	} );
 
-	it( 'loads from a URL when isUrl is true', async () => {
+	it( 'loads from a URL when isUrl is true, and records which file it read', async () => {
+		// Fetches and parses the bytes itself rather than delegating to
+		// `parseGLLFromUrl()`, because the buffer has to be fingerprinted on the
+		// way past — re-fetching to hash would download the file twice. The
+		// recorded `source` is what lets `useCachePublisher()` tell whether the
+		// parse it is holding belongs to the file currently selected.
+		const bytes = new Uint8Array( [ 1, 2, 3 ] );
+		( global as any ).fetch = jest.fn().mockResolvedValue( {
+			ok: true,
+			arrayBuffer: async () => bytes.buffer,
+		} );
+
 		const captured: {
 			value: ReturnType< typeof useGLLLoader > | null;
 		} = { value: null };
@@ -245,12 +256,89 @@ describe( 'useGLLLoader (standalone)', () => {
 			);
 		} );
 
-		expect( mockParseGLLFromUrl ).toHaveBeenCalledWith(
+		expect( ( global as any ).fetch ).toHaveBeenCalledWith(
 			'https://example.com/sample.gll'
 		);
-		expect( captured.value?.data ).toEqual( {
-			GenSystem: { Label: 'FromUrl' },
+		expect( mockParseGLL ).toHaveBeenCalled();
+		expect( captured.value?.parsedFrom?.url ).toBe(
+			'https://example.com/sample.gll'
+		);
+		expect( captured.value?.data ).toEqual( { GenSystem: { Label: 'X' } } );
+
+		delete ( global as any ).fetch;
+	} );
+
+	it( 'reports a fetch failure as an error rather than a parse', async () => {
+		( global as any ).fetch = jest.fn().mockResolvedValue( {
+			ok: false,
+			status: 404,
+			statusText: 'Not Found',
 		} );
+
+		const captured: {
+			value: ReturnType< typeof useGLLLoader > | null;
+		} = { value: null };
+		render( <ProbeLoader captured={ captured } /> );
+
+		await act( async () => {
+			await captured.value!.load(
+				'https://example.com/missing.gll',
+				true
+			);
+		} );
+
+		expect( captured.value?.error ).toBeTruthy();
+		expect( captured.value?.data ).toBeNull();
+
+		delete ( global as any ).fetch;
+	} );
+
+	it( 'ignores a slow load that has been superseded', async () => {
+		// Changing the file twice in quick succession leaves two parses in
+		// flight; the one the author is no longer waiting for must not win by
+		// finishing last.
+		let releaseFirst: ( value: any ) => void = () => {};
+		mockParseGLL
+			.mockReturnValueOnce(
+				new Promise( ( resolve ) => {
+					releaseFirst = resolve;
+				} )
+			)
+			.mockResolvedValueOnce( { GenSystem: { Label: 'Second' } } );
+
+		( global as any ).fetch = jest.fn().mockResolvedValue( {
+			ok: true,
+			arrayBuffer: async () => new Uint8Array( [ 9 ] ).buffer,
+		} );
+
+		const captured: {
+			value: ReturnType< typeof useGLLLoader > | null;
+		} = { value: null };
+		render( <ProbeLoader captured={ captured } /> );
+
+		let first: Promise< unknown >;
+		await act( async () => {
+			first = captured.value!.load( 'https://example.com/a.gll', true );
+			await captured.value!.load( 'https://example.com/b.gll', true );
+		} );
+
+		expect( captured.value?.parsedFrom?.url ).toBe(
+			'https://example.com/b.gll'
+		);
+
+		await act( async () => {
+			releaseFirst( { GenSystem: { Label: 'First' } } );
+			await first;
+		} );
+
+		expect( captured.value?.data ).toEqual( {
+			GenSystem: { Label: 'Second' },
+		} );
+		expect( captured.value?.parsedFrom?.url ).toBe(
+			'https://example.com/b.gll'
+		);
+
+		delete ( global as any ).fetch;
 	} );
 
 	it( 'sets error state when parsing fails', async () => {

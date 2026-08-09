@@ -1,7 +1,8 @@
 /**
  * Configuration Block - Frontend Script
  *
- * Fetches the GLL, parses it through WASM, and hands the result to
+ * Prefers the cached display subset served over REST and falls back to fetching
+ * the GLL and parsing it through WASM, handing either result to
  * config-render.ts. The split keeps the DOM building testable under jsdom,
  * which importing the WASM loader would otherwise prevent.
  *
@@ -15,6 +16,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
+import { fetchCachedSubset } from '../shared/gll-cache';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 import { renderConfig } from './config-render';
@@ -31,11 +33,54 @@ const STORAGE_KEY = 'gll-config-cards';
 
 /**
  * Initialize all configuration blocks on the page.
+ *
+ * The cache is tried for every block BEFORE the WASM runtime is touched, and the
+ * runtime is booted only if something missed. That ordering is the entire point
+ * of the cache: on a page where every block's file has been parsed already, the
+ * 4.2 MB `gll.wasm` is never requested at all. Booting it up front — as this
+ * used to — would have paid the download before discovering it was not needed.
+ *
+ * A cache miss is not an error. It is the normal state for a file nobody has
+ * opened in the editor on a host with no server-side parser, and it simply means
+ * this page parses the way every page did before.
  */
 document.addEventListener( 'DOMContentLoaded', async () => {
-	const blocks = document.querySelectorAll( '.gll-config-block' );
+	const blocks = Array.from(
+		document.querySelectorAll< HTMLElement >( '.gll-config-block' )
+	);
 
 	if ( blocks.length === 0 ) {
+		return;
+	}
+
+	const pending = [];
+
+	await Promise.all(
+		blocks.map( async ( block ) => {
+			// Before anything async, so the header paragraph is already a live
+			// region when setBlockHeaderLabel rewrites it from "Loading
+			// configuration…" to the system label. A region created and filled
+			// in the same tick is not reliably announced.
+			initBlockLiveRegions( block );
+
+			if ( ! block.dataset.fileUrl ) {
+				showError( block, __( 'No file URL specified', 'gll-info' ) );
+				return;
+			}
+
+			const options = readBlockOptions( block );
+			const cached = await fetchCachedSubset( block.dataset.fileId );
+
+			if ( cached ) {
+				renderBlock( block, cached, options );
+				return;
+			}
+
+			pending.push( { block, options } );
+		} )
+	);
+
+	if ( pending.length === 0 ) {
 		return;
 	}
 
@@ -43,7 +88,7 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 		await ensureWasmReady();
 	} catch ( error ) {
 		console.error( 'Failed to initialize WASM:', error );
-		blocks.forEach( ( block ) => {
+		pending.forEach( ( { block } ) => {
 			showError(
 				block,
 				__( 'Failed to initialize WASM parser', 'gll-info' )
@@ -52,28 +97,22 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 		return;
 	}
 
-	blocks.forEach( ( block ) => {
-		initializeBlock( block );
+	pending.forEach( ( { block, options } ) => {
+		parseAndRender( block, options );
 	} );
 } );
 
 /**
- * Initialize a single configuration block.
+ * Read a block's display options from its data attributes.
  *
  * @param {HTMLElement} block Block element.
+ * @return {Object} Display options.
  */
-async function initializeBlock( block ) {
-	// Before the fetch, so the header paragraph is already a live region when
-	// setBlockHeaderLabel rewrites it from "Loading configuration…" to the
-	// system label. A region created and filled in the same tick is not
-	// reliably announced.
-	initBlockLiveRegions( block );
-
-	const fileUrl = block.dataset.fileUrl;
-
-	// Booleans that default to true are read as "not explicitly false", so a
-	// block saved before an attribute existed keeps the documented default.
-	const options = {
+function readBlockOptions( block ) {
+	return {
+		// Booleans that default to true are read as "not explicitly false", so
+		// a block saved before an attribute existed keeps the documented
+		// default.
 		showBoxTypes: block.dataset.showBoxTypes !== 'false',
 		showFrames: block.dataset.showFrames !== 'false',
 		showFilterGroups: block.dataset.showFilterGroups !== 'false',
@@ -88,14 +127,43 @@ async function initializeBlock( block ) {
 		initiallyCollapsed: block.dataset.initiallyCollapsed === 'true',
 		hideWhenEmpty: block.dataset.hideWhenEmpty === 'true',
 	};
+}
 
-	if ( ! fileUrl ) {
-		showError( block, __( 'No file URL specified', 'gll-info' ) );
-		return;
+/**
+ * Render a block from data, whichever source it came from.
+ *
+ * The cached subset and a full parse are interchangeable here: the subset
+ * carries the config tables whole and reduces case geometries to counts, which
+ * `formatGeometrySummary()` reads through `geometryCounts()`.
+ *
+ * @param {HTMLElement} block   Block element.
+ * @param {Object}      data    Normalized data or a hydrated subset.
+ * @param {Object}      options Display options.
+ */
+function renderBlock( block, data, options ) {
+	setBlockHeaderLabel( block, data );
+
+	const loadingEl = block.querySelector( '.gll-config-loading' );
+	if ( loadingEl ) {
+		loadingEl.style.display = 'none';
 	}
 
+	renderConfig( block, data, options );
+
+	if ( options.rememberCollapsed ) {
+		restoreCardState( block );
+	}
+}
+
+/**
+ * Fetch and parse the file, then render.
+ *
+ * @param {HTMLElement} block   Block element.
+ * @param {Object}      options Display options.
+ */
+async function parseAndRender( block, options ) {
 	try {
-		const response = await fetch( fileUrl );
+		const response = await fetch( block.dataset.fileUrl );
 		if ( ! response.ok ) {
 			throw new Error(
 				sprintf(
@@ -107,19 +175,8 @@ async function initializeBlock( block ) {
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
-		const data = await parseGLL( arrayBuffer );
-		setBlockHeaderLabel( block, data );
 
-		const loadingEl = block.querySelector( '.gll-config-loading' );
-		if ( loadingEl ) {
-			loadingEl.style.display = 'none';
-		}
-
-		renderConfig( block, data, options );
-
-		if ( options.rememberCollapsed ) {
-			restoreCardState( block );
-		}
+		renderBlock( block, await parseGLL( arrayBuffer ), options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, error.message );

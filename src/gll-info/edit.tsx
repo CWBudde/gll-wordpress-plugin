@@ -28,6 +28,8 @@ import {
 } from '@wordpress/element';
 import {
 	useGLLLoader,
+	useCachePublisher,
+	CacheRebuildControl,
 	computeResponseAngles,
 	buildSourceResponseChartConfig,
 	ChartWrapper,
@@ -1123,6 +1125,7 @@ function GLLSources( {
 export default function Edit( { attributes, setAttributes } ) {
 	const {
 		fileUrl,
+		fileId,
 		fileName,
 		showOverview,
 		showSources,
@@ -1131,7 +1134,17 @@ export default function Edit( { attributes, setAttributes } ) {
 		showResponses,
 		appearance,
 	} = attributes;
-	const { data, isLoading, error, load, clear } = useGLLLoader();
+	const { data, parsedFrom, isLoading, error, load, clear } = useGLLLoader();
+
+	// This block is one of the two served from the cache on the frontend, so
+	// keeping it warm here is what stops visitors downloading the parser.
+	const rebuildCache = useCachePublisher( {
+		fileId,
+		fileUrl,
+		data,
+		parsedFrom,
+	} );
+
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
 	const blockProps = useBlockProps( {
@@ -1237,6 +1250,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					>
 						{ __( 'Remove', 'gll-info' ) }
 					</Button>
+					<CacheRebuildControl
+						rebuild={ rebuildCache }
+						enabled={ Boolean( data ) }
+					/>
 				</PanelBody>
 
 				<PanelBody title={ __( 'Display Options', 'gll-info' ) }>

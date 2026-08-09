@@ -31,6 +31,7 @@ import * as THREE from 'three';
 
 import {
 	useGLLLoader,
+	useCachePublisher,
 	ThreeWrapper,
 	isWebGLSupported,
 	AppearanceControl,
@@ -77,7 +78,12 @@ export default function Edit( { attributes, setAttributes } ) {
 	const blockProps = useBlockProps( {
 		className: appearanceClass( appearance ),
 	} );
-	const { data, isLoading, error, load, clear } = useGLLLoader();
+	const { data, parsedFrom, isLoading, error, load, clear } = useGLLLoader();
+
+	// This block renders from a full parse and never from the cache, but the
+	// file it just parsed is very likely the one a `gll-info` or `config` block
+	// elsewhere on the site uses — so warm it while the data is free.
+	useCachePublisher( { fileId, fileUrl, data, parsedFrom } );
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const threeRef = useRef< ThreeWrapperRef >( null );
 	const balloonMeshRef = useRef< THREE.Mesh | null >( null );

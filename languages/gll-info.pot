@@ -9,13 +9,16 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-09T16:02:16+00:00\n"
+"POT-Creation-Date: 2026-08-09T20:34:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gll-info\n"
 
 #. Plugin Name of the plugin
 #: gll-info.php
+#: includes/class-gll-settings.php:51
+#: includes/class-gll-settings.php:52
+#: includes/class-gll-settings.php:120
 msgid "GLL Info"
 msgstr ""
 
@@ -106,16 +109,16 @@ msgstr ""
 msgid "GLL files list"
 msgstr ""
 
-#: includes/class-gll-media.php:75
+#: includes/class-gll-media.php:103
 msgid "GLL Files"
 msgstr ""
 
-#: includes/class-gll-media.php:76
+#: includes/class-gll-media.php:104
 msgid "Manage GLL Files"
 msgstr ""
 
 #. translators: %s: number of GLL files
-#: includes/class-gll-media.php:78
+#: includes/class-gll-media.php:106
 #, php-format
 msgid "GLL File <span class=\"count\">(%s)</span>"
 msgid_plural "GLL Files <span class=\"count\">(%s)</span>"
@@ -267,6 +270,159 @@ msgstr ""
 
 #: includes/class-gll-patterns.php:234
 msgid "balloon"
+msgstr ""
+
+#: includes/class-gll-rest.php:91
+msgid "Attachment ID of the GLL file."
+msgstr ""
+
+#: includes/class-gll-rest.php:116
+msgid "You are not allowed to edit this file."
+msgstr ""
+
+#: includes/class-gll-rest.php:160
+msgid "The submitted GLL data could not be stored."
+msgstr ""
+
+#: includes/class-gll-rest.php:178
+msgid "The file changed while it was being read. Nothing was stored."
+msgstr ""
+
+#: includes/class-gll-rest.php:185
+msgid "The GLL data could not be saved."
+msgstr ""
+
+#: includes/class-gll-rest.php:227
+msgid "No cached data is available for this file."
+msgstr ""
+
+#: includes/class-gll-rest.php:240
+msgid "That attachment is not a GLL file."
+msgstr ""
+
+#: includes/class-gll-settings.php:89
+msgid "You are not allowed to do that."
+msgstr ""
+
+#: includes/class-gll-settings.php:124
+msgid "Parser detection has been run again."
+msgstr ""
+
+#: includes/class-gll-settings.php:128
+msgid "Server-side parsing"
+msgstr ""
+
+#: includes/class-gll-settings.php:132
+msgid "GLL files are normally parsed in the visitor’s browser, which means downloading a 4 MB parser and doing the work again on every page view. When this site can parse them on the server instead, each file is parsed once at upload time and pages load without the parser at all. Blocks that need the full measurement data — frequency response, polar plot, 3D balloon, geometry and resources — always parse in the browser."
+msgstr ""
+
+#: includes/class-gll-settings.php:143
+msgid "Parse on the server"
+msgstr ""
+
+#: includes/class-gll-settings.php:152
+msgid "Parse GLL files on the server when a parser is available"
+msgstr ""
+
+#: includes/class-gll-settings.php:156
+msgid "Turning this off does not break anything: files are then parsed in the block editor and in visitors’ browsers, as they were before."
+msgstr ""
+
+#: includes/class-gll-settings.php:165
+msgid "Detected parser"
+msgstr ""
+
+#: includes/class-gll-settings.php:177
+msgid "Check again"
+msgstr ""
+
+#: includes/class-gll-settings.php:206
+msgid "in use"
+msgstr ""
+
+#: includes/class-gll-settings.php:210
+msgid "available"
+msgstr ""
+
+#: includes/class-gll-settings.php:212
+msgid "not available on this host"
+msgstr ""
+
+#: includes/class-gll-settings.php:227
+msgid "No server-side parser is available, so files are parsed in the browser. This is a supported configuration and nothing is broken."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:136
+msgid "This site is not allowed to run external commands."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:152
+msgid "The parser could not be started."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:174
+msgid "The parser took too long and was stopped."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:234
+msgid "The parser produced no output."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:243
+msgid "The parser produced output that could not be read."
+msgstr ""
+
+#: includes/parser/class-gll-parser-backend.php:253
+msgid "The GLL file could not be parsed."
+msgstr ""
+
+#: includes/parser/class-gll-parser-cli.php:49
+msgid "gllinfo command-line tool"
+msgstr ""
+
+#: includes/parser/class-gll-parser-cli.php:81
+msgid "No GLL command-line parser is configured."
+msgstr ""
+
+#: includes/parser/class-gll-parser-cli.php:96
+#: includes/parser/class-gll-parser-node.php:112
+msgid "The parser exited with an error."
+msgstr ""
+
+#: includes/parser/class-gll-parser-node.php:52
+msgid "Node.js with the bundled WebAssembly parser"
+msgstr ""
+
+#: includes/parser/class-gll-parser-phpwasm.php:56
+msgid "In-process WebAssembly runtime"
+msgstr ""
+
+#: includes/parser/class-gll-parser-phpwasm.php:82
+msgid "No PHP WebAssembly runtime (Wasmer or Extism) is installed."
+msgstr ""
+
+#: includes/parser/class-gll-parser-phpwasm.php:88
+msgid "The bundled parser is a JavaScript-target WebAssembly build and cannot run outside a JavaScript engine. A WASI build would be required."
+msgstr ""
+
+#: includes/parser/class-gll-parser-phpwasm.php:127
+msgid "No in-process WebAssembly parser handled the file."
+msgstr ""
+
+#: includes/parser/class-gll-parser.php:232
+msgid "No server-side GLL parser is available."
+msgstr ""
+
+#: includes/parser/class-gll-parser.php:241
+msgid "The GLL file could not be read."
+msgstr ""
+
+#: includes/parser/class-gll-parser.php:262
+msgid "The GLL file is too large to parse on the server."
+msgstr ""
+
+#: includes/parser/class-gll-parser.php:277
+msgid "The parsed GLL data could not be reduced."
 msgstr ""
 
 #: build/balloon-3d/index.js:1
@@ -1054,7 +1210,7 @@ msgid "Failed to initialize WASM parser"
 msgstr ""
 
 #: build/balloon-3d/view.js:4
-#: build/config/view.js:49
+#: build/config/view.js:48
 #: build/frequency-response/view.js:4
 #: build/geometry/view.js:4
 #: build/polar-plot/view.js:4
@@ -1117,6 +1273,31 @@ msgstr ""
 
 #: build/balloon-3d/view.js:11
 msgid "Use the arrow keys to rotate and the plus and minus keys to zoom."
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "Visitors are served a small summary of this file instead of downloading and parsing it. It is stored when the file is uploaded or first placed in a block."
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "Refreshing…"
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "Refresh stored summary"
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "Stored summary refreshed."
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "The summary could not be stored. Visitors will parse the file in their browser instead, which still works."
 msgstr ""
 
 #. translators: %s: mass, already formatted to two decimals.

@@ -17,10 +17,22 @@ blocks. Upload the `.gll` file to the WordPress media library, pick it in a
 block, and the block reads the file directly in the browser and renders it — no
 export step, no conversion, and no copy of the data to keep in sync.
 
-Parsing happens client-side in WebAssembly. The plugin ships a Go-based GLL
-parser compiled to `gll.wasm`; the browser downloads the `.gll` file and the
-parser, and everything else — charts, meshes, tables — is built from the parsed
-result. Nothing about the file is processed on the server.
+Parsing happens in WebAssembly. The plugin ships a Go-based GLL parser compiled
+to `gll.wasm`; the browser downloads the `.gll` file and the parser, and
+everything else — charts, meshes, tables — is built from the parsed result.
+
+The file viewer and the configuration block do not make visitors do that work.
+When a `.gll` file is uploaded, or first placed in a block, a small summary of it
+is stored and served to visitors instead — a few kilobytes rather than a 4 MB
+parser and a file that can run to 15 MB. The five blocks that draw measurement
+data still parse in the browser, because that data is what they draw.
+
+If your server can run Node, the summary is prepared at upload time and nobody
+has to open the block editor for it. If it cannot, the block editor prepares it
+when an author picks the file. If neither happens, visitors' browsers parse the
+file as they always did. All three are supported; see Settings → GLL Info for
+which one is in use on your site. No Go toolchain is required on the server in
+any case.
 
 = Blocks =
 
@@ -61,11 +73,16 @@ and filter configuration, and an overview-only file viewer.
 
 = What this plugin does not do (yet) =
 
-* Parsed data is **not** cached in post meta. Every page view re-downloads the
-  `.gll` file and re-parses it in the visitor's browser. Large files therefore
-  cost the visitor bandwidth and CPU on every visit.
-* The 3D blocks require WebGL, and all blocks require a browser with
-  WebAssembly support. There is no non-WebAssembly fallback.
+* Only the file viewer and the configuration block are served from the stored
+  summary. The frequency response, polar plot, 3D balloon, geometry and
+  resources blocks re-download the `.gll` file and re-parse it in the visitor's
+  browser on every page view, because they render the measurement data the
+  summary leaves out. Large files therefore still cost those visitors bandwidth
+  and CPU, and very large files may fail on phones and tablets.
+* The 3D blocks require WebGL. Every block except the file viewer and the
+  configuration block requires a browser with WebAssembly support, and those two
+  require it whenever their stored summary is unavailable. There is no
+  non-WebAssembly fallback.
 * A `gll_file` custom post type is registered, but the blocks do not read from
   it — they take their file from the media library.
 
@@ -199,6 +216,25 @@ Yes. It is a media library attachment like any other, and the visitor's browser
 downloads it in full in order to render the block. Do not upload a GLL file you
 are not willing to distribute.
 
+= Settings > GLL Info says no server-side parser is available. Is that a problem? =
+
+No. It is a supported configuration and nothing is broken. Your site will
+prepare each file's summary in the block editor instead, when an author picks
+the file, and visitors' browsers will parse any file that has no summary yet.
+
+Server-side parsing needs PHP to be allowed to start a subprocess, which many
+shared hosts forbid, and it needs `node` on the server's PATH. If you have Node
+installed somewhere unusual, point the plugin at it with the
+`GLL_INFO_NODE_BIN` constant or the `gll_info_node_bin` filter, then press
+"Check again".
+
+= I replaced a GLL file with a new version. Do I have to clear anything? =
+
+No. The stored summary records a fingerprint of the file it was built from and
+is discarded automatically as soon as the file's contents differ. Deleting the
+attachment removes it too. If you want to force the work to happen again, use
+*Refresh stored summary* in the file viewer's or configuration block's sidebar.
+
 = Is there a custom post type for GLL files? =
 
 A `gll_file` post type is registered and appears in the admin menu, but no
@@ -217,6 +253,13 @@ before the plugin is submitted anywhere that displays them.
 * Seven blocks: GLL File Viewer, Frequency Response, Polar Plot, 3D Balloon,
   Geometry Viewer, Resources and Configuration.
 * Client-side GLL parsing via a Go parser compiled to WebAssembly.
+* A stored per-file summary, served over the REST API, so the file viewer and
+  configuration blocks render without downloading the parser. Prepared on upload
+  where the server can run it, in the block editor otherwise, and rebuilt on
+  demand from the block sidebar.
+* Optional server-side parsing with no Go toolchain required: the bundled
+  WebAssembly parser is run under Node. An external `gllinfo` binary can be
+  configured instead. Settings > GLL Info reports which is in use.
 * `.gll` upload support and a media library filter for GLL files.
 * Three block patterns and thirteen block variations.
 * Theme-aware styling with a per-block Appearance frame setting.

@@ -21,6 +21,7 @@
 import { __, _x, sprintf } from '@wordpress/i18n';
 
 import { formatFrequency } from '../shared/charting-utils';
+import { geometryCounts } from '../shared/gll-subset';
 
 export type ConfigSectionKey =
 	| 'box-types'
@@ -320,11 +321,13 @@ export function formatWarningValue( type: any, value: any ): string {
 /**
  * Summarize a case geometry in one line.
  *
- * The counts are read off the normalized `Vertices`/`Edges`/`Faces` arrays,
- * which have already had unrenderable entries filtered out, so this block and
- * the 3D geometry block can never disagree about the same mesh.
+ * The counts come from `geometryCounts()`, which measures the normalized
+ * `Vertices`/`Edges`/`Faces` arrays of a full parse and reads the pre-computed
+ * counts of a cached subset — this block renders from either. Unrenderable
+ * entries have already been filtered out in both cases, so this block and the 3D
+ * geometry block can never disagree about the same mesh.
  *
- * @param {Object} geometry Normalized case geometry.
+ * @param {Object} geometry Normalized or subset case geometry.
  * @return {string} Summary line, or an empty string when there is no geometry.
  */
 export function formatGeometrySummary( geometry: any ): string {
@@ -332,21 +335,23 @@ export function formatGeometrySummary( geometry: any ): string {
 		return '';
 	}
 
+	const counts = geometryCounts( geometry );
+
 	const parts = [
 		sprintf(
 			/* translators: %d: number of mesh vertices. */
 			__( '%d vertices', 'gll-info' ),
-			( geometry.Vertices || [] ).length
+			counts.Vertices
 		),
 		sprintf(
 			/* translators: %d: number of mesh edges. */
 			__( '%d edges', 'gll-info' ),
-			( geometry.Edges || [] ).length
+			counts.Edges
 		),
 		sprintf(
 			/* translators: %d: number of mesh faces. */
 			__( '%d faces', 'gll-info' ),
-			( geometry.Faces || [] ).length
+			counts.Faces
 		),
 	];
 

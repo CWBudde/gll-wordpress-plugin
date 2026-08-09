@@ -39,12 +39,26 @@ npm run plugin-zip
 The plugin uses a hybrid approach for GLL file parsing:
 
 - **Editor (Gutenberg):** WASM-based parsing in real-time for preview
-- **Frontend:** Cached parsed metadata stored in WordPress post meta (planned)
+- **Frontend, `gll-info` and `config`:** the cached display subset, fetched from
+  `gll-info/v1/cache/<id>`, falling back to WASM when the cache is cold
+- **Frontend, the other five blocks:** WASM, always. They render measurement
+  data — response spectra, meshes, embedded files — which the subset drops
+- **Server:** optional. Where the host allows a subprocess, `GLL_Parser` runs the
+  same `gll.wasm` under Node at upload time. Still no Go on the server
 - **WASM Assets:** Located in `assets/wasm/` directory
   - `gll.wasm` (~4MB) - Compiled Go parser
   - `wasm_exec.js` - Go WebAssembly runtime
+- **Server-side runner:** `assets/parser/gll-parse.mjs`, plain JavaScript with no
+  imports from `src/` — it emits raw parser output and `GLL_Subset::from_raw()`
+  reduces it, because the other two backends hand PHP raw output too
 
 The WASM parser is loaded on-demand and shared across all blocks through React Context.
+
+**The cache is a fast path, never a requirement.** Every consumer falls back to
+parsing, and a cold cache — an attachment nobody has opened in the editor on a
+host with no parser backend — is a supported state rather than a failure. When
+changing any of this, keep that property: it is what lets the plugin work
+unchanged on hosting that forbids `proc_open`.
 
 ### Plugin Structure
 
@@ -147,8 +161,10 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
   the `.pot` catalogue now ships — screen-reader testing is still outstanding)
 - 🔶 Phase 12: Testing and release (all suites in place and green; screen-reader
   testing remains open and no release has been tagged)
-- 🔶 Phase 13: Remaining work — the defect backlog is empty; screen-reader
-  testing and the release tag are what still block a release
+- ✅ Phase 13.4.1: Server-side parse cache (display subset in attachment meta,
+  `gll-info/v1/cache/<id>`, three parser backends, settings screen)
+- 🔶 Phase 13: Remaining work — screen-reader testing and the release tag still
+  block a release, and 13.4.7 records one defect found while building 13.4.1
 
 The main block (`gll-info/gll-info`) currently integrates overview and sources
 display with toggle controls in the InspectorControls panel. Two of those
@@ -160,12 +176,25 @@ is the block for that.
 
 ## Testing
 
-Four suites, all green. `npm test` runs the two Jest projects (660 tests): a
+Four suites, all green. `npm test` runs the two Jest projects (752 tests): a
 jsdom `unit` project and a node `integration` project that drives the real
-`gll.wasm`. `npm run test:php` runs 33 PHPUnit tests against real WordPress
-inside wp-env. `npm run test:e2e` runs 27 Playwright specs against a real
+`gll.wasm`. `npm run test:php` runs 99 PHPUnit tests against real WordPress
+inside wp-env. `npm run test:e2e` runs 33 Playwright specs against a real
 browser. `npm run typecheck` exists because `wp-scripts` compiles through babel,
 which strips types without checking them.
+
+The wp-env PHP container has no Node, which is representative of most shared
+hosting rather than an oversight. So the server-side parser is covered from both
+ends: PHPUnit drives `GLL_Parser` against a stub backend registered through
+`gll_info_parser_backends`, and `tests/parser-runner.integration.test.ts` drives
+the real `assets/parser/gll-parse.mjs` under Jest, where Node exists.
+
+The two subset implementations are pinned to committed goldens in
+`tests/fixtures/`. Regenerate them with
+`node --experimental-strip-types scripts/make-goldens.mjs` after any deliberate
+change to the subset shape, and commit the result — the Jest and PHPUnit suites
+both assert against those files, which is what keeps the JavaScript builder and
+the PHP reducer from drifting apart.
 
 wp-env is required for the PHP and E2E suites: `npm run env:start`. The plugin
 is mounted at the `gll-info` slug rather than the repository directory name,

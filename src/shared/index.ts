@@ -18,6 +18,24 @@ export {
 // Parser output normalization
 export { normalizeGllData } from './gll-normalize';
 
+// Cacheable display subset
+export {
+	SUBSET_VERSION,
+	buildDisplaySubset,
+	geometryCounts,
+	hydrateSubsetLabels,
+	sourceResponseCount,
+} from './gll-subset';
+
+// Cached-subset REST client, and the editor hook that keeps it warm
+export {
+	deleteCachedSubset,
+	fetchCachedSubset,
+	publishSubset,
+} from './gll-cache';
+export { useCachePublisher } from './use-cache-publisher';
+export { default as CacheRebuildControl } from './cache-rebuild-control';
+
 // GLL Context
 export { GLLContext, GLLProvider, useGLL, useGLLLoader } from './gll-context';
 

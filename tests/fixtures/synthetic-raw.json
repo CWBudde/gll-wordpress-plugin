@@ -1,0 +1,286 @@
+{
+	"header": {
+		"magic": "EGLL",
+		"format_id": "EASE_GLL",
+		"format_version": 4,
+		"sub_version": 1
+	},
+	"gen_system": {
+		"label": "Synthetic Rig",
+		"key": "sysSynthetic",
+		"version": 3,
+		"type": 0,
+		"company": "SynthCo",
+		"info_text": "info",
+		"copyright_text": "(c) SynthCo",
+		"website_text": "https://example.invalid",
+		"email_text": "nobody@example.invalid"
+	},
+	"metadata": {
+		"product_name": "Synthetic Rig",
+		"display_name": "Synth Rig",
+		"manufacturer": "SynthCo",
+		"description": "Covers the branches the 3 KB sample fixture does not reach.",
+		"copyright": "(c) SynthCo",
+		"website": "https://example.invalid",
+		"email": "nobody@example.invalid"
+	},
+	"database": {
+		"source_definitions": [
+			{
+				"key": "sdLF",
+				"definition": {
+					"label": "LF Driver",
+					"company_label": "SynthCo",
+					"data_type": 1,
+					"nominal_bandwidth_from": 40,
+					"nominal_bandwidth_to": 1200,
+					"on_axis_level": 96.5,
+					"rated_horizontal_angle": 90,
+					"rated_vertical_angle": 60,
+					"on_axis_spectrum": {
+						"definition": {
+							"bands_per_octave": 3,
+							"start_freq": 100,
+							"point_count": 3
+						},
+						"level": [ 90.0, 91.0, 92.0 ],
+						"phase": [ 0.0, 0.1, 0.2 ],
+						"delay": 0.5
+					},
+					"balloon_data": {
+						"response_count": 2,
+						"angular_resolution": {
+							"meridian_step": 10,
+							"parallel_step": 5,
+							"symmetry": 2,
+							"front_half_only": true
+						}
+					}
+				},
+				"responses": [
+					{ "level": [ 1.0, 2.0 ], "phase": [ 0.0, 0.0 ] },
+					{ "level": [ 3.0, 4.0 ], "phase": [ 0.0, 0.0 ] }
+				]
+			},
+			{
+				"key": "sdHF",
+				"definition": {
+					"label": "HF Driver",
+					"data_type": 1,
+					"nominal_bandwidth_from": 1200,
+					"nominal_bandwidth_to": 18000
+				}
+			}
+		],
+		"box_types": [
+			{
+				"label": "Box With Geometry",
+				"key": "bxGeo",
+				"weight": 24.75,
+				"sources": [ "srcLF", "srcHF" ],
+				"reference_point": { "x": 0.1, "y": 0.2, "z": 0.3 },
+				"center_of_mass": { "x": 0.0, "y": 0.0, "z": 0.15 },
+				"next_pivot": { "x": 0.0, "y": 0.4, "z": 0.0 },
+				"horizontal_opening_angle": 90,
+				"vertical_opening_angle": 15,
+				"source_placements": [
+					{
+						"label": "LF Placement",
+						"key": "srcLF",
+						"source_def_key": "sdLF",
+						"position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+						"angles": { "x": 0.0, "y": -5.0, "z": 0.0 }
+					},
+					{
+						"label": "HF Placement",
+						"key": "srcHF",
+						"source_def_key": "sdHF",
+						"position": { "x": 0.0, "y": 0.0, "z": 0.25 }
+					}
+				],
+				"case_geometry": {
+					"is_symmetric": true,
+					"symmetry_axis": 0.125,
+					"vertices": [
+						{ "x": 0.0, "y": 0.0, "z": 0.0 },
+						{ "x": 1.0, "y": 0.0, "z": 0.0 },
+						{ "x": 1.0, "y": 1.0, "z": 0.0 },
+						{ "x": 0.0, "y": 1.0, "z": 0.0 }
+					],
+					"edges": [
+						{
+							"v1": 1,
+							"v2": 2,
+							"color": 16711680,
+							"label": "front"
+						},
+						{ "v1": 2, "v2": -3 },
+						{ "v1": 0, "v2": 4 },
+						{ "v1": 4, "v2": 0 }
+					],
+					"faces": [
+						{
+							"vertices": [ 1, 2, 3 ],
+							"color": 255,
+							"label": "f1"
+						},
+						{ "vertices": [ 1, 2, 3, 4 ] },
+						{ "vertices": [ 1, 0, 2 ] }
+					]
+				}
+			},
+			{
+				"label": "Box Without Geometry",
+				"key": "bxPlain",
+				"weight": 3.5,
+				"sources": [],
+				"source_placements": []
+			}
+		],
+		"frames": [
+			{
+				"label": "Flown Frame",
+				"key": "frFlown",
+				"type_flown": 1,
+				"weight": 8.25,
+				"center_of_mass": { "x": 0.0, "y": 0.0, "z": 0.05 },
+				"next_pivot": { "x": 0.0, "y": 0.2, "z": 0.0 },
+				"pin_points": [
+					{
+						"label": "Front Pin",
+						"vector": { "x": 0.0, "y": 0.1, "z": 0.0 }
+					},
+					{
+						"label": "Rear Pin",
+						"vector": { "x": 0.0, "y": -0.1, "z": 0.0 }
+					}
+				],
+				"case_geometry": {
+					"is_symmetric": false,
+					"vertices": [
+						{ "x": 0.0, "y": 0.0, "z": 0.0 },
+						{ "x": 0.5, "y": 0.0, "z": 0.0 }
+					],
+					"edges": [ { "v1": 1, "v2": 2 } ],
+					"faces": []
+				}
+			},
+			{
+				"label": "Ground Frame",
+				"key": "frGround",
+				"type_flown": 0,
+				"weight": 2.0,
+				"pin_points": []
+			}
+		],
+		"limits": [
+			{ "frame": 0, "box_type": 0, "type": 2, "limit_value": 1000.0 },
+			{ "frame": 0, "box_type": 1, "type": 4, "limit_value": 12.5 },
+			{ "frame": 1, "box_type": 0, "type": 9, "limit_value": 1.0 }
+		],
+		"warnings": [
+			{
+				"frame": 0,
+				"type": 1,
+				"text": "Minimum count not reached",
+				"limit_value": 2.0
+			},
+			{
+				"frame": 1,
+				"type": 7,
+				"text": "Unknown warning kind",
+				"limit_value": 0.0
+			}
+		],
+		"filter_groups": [
+			{
+				"label": "Presets",
+				"key": "fgPresets",
+				"is_overridable": true,
+				"filters": [
+					{
+						"label": "Default",
+						"key": "fDefault",
+						"filter": {
+							"bypass": false,
+							"invert_polarity": true,
+							"mute_input": false,
+							"gain": -3.0,
+							"delay": 0.002,
+							"filters": [
+								{
+									"filter_type": 1,
+									"label": "High Pass",
+									"key": "flHp",
+									"bypass": false,
+									"invert_polarity": false,
+									"gain": 0.0,
+									"delay": 0.0,
+									"iir_params": {
+										"filter_type": 2,
+										"filter_shape": 1,
+										"order": 4,
+										"freq_crit_hz": 80.0,
+										"alignment": 2,
+										"q_factor": 0.707
+									}
+								},
+								{
+									"filter_type": 2,
+									"label": "FIR Correction",
+									"key": "flFir",
+									"fir_data": {
+										"is_time_response": true,
+										"is_complex": false,
+										"is_even": true,
+										"sample_rate": 48000,
+										"data_irm": [ 0.1, 0.2, 0.3, 0.4 ],
+										"data_dip": [ 0.5, 0.6 ]
+									}
+								},
+								{
+									"filter_type": 0,
+									"label": "Log Spectrum",
+									"key": "flLog",
+									"log_spectrum": {
+										"bands_per_octave": 6,
+										"lowest_frequency": 20.0,
+										"number_of_bands": 60,
+										"delay": 0.0,
+										"level": [ 1.0, 2.0 ],
+										"phase": null
+									}
+								},
+								{
+									"filter_type": 5,
+									"label": "Unknown Kind",
+									"key": "flUnknown"
+								}
+							]
+						}
+					}
+				]
+			}
+		],
+		"include_files": [
+			{
+				"label": "Datasheet",
+				"key": "incDs",
+				"filename": "docs\\\\datasheet.pdf",
+				"size": 2170000,
+				"data_uri": "data:application/pdf;base64,AAAA"
+			},
+			{ "label": "", "key": "", "filename": "", "size": 0 }
+		],
+		"data_files": [
+			{
+				"label": "Logo",
+				"key": "datLogo",
+				"filename": ".\\\\Drawings\\\\logo.PNG",
+				"size": 337,
+				"data_uri": "data:image/png;base64,BBBB"
+			}
+		]
+	}
+}
