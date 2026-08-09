@@ -959,10 +959,36 @@ it.
 - [ ] Test fallback for older browsers
 
 ### Task 12.4: Performance Testing
-- [ ] Test with large GLL files (100MB+)
-- [ ] Measure memory usage
-- [ ] Test Three.js scene performance with complex geometries
-- [ ] Optimize if needed
+- [x] ~~Test with large GLL files (100MB+)~~ Amended: parse the largest file
+  available (15.4 MB) and document the ceiling — see below
+- [x] Measure memory usage
+- [x] Test Three.js scene performance with complex geometries
+- [x] Optimize if needed — measured first, and the answer is "not here"
+
+`scripts/perf-corpus.mjs` (`npm run perf`) sweeps the 29-file reference corpus
+and writes `docs/performance.md`.
+
+**The 100 MB criterion could not be met and was amended rather than faked.** No
+such file exists; the largest GLL in the corpus is 15.4 MB and that appears to
+be near the format's real-world ceiling. Padding one to 100 MB would produce
+something the parser rejects, so the measurement would describe the error path.
+
+**What the measurement found is more useful than the original target.** The
+limit is memory, not speed. A 15.4 MB GLL expands to 228.7 MB of JSON and leaves
+the Go WASM instance holding 1.3 GB of linear memory, which Go never returns to
+the host. Files of 10 MB and up therefore need 800 MB–1.3 GB and 6–11 s to
+parse; they are unpleasant on desktop and likely to fail on mobile, where
+per-tab WASM memory is capped well below a gigabyte. Files up to ~2 MB — 21 of
+the 29 — parse in under a second and are comfortable everywhere.
+
+Everything downstream of the parser is free by comparison: normalization runs in
+single-digit milliseconds even for the largest file, balloon mesh construction
+under 15 ms, case geometry about 1 ms. Optimizing any of those would be
+optimizing noise, which is why "optimize if needed" is answered by not doing it.
+
+Not gated in CI, deliberately: the corpus is machine-local third-party data, and
+runner variance on CPU-bound WASM would swamp any threshold tight enough to
+catch a regression.
 
 ### Task 12.5: Release Preparation
 - [ ] Update readme.txt

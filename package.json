@@ -36,6 +36,7 @@
 		"env:stop": "wp-env stop",
 		"env:clean": "wp-env clean all",
 		"test:php": "./scripts/test-php.sh",
+		"perf": "node --experimental-strip-types --expose-gc --no-warnings scripts/perf-corpus.mjs",
 		"i18n:pot": "./scripts/make-pot.sh",
 		"i18n:json": "./scripts/make-json.sh",
 		"start": "wp-scripts start --blocks-manifest",
