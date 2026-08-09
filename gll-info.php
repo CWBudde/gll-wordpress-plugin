@@ -162,46 +162,68 @@ function gll_info_enqueue_editor_assets() {
 add_action( 'enqueue_block_editor_assets', 'gll_info_enqueue_editor_assets' );
 
 /**
- * Enqueue frontend assets for GLL blocks.
+ * Register the Go WebAssembly runtime.
+ *
+ * Registered, never enqueued here. Every block lists this handle in its
+ * `viewScript` array, so the block renderer enqueues it exactly when a GLL block
+ * is actually rendered — on a page with no GLL block nothing is queued at all.
+ *
+ * Priority 5 keeps it ahead of `gll_info_block_init()` at 10. Core resolves a
+ * non-`file:` entry in `viewScript` to a bare handle without checking that it
+ * exists (`register_block_script_handle()`), and an unregistered handle is a
+ * silent no-op at enqueue time, so registering late would fail invisibly.
+ *
+ * wasm-loader injects this script itself when `window.Go` is undefined, so the
+ * eager load is an optimization rather than a requirement: it saves a serial
+ * round trip before the 4.2 MB WASM fetch can start.
  */
-function gll_info_enqueue_frontend_assets() {
-	// Only enqueue if at least one GLL block is present.
-	$has_gll_block = false;
-	foreach ( gll_info_get_block_names() as $block_name ) {
-		if ( has_block( $block_name ) ) {
-			$has_gll_block = true;
-			break;
-		}
-	}
-
-	if ( ! $has_gll_block ) {
-		return;
-	}
-
-	// The view scripts are enqueued by the block renderer, not here, but their
-	// handles are already registered at this point — so this is the last hook
-	// that reliably runs before they are printed.
-	gll_info_set_block_script_translations( 'view-script' );
-
-	// Enqueue wasm_exec.js for frontend.
-	wp_enqueue_script(
+function gll_info_register_frontend_runtime() {
+	wp_register_script(
 		'gll-info-wasm-exec',
 		GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
 		array(),
 		GLL_INFO_VERSION,
 		true
 	);
+}
+add_action( 'init', 'gll_info_register_frontend_runtime', 5 );
 
-	// Pass WASM URL to frontend.
-	wp_localize_script(
-		'gll-info-wasm-exec',
-		'gllInfoSettings',
-		array(
-			'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
-			'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
-			'pluginUrl'   => GLL_INFO_PLUGIN_URL,
-		)
+/**
+ * Attach WASM configuration and translations to every block's view script.
+ *
+ * This deliberately does not ask whether the page contains a GLL block. It used
+ * to, via `has_block()`, which inspects only the main post content — so a block
+ * delivered through a template part, a widget, a reusable block or a
+ * full-site-editing template got neither the settings nor its translations. The
+ * settings had a hardcoded fallback in wasm-loader and so appeared to work on a
+ * stock install; the translations had none and were simply missing.
+ *
+ * Attaching unconditionally costs nothing. `wp_localize_script()` and
+ * `wp_set_script_translations()` write to the registered handle, and a
+ * registered handle that is never enqueued prints nothing at all. The block
+ * renderer remains the only thing that can put these scripts on a page, which is
+ * the property the old gate was there to provide.
+ *
+ * The handles come from `gll_info_get_block_names()` for the same reason the
+ * editor path does: derived from the registry, a block added later cannot be
+ * left out.
+ */
+function gll_info_enqueue_frontend_assets() {
+	$settings = array(
+		'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
+		'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
+		'pluginUrl'   => GLL_INFO_PLUGIN_URL,
 	);
+
+	foreach ( gll_info_get_block_names() as $block_name ) {
+		wp_localize_script(
+			str_replace( '/', '-', $block_name ) . '-view-script',
+			'gllInfoSettings',
+			$settings
+		);
+	}
+
+	gll_info_set_block_script_translations( 'view-script' );
 }
 add_action( 'wp_enqueue_scripts', 'gll_info_enqueue_frontend_assets' );
 

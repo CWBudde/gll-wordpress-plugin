@@ -6,8 +6,8 @@ file data, built on the `gll-tools` Go/WASM parser with the web demo at
 
 **Status: Phases 1–12 complete.** What is left is collected in
 [Phase 13 — Remaining work](#phase-13--remaining-work) at the end of this
-document: screen-reader testing, tagging the release, three tracked defects, and
-the features deliberately never built.
+document: screen-reader testing, tagging the release, two remaining tracked
+defects, and the features deliberately never built.
 
 ---
 
@@ -375,9 +375,10 @@ first time, surfaced 96 errors, three of them real defects: `scene-builder`'s
 Block registration is covered by a CI matrix over WordPress 6.7.2 and current
 core, because `function_exists` cannot be un-defined and the 6.7 fallback is
 otherwise unreachable — which also makes "Requires at least: 6.7" a tested claim.
-The `has_block()` defect below has a *passing* characterization test describing
-what actually happens; it will fail the day the gate is fixed, which is the
-wanted signal. A red test in a release branch only teaches people to ignore CI.
+The `has_block()` defect carried a *passing* characterization test describing
+what actually happened, on the reasoning that a red test in a release branch only
+teaches people to ignore CI. That test did its job and has been replaced: the
+gate is fixed in 13.3.1 and the tests now assert the intended behaviour.
 
 ### E2E found a shipped bug
 
@@ -556,49 +557,71 @@ Each defect below is characterized by a *passing* test describing today's
 behaviour, so the first step of every fix is to flip that test to assert the
 intended behaviour and watch it go red.
 
-#### 13.3.1 Fix `has_block()` frontend asset gating [0.2.0, do first]
+#### 13.3.1 Fix `has_block()` frontend asset gating [DONE]
 
-`gll_info_enqueue_frontend_assets()` (`gll-info.php:167`) gates on `has_block()`,
-which inspects only the main post content. A GLL block in a template part,
-widget, reusable block or full-site-editing template therefore receives neither
-`gllInfoSettings` nor its script translations. It works anyway on a stock install
-because `wasm-loader` falls back to a hardcoded `/wp-content/plugins/gll-info/…`
-path — so the breakage is invisible until someone renames the plugin directory,
-installs in a subdirectory, runs non-root multisite, or overrides
-`WP_PLUGIN_URL`. Translations are broken in *all* of those cases regardless of
-path, because there is no fallback for those.
+`gll_info_enqueue_frontend_assets()` gated on `has_block()`, which inspects only
+the main post content. A GLL block in a template part, widget, reusable block or
+full-site-editing template therefore received neither `gllInfoSettings` nor its
+script translations. It worked anyway on a stock install because `wasm-loader`
+falls back to a hardcoded `/wp-content/plugins/gll-info/…` path — so the
+breakage was invisible until someone renamed the plugin directory, installed in a
+subdirectory, ran non-root multisite, or overrode `WP_PLUGIN_URL`. Translations
+were broken in *all* of those cases regardless of path, having no fallback.
 
-The editor path (`gll_info_enqueue_editor_assets`, `:139`) already solves this
-correctly: it attaches settings to each block's own script handle so any single
-block can be the only one on screen. The frontend should follow the same shape
-instead of enqueueing a separate `gll-info-wasm-exec` handle behind a gate.
+- [x] Register `gll-info-wasm-exec` on `init` (priority 5) rather than enqueueing
+      it conditionally
+- [x] Add `"gll-info-wasm-exec"` alongside `"file:./view.js"` in all seven
+      `block.json` `viewScript` arrays — verified against core first
+- [x] Attach `gllInfoSettings` and `gll_info_set_block_script_translations()`
+      unconditionally
+- [x] Delete the `has_block()` loop
+- [x] Rebuild — `block.json` changes only take effect through `build/`
+- [x] Replace the characterization test (PHPUnit, 31 → 33)
+- [x] Add E2E specs for the reusable-block and template-part paths
+- [x] Assert the regression the gate was bought to prevent: no GLL block on the
+      page means nothing is enqueued
 
-- [ ] Register `gll-info-wasm-exec` on `init` with `wp_register_script()` rather
-      than enqueueing it conditionally on `wp_enqueue_scripts`
-- [ ] Attach `gllInfoSettings` to that handle once at registration —
-      `wp_localize_script()` on a registered-but-not-enqueued handle prints
-      nothing, so this is free when no block renders
-- [ ] Make every block depend on it: add `"gll-info-wasm-exec"` alongside
-      `"file:./view.js"` in each of the seven `block.json` `viewScript` arrays.
-      **Verify this first** — `viewScript` accepts an array and treats non-`file:`
-      entries as pre-registered handles, but confirm against the installed core
-      version before converting all seven
-- [ ] Move `gll_info_set_block_script_translations( 'view-script' )` out from
-      behind the gate — it must run whenever the handles are registered
-- [ ] Delete the `has_block()` loop and, if nothing else uses it,
-      `gll_info_get_block_names()`'s frontend caller
-- [ ] Rebuild (`npm run build`) — `block.json` changes only take effect through
-      `build/`, and `build/blocks-manifest.php` is what registration reads
-- [ ] Rewrite the characterization test to assert settings and translations are
-      present for a block in a template part and in a widget
-- [ ] Add an E2E spec that renders a GLL block from a template part and asserts
-      `window.gllInfoSettings` exists
-- [ ] **Regression risk to test explicitly:** assets must *not* load on pages
-      with no GLL block. That is what the gate bought and it must survive.
+**The settings attach to the seven view-script handles, not to
+`gll-info-wasm-exec`.** This is a deliberate departure from what this plan
+originally specified. Attaching to the shared runtime handle would print one blob
+instead of seven, but it would make correctness depend on all seven `block.json`
+files carrying the handle — and a block added later, or one file missed in a
+rename, would lose its settings silently. Deriving the handles from
+`gll_info_get_block_names()` is what makes that impossible, and it is exactly
+what the editor path already does. The runtime handle is now only an eager
+preload: `wasm-loader` injects `wasm_exec.js` itself when `window.Go` is
+undefined, so nothing depends on it arriving.
 
-Note for whoever does this: wp-env deliberately mounts the plugin at the
-`gll-info` slug so the fallback path stays exercised as it would be in a real
-install. To test the failure this fixes, mount it under a different slug.
+Registration sits at `init` priority 5, ahead of block registration at 10.
+`register_block_script_handle()` resolves a non-`file:` entry to a bare handle
+*without checking that it exists*, and enqueueing an unregistered handle is a
+silent no-op, so registering late would fail invisibly.
+
+Three things surfaced that are worth keeping:
+
+**Core already sets the script text domain, but not the path.**
+`register_block_script_handle()` calls `wp_set_script_translations( $handle,
+$metadata['textdomain'] )` from `block.json` with no path, so it resolves against
+`WP_LANG_DIR/plugins/` — the language-pack location, empty on an install that has
+never fetched one. Pointing at the plugin's bundled `/languages` is the entire
+contribution of `gll_info_set_block_script_translations()`. The first version of
+the new test asserted the *domain* and passed before the fix was written: it was
+testing core. It asserts the path now.
+
+**Since WordPress 6.9, a block that renders empty has its enqueues undone.**
+`WP_Block::render()` snapshots the asset queues, and if the rendered content is
+blank it dequeues whatever the block just added. Every block's `save()` returns
+null without a `fileUrl`, so the obvious test markup —
+`<!-- wp:gll-info/gll-info /-->`, which is what the old tests and the patterns
+use — loads no assets at all. That is correct behaviour, and it means any test
+about asset loading has to use markup carrying a file and its saved `<div>`. Two
+of the new tests initially failed against this and not against the production
+code.
+
+**The plugin is mounted at the `gll-info` slug in wp-env deliberately**, so the
+hardcoded fallback keeps being exercised as it would be on a real install. The
+failure this fixes is therefore not reproducible there by path; the tests assert
+the presence of `gllInfoSettings` instead, which is the thing that was missing.
 
 #### 13.3.2 Resolve `showResponses`
 
