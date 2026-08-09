@@ -35,6 +35,7 @@
 		"env:start": "wp-env start",
 		"env:stop": "wp-env stop",
 		"env:clean": "wp-env clean all",
+		"test:php": "./scripts/test-php.sh",
 		"i18n:pot": "./scripts/make-pot.sh",
 		"i18n:json": "./scripts/make-json.sh",
 		"start": "wp-scripts start --blocks-manifest",

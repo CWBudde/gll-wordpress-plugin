@@ -34,3 +34,11 @@ node_modules/
 
 # Trunk
 .trunk/
+# Composer dependencies, installed inside the wp-env container.
+vendor/
+
+# wp-env local overrides.
+.wp-env.override.json
+
+# PHPUnit result cache.
+.phpunit.result.cache

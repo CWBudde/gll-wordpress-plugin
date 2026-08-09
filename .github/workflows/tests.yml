@@ -30,6 +30,9 @@ jobs:
     integration:
         uses: ./.github/workflows/test-integration.yml
 
+    php:
+        uses: ./.github/workflows/test-php.yml
+
     build:
         uses: ./.github/workflows/test-can-build.yml
 
