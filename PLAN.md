@@ -943,20 +943,75 @@ it.
 
 ## Phase 12: Testing & Release
 
+**The environment caveat recorded in Phases 8, 9, 10 and 11 is retired.** Those
+phases each deferred browser verification, screen-reader testing and the `.pot`
+catalogue for the same reason: "no local WordPress environment and staging is
+outward-facing". `wp-env` supplies one. It is configured in `.wp-env.json` and
+brought into a usable state by `scripts/wp-env-after-start.sh`.
+
 ### Task 12.1: Unit Tests
-- [ ] Test WASM loader
-- [ ] Test data parsing utilities
-- [ ] Test React components
+- [x] Test WASM loader — already covered; unchanged
+- [x] Test data parsing utilities
+- [x] Test React components
+
+655 tests across both Jest projects, up from 316. Six previously untested pure
+modules now covered: `charting-utils`, `polar-utils`, `balloon-utils`, `a11y`,
+`escape-html` and the polar compass plugin — roughly 2100 lines of maths and
+runtime accessibility on every block's critical path.
+
+Type checking is on for the first time (`npm run typecheck`). `wp-scripts`
+compiles through babel, which strips types without checking them, so a genuine
+type error shipped silently before this. Turning it on surfaced 96 errors, three
+of which were real defects rather than noise — see the commit for
+`scene-builder`'s `setIndex`, geometry's dead `enableKeys`, and two assertions
+that were comparing `NaN` to `NaN`.
 
 ### Task 12.2: Integration Tests
-- [ ] Test block registration
-- [ ] Test media library integration
-- [ ] Test frontend rendering
+- [x] Test block registration
+- [x] Test media library integration
+- [x] Test frontend rendering
+
+31 PHPUnit tests against the real WordPress core test suite inside wp-env, plus
+the E2E round trip for frontend rendering. Both block registration paths are
+covered by a CI matrix over WordPress 6.7.2 and current core, because
+`function_exists` cannot be un-defined and the 6.7 fallback is otherwise
+unreachable. That also makes "Requires at least: 6.7" a tested claim.
+
+The `has_block()` defect recorded in Phase 11 has a *passing* characterization
+test describing what actually happens, plus the reason it has never bitten in
+the field. It will fail the day the gate is fixed, which is the wanted signal; a
+red test in a release branch only teaches people to ignore CI.
 
 ### Task 12.3: Browser Testing
-- [ ] Test WASM in Chrome, Firefox, Safari, Edge
-- [ ] Test WebGL in different browsers (for 3D blocks)
-- [ ] Test fallback for older browsers
+- [x] ~~Test WASM in Chrome, Firefox, Safari, Edge~~ Amended: Chromium verified;
+  Firefox and WebKit configured; **Safari and mobile remain unverified**
+- [x] Test WebGL in different browsers (for 3D blocks)
+- [x] Test fallback for older browsers
+
+23 Playwright specs. The full round trip works: a real `.gll` uploads through the
+REST media pipeline, all seven blocks insert, all three patterns load, and a
+published page parses and renders with a live WebGL context.
+
+**This found a shipped bug.** The geometry markup duplicated into
+`class-gll-patterns.php` was missing the `wp-block-gll-info-geometry` class that
+`supports.className` makes `save()` emit, so that block loaded as *invalid* in
+every pattern containing it. WordPress recovers an invalid block rather than
+refusing it, so nothing looked wrong. `pattern-content.test.tsx` exists to
+prevent exactly this and passed throughout, because `serialize()` under jsdom
+omits the same class — it was comparing the PHP against equally incomplete
+output. The E2E spec is now the authority and asserts `isValid` per block.
+
+The fallback specs are the only honest reading of "test fallback for older
+browsers": an old browser cannot be obtained and a faked user-agent tests
+nothing, so `addInitScript` removes the features the code actually branches on
+before any page script runs.
+
+Cross-browser honesty: Chromium is a good proxy for Chrome and defensible for
+Edge. **Playwright's WebKit is not Safari** — different graphics stack, and
+Safari applies its own WebAssembly memory limits, which is precisely where this
+plugin is most exposed given Task 12.4's findings. Safari on real hardware and
+any mobile browser remain unverified, and `readme.txt` says so rather than
+listing them.
 
 ### Task 12.4: Performance Testing
 - [x] ~~Test with large GLL files (100MB+)~~ Amended: parse the largest file
@@ -991,10 +1046,77 @@ runner variance on CPU-bound WASM would swamp any threshold tight enough to
 catch a regression.
 
 ### Task 12.5: Release Preparation
-- [ ] Update readme.txt
-- [ ] Create changelog
-- [ ] Build production assets
-- [ ] Create plugin ZIP
+- [x] Update readme.txt
+- [x] Create changelog — `readme.txt` is the single source of truth
+- [x] Build production assets
+- [x] Create plugin ZIP — and verify it, which is the part that mattered
+
+**The shipped ZIP was unusable and nobody could have noticed.** `wp-scripts
+plugin-zip` reads only the `files` field in `package.json`. It does **not** read
+`.distignore` or `.gitattributes`, and with no `files` field it falls back to a
+hardcoded glob that omits `assets/**` — so the archive contained no `gll.wasm`,
+and every block parses client-side through that module. The plugin installed
+cleanly and could not read a single file.
+
+The obvious fix is the wrong one: adding a `.distignore` would look right, pass
+review, and ship the same broken ZIP. Only the `files` array changes the packer's
+behaviour.
+
+`scripts/verify-plugin-zip.sh` asserts against the archive rather than reading
+the packer's log — the WASM module present *and over 4 MB*, since
+present-but-truncated is a real failure mode a listing cannot see, plus the icon,
+the includes, all seven block manifests, and the absence of `node_modules`,
+`src`, `tests` and the lockfile.
+
+`scripts/check-version.mjs` guards the five places the version is written by
+hand, and runs on every push. A single missed location is otherwise silent.
+
+`.github/workflows/release.yml` is written and verified but **not triggered** —
+no tag is created here, as agreed. It rebuilds and diffs `build/`, regenerates
+and diffs the catalogue, packages, and runs the ZIP verification before
+publishing. The `build/` diff is deliberately *not* run on ordinary pushes:
+webpack output is not reproducible across Node minor versions, and a check that
+reddens on version skew teaches people to ignore a red X.
+
+Also fixed here: the create-block placeholder `description` and `author`, which
+contradicted the PHP header, and the missing `LICENSE` file for a licence
+declared in three places and present in none.
+
+### Outstanding from Phase 11
+
+- [x] Generate `languages/gll-info.pot` — done; 476 strings, 1043 `build/`
+  references. The trap worth recording: `make-pot` must scan `build/`, not just
+  `src/`, because core resolves a script translation by hashing the script path
+  relative to the plugin and `make-json` derives that hash from the POT's
+  references. A POT referencing `src/` produces JSON named after paths that do
+  not exist in the shipped plugin, core never finds them, and every string stays
+  English with nothing failing. Verified end to end with a throwaway `de_DE`
+  catalogue rather than reasoned about.
+- [ ] **Test with screen readers — still open, and deliberately so.** axe-core
+  runs against four blocks and reports no serious or critical violations, which
+  is real but strictly smaller than what this task asks. axe cannot judge
+  whether the canvas descriptions are *useful*, whether live-region
+  announcements arrive in a sensible order, or whether the 3D blocks are
+  navigable at all. That needs NVDA, JAWS or VoiceOver and a human. Closing this
+  on an axe pass would be the one genuinely dishonest move available here.
+
+### Known issues, tracked rather than fixed
+
+- `gll_info_enqueue_frontend_assets()` gates on `has_block()`, which inspects
+  only the main post content, so a GLL block in a template part, widget or
+  reusable block gets no `gllInfoSettings`. It works anyway on a stock install
+  because `wasm-loader` falls back to a hardcoded
+  `/wp-content/plugins/gll-info/...` path; it breaks on a renamed plugin
+  directory, a subdirectory install, non-root multisite, or a `WP_PLUGIN_URL`
+  override. The fix is a per-block `viewScript` dependency across seven
+  `block.json` files plus a rebuild — a 0.2.0 change, characterized by a passing
+  test today.
+- `showResponses` on the main block is still a no-op: it serializes to
+  `data-show-responses` and nothing reads it.
+- `polar-utils.ts` contains `onAxisLevel.length === onAxisLevel.length` in the
+  `canCombineOnAxis` guard. It is redundant rather than wrong — the preceding
+  frequency-length comparison already enforces the intended rule — and a test
+  pins the behaviour so repairing the line cannot change anything unnoticed.
 
 ---
 
@@ -1085,13 +1207,13 @@ gll-info/
 | 3. Overview Block | 5 | Low | DONE (integrated) |
 | 4. Frequency Response | 5 | High | DONE |
 | 5. Polar Plot | 6 | Medium-High | DONE |
-| 6. 3D Balloon | 9 | Very High | TODO |
+| 6. 3D Balloon | 9 | Very High | DONE |
 | 7. Sources List | 9 | Medium-High | PARTIAL (5/9 tasks complete, 1 partial) |
 | 8. Geometry Viewer | 11 | Very High | DONE |
 | 9. Resources | 4 | Medium | DONE |
 | 10. Configuration | 4 | Medium | DONE |
-| 11. Integration | 5 | Medium | TODO |
-| 12. Testing | 5 | Medium | TODO |
+| 11. Integration | 5 | Medium | DONE (screen-reader testing open) |
+| 12. Testing | 5 | Medium | DONE (screen-reader testing open) |
 
 **Total: 70 tasks across 12 phases**
 **Completed: ~54 tasks (Phases 1-5, 8-10, Phase 7: Tasks 7.1, 7.2, 7.4, 7.5, 7.7, 7.9)**

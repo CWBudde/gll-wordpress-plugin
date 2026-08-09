@@ -2,7 +2,7 @@
 Contributors:
 Tags:              loudspeaker, acoustics, gll, audio, blocks
 Requires at least: 6.7
-Tested up to:      6.7
+Tested up to:      7.0
 Requires PHP:      7.4
 Stable tag:        0.1.0
 License:           GPL-2.0-or-later
@@ -129,6 +129,37 @@ For example, to force a dark panel regardless of the theme:
 
 Data colors are deliberately **not** themed: chart series colors and the dB
 colormap on the 3D balloon encode meaning, so they stay stable across themes.
+
+== Tested Environments ==
+
+Stated as what was actually run, rather than as a list of everything the plugin
+is hoped to work on.
+
+**WordPress:** the integration suite runs against WordPress 6.7.2, which is the
+declared minimum, and against current WordPress. Both block registration paths
+are exercised: 6.7 takes the per-block fallback and 6.8+ takes the metadata
+collection.
+
+**Browsers:** the end-to-end suite runs on Chromium, which is a good proxy for
+Chrome and a defensible one for Edge, since they share an engine. It is also
+configured for Firefox and WebKit locally.
+
+Safari has **not** been verified on real hardware. Playwright's WebKit is not
+Safari — it uses a different graphics stack, and Safari has historically applied
+its own limits to WebAssembly memory, which is exactly where this plugin is most
+exposed. Mobile browsers have not been verified at all.
+
+**Large files are a real limit, not a theoretical one.** Parsing happens in the
+browser, and a large GLL needs a great deal of memory: a 15 MB file expands to
+over 200 MB of intermediate data and leaves the parser holding more than a
+gigabyte. Files up to roughly 2 MB are comfortable everywhere. Files of 10 MB
+and up take several seconds even on a current laptop and may fail outright on
+phones and tablets. See `docs/performance.md` for measurements.
+
+**Screen readers** have not been tested. Automated accessibility checks
+(axe-core) run against the rendered blocks and report no serious or critical
+violations, but that is a strictly smaller claim: it cannot tell whether the
+chart descriptions are actually useful to someone listening to them.
 
 == Frequently Asked Questions ==
 

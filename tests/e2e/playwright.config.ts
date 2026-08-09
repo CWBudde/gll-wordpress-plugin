@@ -13,6 +13,10 @@ const baseURL = process.env.WP_BASE_URL || 'http://localhost:8889';
 
 export default defineConfig( {
 	testDir: './specs',
+	// Re-activates the plugin and a theme. The PHP suite reinstalls the tests
+	// site and undoes both, so without this `npm run test:php` silently breaks
+	// every subsequent E2E run — see the file for why the theme matters.
+	globalSetup: require.resolve( './global-setup.ts' ),
 	// The blocks fetch a multi-megabyte WASM module and then parse a binary, so
 	// the default 30 s is not generous for the round-trip specs.
 	timeout: 120_000,
