@@ -147,15 +147,23 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
   the `.pot` catalogue now ships — screen-reader testing is still outstanding)
 - 🔶 Phase 12: Testing and release (all suites in place and green; screen-reader
   testing remains open and no release has been tagged)
+- 🔶 Phase 13: Remaining work — the defect backlog is empty; screen-reader
+  testing and the release tag are what still block a release
 
-The main block (`gll-info/gll-info`) currently integrates overview and sources display with toggle controls in the InspectorControls panel.
+The main block (`gll-info/gll-info`) currently integrates overview and sources
+display with toggle controls in the InspectorControls panel. Two of those
+toggles look interchangeable and are not: `showResponses` gates a text summary
+(response count and angular resolution) in the editor *and* on the frontend,
+while `showSourceResponseCharts` gates the Chart.js preview in the editor only.
+The frontend deliberately renders no charts here — `gll-info/frequency-response`
+is the block for that.
 
 ## Testing
 
-Four suites, all green. `npm test` runs the two Jest projects (655 tests): a
+Four suites, all green. `npm test` runs the two Jest projects (660 tests): a
 jsdom `unit` project and a node `integration` project that drives the real
-`gll.wasm`. `npm run test:php` runs 31 PHPUnit tests against real WordPress
-inside wp-env. `npm run test:e2e` runs 23 Playwright specs against a real
+`gll.wasm`. `npm run test:php` runs 33 PHPUnit tests against real WordPress
+inside wp-env. `npm run test:e2e` runs 27 Playwright specs against a real
 browser. `npm run typecheck` exists because `wp-scripts` compiles through babel,
 which strips types without checking them.
 
