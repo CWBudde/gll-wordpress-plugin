@@ -112,6 +112,20 @@
  * colour and turns dotted: the same shape in the same place, but unmistakably
  * drawn on purpose.
  *
+ * `!important` is load-bearing here, not defensive. Sass emits a mixin where it
+ * is included, and every block includes this near the top of its stylesheet and
+ * then defines its spinner further down under a deeper selector — for example
+ * `.gll-polar-plot-block .gll-polar-plot-loading .gll-spinner`, three classes
+ * against this rule's two. A media query adds no specificity, so the later rule
+ * won outright and the override was inert in five of the seven blocks: the
+ * spinner kept turning, and the `border` shorthand in that rule also undid both
+ * the dotted style and the accent colour.
+ *
+ * Raising specificity here instead would mean guessing how deeply each block
+ * nests its spinner, which is exactly the kind of coupling that breaks the next
+ * time a block reorganizes its markup. An accessibility override that must win
+ * regardless of include order and nesting depth is what `!important` is for.
+ *
  * @param {String} $selector Spinner element selector.
  * @param {Color}  $color    Colour for the resting ring.
  */
@@ -120,9 +134,9 @@
 	@media (prefers-reduced-motion: reduce) {
 
 		#{$selector} {
-			animation: none;
-			border-style: dotted;
-			border-color: $color;
+			animation: none !important;
+			border-style: dotted !important;
+			border-color: $color !important;
 		}
 	}
 }

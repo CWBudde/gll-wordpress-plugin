@@ -143,69 +143,60 @@ export function buildMetadataHtml( {
 } ): string {
 	const badges = [];
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Frequency:',
-			'gll-info'
-		) }</strong> ${ freqLabel }</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Frequency:', 'gll-info' )
+		) }</strong> ${ escapeHtml( freqLabel ) }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Display Range:',
-			'gll-info'
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Display Range:', 'gll-info' )
 		) }</strong> ${ displayMin.toFixed( 1 ) } &ndash; ${ displayMax.toFixed(
 			1
 		) } dB</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Grid:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.fullMeridianCount } &times; ${
-			balloonGrid.fullParallelCount
-		}</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Grid:', 'gll-info' )
+		) }</strong> ${ Number(
+			balloonGrid.fullMeridianCount
+		) } &times; ${ Number( balloonGrid.fullParallelCount ) }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Resolution:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.meridianStep }° × ${
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Resolution:', 'gll-info' )
+		) }</strong> ${ Number( balloonGrid.meridianStep ) }° × ${ Number(
 			balloonGrid.parallelStep
-		}°</span>`
+		) }°</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Symmetry:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.symmetryName }</span>`
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Symmetry:', 'gll-info' )
+		) }</strong> ${ escapeHtml( balloonGrid.symmetryName ) }</span>`
 	);
 	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Quality:',
-			'gll-info'
+		`<span class="gll-meta-badge"><strong>${ escapeHtml(
+			__( 'Quality:', 'gll-info' )
 		) }</strong> ${ escapeHtml( options.qualityPreset ) }</span>`
 	);
 	if ( options.wireframe ) {
 		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
-				'Wireframe',
-				'gll-info'
+			`<span class="gll-meta-badge gll-meta-badge-highlight">${ escapeHtml(
+				__( 'Wireframe', 'gll-info' )
 			) }</span>`
 		);
 	}
 	if ( options.autoRotate ) {
 		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
-				'Auto-Rotate',
-				'gll-info'
+			`<span class="gll-meta-badge gll-meta-badge-highlight">${ escapeHtml(
+				__( 'Auto-Rotate', 'gll-info' )
 			) }</span>`
 		);
 	}
 	const sourceLabel = source.Definition?.Label || source.Label || '';
 	if ( sourceLabel ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>${ __(
-				'Source:',
-				'gll-info'
+			`<span class="gll-meta-badge"><strong>${ escapeHtml(
+				__( 'Source:', 'gll-info' )
 			) }</strong> ${ escapeHtml( sourceLabel ) }</span>`
 		);
 	}
@@ -233,10 +224,12 @@ export function buildColorbarHtml(
 	 * @return {string} Localized "NN dB".
 	 */
 	const decibelTick = ( level: number ) =>
-		sprintf(
-			// translators: %s: sound pressure level, already rounded.
-			__( '%s dB', 'gll-info' ),
-			level.toFixed( 0 )
+		escapeHtml(
+			sprintf(
+				// translators: %s: sound pressure level, already rounded.
+				__( '%s dB', 'gll-info' ),
+				level.toFixed( 0 )
+			)
 		);
 
 	return `
@@ -258,6 +251,11 @@ export function buildColorbarHtml(
  * — the frequency, the level range and the grid — rather than the word "chart".
  * The second sentence is the only place the keyboard bindings are stated; they
  * are invisible chrome otherwise.
+ *
+ * Deliberately NOT escaped, unlike the two builders above. This is handed to
+ * `describeCanvas`, which sets it with `setAttribute`, where markup is inert
+ * text. Escaping it would put literal `&amp;` into what a screen reader reads
+ * aloud.
  *
  * @param {Object} params             Parameters object.
  * @param {string} params.freqLabel   Formatted frequency.

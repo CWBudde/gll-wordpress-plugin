@@ -170,12 +170,24 @@ test.describe( 'accessibility', () => {
 			const postId = await publish( { admin, editor }, blockName );
 			await page.goto( `/?p=${ postId }` );
 
-			// Wait for hydration; scanning the loading state would test the
-			// spinner rather than the content.
-			await expect(
-				page.locator( '[class*="gll-"][class*="-block"]' ).first()
-			).toBeVisible();
-			await page.waitForTimeout( 1500 );
+			// Wait for hydration to actually finish. The block root ships in
+			// save() output, so it is visible before any parsing starts —
+			// asserting on it and then sleeping would let a slower runner scan
+			// the loading state and report a clean bill of health for a
+			// spinner. The spinner disappearing is the real signal.
+			const block = page
+				.locator( '[class*="gll-"][class*="-block"]' )
+				.first();
+			await expect( block ).toBeVisible();
+			// Hidden rather than absent: the views set `display: none` on the
+			// loading container instead of removing it, so the spinner stays in
+			// the DOM. `toBeHidden` is true for either, so this keeps working
+			// if that ever changes.
+			await expect( block.locator( '.gll-spinner' ) ).toBeHidden();
+
+			// And hydration must have succeeded: an error panel would other-
+			// wise be scanned instead of the content, and pass easily.
+			await expect( block.getByRole( 'alert' ) ).toHaveCount( 0 );
 
 			const results = await new AxeBuilder( { page } )
 				// Scoped to the block. Gutenberg's own theme markup has its own

@@ -1,13 +1,20 @@
 name: Release
 
-# Tag-triggered only. Nothing here runs on a push to a branch, and no tag is
-# created by this repository's automation — cutting a release stays a deliberate
-# human act.
+# Tag-triggered only, and literally so. Nothing here runs on a push to a branch,
+# and no tag is created by this repository's automation — cutting a release
+# stays a deliberate human act.
+#
+# There is deliberately no `workflow_dispatch`. Every step downstream derives the
+# release from `GITHUB_REF_NAME`, which on a manual run is the selected *branch*
+# — so a dispatch from `main` would call the version check with `--expect main`
+# and fail before packaging. Offering a manual trigger that cannot succeed is
+# worse than offering none. Re-running a release means re-pushing the tag, or
+# adding an explicit tag input here and checking that tag out, which is new
+# logic this workflow has never exercised.
 on:
     push:
         tags:
             - 'v*'
-    workflow_dispatch:
 
 permissions:
     contents: write

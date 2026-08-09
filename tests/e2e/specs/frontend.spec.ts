@@ -177,31 +177,42 @@ test.describe( 'published page', () => {
 		const canvas = page.locator( '.gll-balloon-3d-block canvas' );
 		await expect( canvas ).toBeVisible();
 
-		// A real context, not a fallback message. Asserted rather than
-		// screenshotted: GPU output is not deterministic enough to diff, but
-		// "is there a context and did anything get drawn" is.
-		const drawn = await canvas.evaluate( ( element: HTMLCanvasElement ) => {
-			const gl =
-				element.getContext( 'webgl2' ) || element.getContext( 'webgl' );
-			if ( ! gl ) {
-				return null;
+		// A real context with a real drawing buffer, not a fallback message.
+		//
+		// This deliberately does NOT read pixels back. The renderer is created
+		// without `preserveDrawingBuffer`, so once a frame has been composited
+		// the buffer contents are undefined by specification and `readPixels`
+		// returns zeros for a perfectly good render — measured here, not assumed.
+		// A pixel probe would therefore have to be asserted loosely enough to
+		// pass on a blank canvas, which is worse than not probing at all.
+		//
+		// Screenshot diffing is out for the same class of reason: GPU output is
+		// not deterministic enough to compare.
+		const context = await canvas.evaluate(
+			( element: HTMLCanvasElement ) => {
+				const gl = ( element.getContext( 'webgl2' ) ||
+					element.getContext(
+						'webgl'
+					) ) as WebGLRenderingContext | null;
+				if ( ! gl ) {
+					return null;
+				}
+				return {
+					bufferWidth: gl.drawingBufferWidth,
+					bufferHeight: gl.drawingBufferHeight,
+					lost: gl.isContextLost(),
+				};
 			}
-			const pixels = new Uint8Array( element.width * element.height * 4 );
-			( gl as WebGLRenderingContext ).readPixels(
-				0,
-				0,
-				element.width,
-				element.height,
-				( gl as WebGLRenderingContext ).RGBA,
-				( gl as WebGLRenderingContext ).UNSIGNED_BYTE,
-				pixels
-			);
-			return pixels.some( ( value ) => value !== 0 );
-		} );
+		);
 
 		expect(
-			drawn,
+			context,
 			'no WebGL context on the balloon canvas'
 		).not.toBeNull();
+		expect( context!.lost, 'the WebGL context was lost' ).toBe( false );
+		// A zero-sized buffer is what a canvas that never got laid out or sized
+		// looks like, and is the realistic failure this can actually detect.
+		expect( context!.bufferWidth ).toBeGreaterThan( 0 );
+		expect( context!.bufferHeight ).toBeGreaterThan( 0 );
 	} );
 } );

@@ -225,6 +225,32 @@ describe( 'buildMetadataHtml', () => {
 		expect( html ).not.toContain( 'srcMain' );
 	} );
 
+	/**
+	 * A locale catalogue is content, not code, and it reaches `innerHTML` the
+	 * same way a source label does. `symmetryName` is a translated `_x()` value
+	 * and was interpolated raw, so a translator — or anyone who can place a
+	 * catalogue — could inject DOM into the block.
+	 */
+	it( 'escapes translated values, not just data from the file', () => {
+		const host = parse(
+			buildMetadataHtml( {
+				freqLabel: '<img src=x onerror=alert(1)>',
+				displayMin: 60,
+				displayMax: 100,
+				balloonGrid: {
+					...GRID,
+					symmetryName: '<script>alert(1)</script>',
+				},
+				source: {},
+				options: OPTIONS,
+			} )
+		);
+
+		expect( host.querySelectorAll( 'img' ) ).toHaveLength( 0 );
+		expect( host.querySelector( 'script' ) ).toBeNull();
+		expect( host.textContent ).toContain( '<script>alert(1)</script>' );
+	} );
+
 	it( 'escapes a label out of the uploaded binary', () => {
 		const host = parse(
 			buildMetadataHtml( {
