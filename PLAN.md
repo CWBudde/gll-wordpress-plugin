@@ -550,71 +550,202 @@ Chrome and defensible for Edge; Playwright's WebKit is not Safari, and Safari
 applies its own WebAssembly memory limits — precisely where this plugin is most
 exposed. `readme.txt` already says so; keep it that way.
 
-### 13.3 Known defects, tracked rather than fixed
+### 13.3 Defect backlog — work to do
 
-Each is characterized by a passing test that describes current behaviour, so
-fixing one turns a green test red on purpose.
+Each defect below is characterized by a *passing* test describing today's
+behaviour, so the first step of every fix is to flip that test to assert the
+intended behaviour and watch it go red.
 
-**`has_block()` asset gating — a 0.2.0 change.**
-`gll_info_enqueue_frontend_assets()` gates on `has_block()`, which inspects only
-the main post content. A GLL block in a template part, widget or reusable block
-therefore receives no `gllInfoSettings` and no script translations. It works
-anyway on a stock install because `wasm-loader` falls back to a hardcoded
-`/wp-content/plugins/gll-info/...` path — so this breaks on a renamed plugin
-directory, a subdirectory install, non-root multisite, or a `WP_PLUGIN_URL`
-override. The fix is a per-block `viewScript` dependency across all seven
-`block.json` files plus a rebuild; note that the wp-env setup deliberately mounts
-the plugin at the `gll-info` slug precisely so tests do not accidentally exercise
-a path no real install takes.
+#### 13.3.1 Fix `has_block()` frontend asset gating [0.2.0, do first]
 
-**`showResponses` is a no-op.** The main block's attribute serializes to
-`data-show-responses` and nothing reads it. Either wire it up or remove it —
-removing it from `save()` output invalidates existing posts unless a
-`deprecated` entry comes with it.
+`gll_info_enqueue_frontend_assets()` (`gll-info.php:167`) gates on `has_block()`,
+which inspects only the main post content. A GLL block in a template part,
+widget, reusable block or full-site-editing template therefore receives neither
+`gllInfoSettings` nor its script translations. It works anyway on a stock install
+because `wasm-loader` falls back to a hardcoded `/wp-content/plugins/gll-info/…`
+path — so the breakage is invisible until someone renames the plugin directory,
+installs in a subdirectory, runs non-root multisite, or overrides
+`WP_PLUGIN_URL`. Translations are broken in *all* of those cases regardless of
+path, because there is no fallback for those.
 
-**`polar-utils.ts` redundant guard.** `canCombineOnAxis` contains
-`onAxisLevel.length === onAxisLevel.length`. Redundant rather than wrong — the
-preceding frequency-length comparison already enforces the intended rule — and a
-test pins the behaviour so repairing the line cannot change anything unnoticed.
+The editor path (`gll_info_enqueue_editor_assets`, `:139`) already solves this
+correctly: it attaches settings to each block's own script handle so any single
+block can be the only one on screen. The frontend should follow the same shape
+instead of enqueueing a separate `gll-info-wasm-exec` handle behind a gate.
 
-### 13.4 Deferred features (decided, not forgotten)
+- [ ] Register `gll-info-wasm-exec` on `init` with `wp_register_script()` rather
+      than enqueueing it conditionally on `wp_enqueue_scripts`
+- [ ] Attach `gllInfoSettings` to that handle once at registration —
+      `wp_localize_script()` on a registered-but-not-enqueued handle prints
+      nothing, so this is free when no block renders
+- [ ] Make every block depend on it: add `"gll-info-wasm-exec"` alongside
+      `"file:./view.js"` in each of the seven `block.json` `viewScript` arrays.
+      **Verify this first** — `viewScript` accepts an array and treats non-`file:`
+      entries as pre-registered handles, but confirm against the installed core
+      version before converting all seven
+- [ ] Move `gll_info_set_block_script_translations( 'view-script' )` out from
+      behind the gate — it must run whenever the handles are registered
+- [ ] Delete the `has_block()` loop and, if nothing else uses it,
+      `gll_info_get_block_names()`'s frontend caller
+- [ ] Rebuild (`npm run build`) — `block.json` changes only take effect through
+      `build/`, and `build/blocks-manifest.php` is what registration reads
+- [ ] Rewrite the characterization test to assert settings and translations are
+      present for a block in a template part and in a widget
+- [ ] Add an E2E spec that renders a GLL block from a template part and asserts
+      `window.gllInfoSettings` exists
+- [ ] **Regression risk to test explicitly:** assets must *not* load on pages
+      with no GLL block. That is what the gate bought and it must survive.
 
-Not built, each for a stated reason. Reviving any of these is a scope decision,
-not a bug fix.
+Note for whoever does this: wp-env deliberately mounts the plugin at the
+`gll-info` slug so the fallback path stays exercised as it would be in a real
+install. To test the failure this fixes, mount it under a different slug.
 
-- **URL input for external GLL files.** Media library only today; external URLs
-  raise CORS questions that were never resolved.
-- **Nested/child block structure for the overview.** Overview and sources are
-  toggles on the main block instead.
-- **Server-side caching of parsed data** in post meta, transients or filesystem.
-  The original architecture called for it; the frontend parses client-side like
-  the editor. This is the natural home for a fix to the memory ceiling below.
-- **Cluster setups, connectors and transformers.** The demo renders them from a
-  different function into a different tab; Phase 10's tasks do not list them.
-  The data remains available raw.
-- **Per-filter-group frequency response chart.** Needs the FIR/IIR response
-  computation ported *and* would force the huge coefficient arrays back into the
-  browser, which the normalizer deliberately reduces to a count. Its own phase
-  if wanted.
-- **`showFaces` for geometry.** Implemented but untestable: no case geometry in
-  the 29-file corpus carries a face list, so the toggle has nothing to draw.
+#### 13.3.2 Resolve `showResponses`
+
+The main block's attribute serializes to `data-show-responses` and nothing reads
+it. Decide, then do one of:
+
+- [ ] **Wire it up** — have `gll-info/view.ts` and `edit.tsx` honour it the way
+      `showOverview` and `showSources` are honoured, and add tests, or
+- [ ] **Remove it** — and add a `deprecated` entry to the block, because dropping
+      an attribute from `save()` output invalidates every published post that
+      contains the block. A demo page carrying the current markup is already
+      live, so this is not hypothetical
+- [ ] Either way, update the InspectorControls label so the editor stops offering
+      a toggle that does nothing
+
+Recommendation: wire it up. The attribute exists because the feature was
+intended, and the deprecation machinery is the more expensive path.
+
+#### 13.3.3 Remove the redundant `polar-utils` guard
+
+- [ ] Delete `onAxisLevel.length === onAxisLevel.length` from `canCombineOnAxis`
+- [ ] Confirm the pinning test still passes unchanged — the preceding
+      frequency-length comparison already enforces the intended rule, so removal
+      must be a no-op. If the test moves, the analysis was wrong and the guard
+      was load-bearing after all
+
+Five minutes of work. Listed because the line reads like a typo for something
+else and will keep drawing attention until it is gone.
+
+### 13.4 Feature backlog — work that can and should be done
+
+Ordered by value per unit of work. Each was deferred for a stated reason, and
+each reason is now a design constraint rather than a blocker.
+
+#### 13.4.1 Server-side parse cache [highest value — unblocks everything below]
+
+The single most valuable piece of work left. Today every visitor to every page
+downloads a 4.2 MB WASM binary and re-parses the whole GLL client-side; a 15.4 MB
+file costs them 1.3 GB of memory and 6–11 s, and probably fails outright on
+mobile. The original architecture called for caching and it was never built.
+
+- [ ] Decide the storage tier — post meta (travels with the post, bloats
+      `wp_postmeta`), transients (evictable, correct semantics), or filesystem
+      under `wp-content/uploads/` (largest payloads, needs cleanup on attachment
+      delete). **Recommendation: transients keyed by attachment ID + file hash,
+      with a filesystem fallback for payloads over the object-cache limit**
+- [ ] Define a *display subset* rather than caching the full parse. The
+      normalizer already proves this works — dropping `raw.resources` and FIR
+      coefficients was exactly this move. 228.7 MB of JSON is not what any block
+      renders
+- [ ] Add a REST endpoint per block-shaped view (`restUrl` is already plumbed
+      through `gllInfoSettings` and unused)
+- [ ] Populate the cache on attachment upload, and on demand for existing files
+- [ ] Invalidate on re-upload and on attachment delete
+- [ ] Make the frontend prefer the cache and fall back to WASM, so the plugin
+      still works if the cache is cold or the endpoint is unavailable
+- [ ] Only then consider making WASM frontend-optional — that is the payoff:
+      pages that stop shipping 4.2 MB entirely
+
+This requires either a Go parser on the server (a hosting requirement the project
+explicitly rejected) or running the WASM parse once at upload time in an admin
+context. The latter keeps the no-Go-on-server property and is the reason this is
+worth doing rather than reopening the architecture decision.
+
+#### 13.4.2 URL input for external GLL files
+
+- [ ] Add a URL text control beside the MediaUpload in every block that selects a
+      file
+- [ ] Resolve the CORS question that shelved this: an arbitrary origin will not
+      send `Access-Control-Allow-Origin`, so either document the requirement
+      plainly or proxy the fetch through a REST endpoint
+- [ ] If proxying, treat it as SSRF-sensitive — validate the scheme, block
+      private address ranges, cap the response size against the memory ceiling
+      in 13.5.1, and require an authenticated capability to configure the URL
+- [ ] Add the attribute to all seven blocks consistently, or to none
+
+#### 13.4.3 Per-filter-group frequency response chart
+
+The largest genuinely new feature, and its own phase.
+
+- [ ] Port the FIR/IIR response computation from the demo
+- [ ] Compute on demand from coefficients rather than carrying them — the
+      normalizer reduces `data_irm`/`data_dip` (8193 float64 each, ~131 KB per
+      filter) to a count precisely so they never live for the page's lifetime.
+      Do not undo that; fetch or recompute per chart and release
+- [ ] Reuse `charting-utils` and `ChartWrapper` from Phase 4
+- [ ] Corpus reality check: filter groups appear in 10 of 29 files, so the empty
+      state is the common case — follow the Phase 9/10 rule (frontend drops the
+      section, editor explains why)
+
+#### 13.4.4 Cluster setups, connectors and transformers
+
+- [ ] Extend the normalizer — the data reaches the browser and is dropped, which
+      is exactly the shape of the Phases 9 and 10 work
+- [ ] Decide placement: a new block, or new sections in `gll-info/config`
+- [ ] Measure corpus coverage before designing the UX, as in 9 and 10 — how many
+      of the 29 files carry each
+
+#### 13.4.5 `showFaces` — obtain geometry that actually has faces
+
+Implemented, shipped, and unexercised: no case geometry in the 29-file corpus
+carries a face list, so the toggle has nothing to draw and the face path has
+never rendered a single triangle in anger.
+
+- [ ] Source a GLL with face-carrying case geometry, or synthesize one with the
+      `gll-tools` writer if it has one **(beyond this repo)**
+- [ ] Add it to the corpus and assert faces render
+- [ ] If no such file can be obtained, say so in `readme.txt` and consider hiding
+      the toggle when the selected geometry has no faces — an inert control is
+      worse than an absent one
+
+#### 13.4.6 Nested block structure for the overview
+
+- [ ] Lowest value here. The toggle-based design works and nesting buys
+      composability nobody has asked for. Revisit only if users ask to reorder or
+      interleave overview sections
 
 ### 13.5 Open questions
 
-1. **Max upload size for `.gll` in the media library?** Now an informed question
-   rather than a speculative one: a 15.4 MB GLL expands to 228.7 MB of JSON and
-   leaves the Go WASM instance holding 1.3 GB of linear memory that Go never
-   returns. Files ≥10 MB need 800 MB–1.3 GB and 6–11 s and will likely fail on
-   mobile. Files up to ~2 MB (21 of the 29) are comfortable everywhere. A cap, a
-   warning at upload time, or server-side pre-parsing are the three real options.
-2. **Caching strategy for parsed JSON** — transients, post meta or filesystem.
-   Interacts directly with (1) and with the deferred server-side cache above.
-3. **Multi-file support:** compare several GLL files in one view?
+1. **Max upload size for `.gll` in the media library?** Informed rather than
+   speculative now: a 15.4 MB GLL expands to 228.7 MB of JSON and leaves the Go
+   WASM instance holding 1.3 GB of linear memory Go never returns. Files ≥10 MB
+   need 800 MB–1.3 GB and 6–11 s and will likely fail on mobile. Files up to
+   ~2 MB (21 of 29) are comfortable everywhere. Three real options: a hard cap, a
+   warning at upload time, or 13.4.1's server-side pre-parse. They are not
+   exclusive — the warning is cheap and worth doing regardless.
+2. **Caching tier for parsed JSON** — see 13.4.1, which is where this gets
+   answered.
+3. **Multi-file support:** compare several GLL files in one view? Wants 13.4.1
+   first; two full parses in one page is not viable client-side today.
 
-### 13.6 Worth chasing upstream in `gll-tools`
+### 13.6 Upstream work in `gll-tools` (beyond this repo)
 
-The two parsers disagree about `N-APS v1_0.gll`: the `gllinfo` CLI reports 9
-files with filter groups across the corpus, the WASM build 10 — the CLI misses
-that file, which WASM parses as having 2 groups. The plugin uses WASM, so 10 is
-the number that matters here, but the disagreement is genuine and belongs in
-that repository.
+- [ ] **Reconcile the two parsers on `N-APS v1_0.gll`.** The `gllinfo` CLI
+      reports 9 corpus files with filter groups; the WASM build reports 10. The
+      CLI misses that file, which WASM parses as having 2 groups. One of them is
+      wrong about a real file, and the plugin's number is only trustworthy
+      because it happens to use WASM.
+- [ ] **Address the WASM memory ceiling at the source.** Go never returns linear
+      memory to the host, so a large parse permanently costs the tab ~1.3 GB.
+      Options, roughly in order of payoff: a streaming or subset parse API so
+      callers can request only what they render; tearing down and recreating the
+      instance after a large parse; or trimming the JSON the WASM boundary
+      emits — 228.7 MB for a 15.4 MB input suggests the serialization, not the
+      data, is the cost. This caps what any browser-based consumer can do and is
+      not fixable from the plugin side.
+- [ ] **Confirm 15.4 MB is really near the format ceiling.** The performance
+      work assumed it because nothing larger exists in the corpus. If
+      manufacturers ship larger files, the memory findings understate the
+      problem.
