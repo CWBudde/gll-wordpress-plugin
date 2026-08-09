@@ -2,7 +2,11 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
-		"moduleResolution": "node",
+		// "bundler" rather than "node": the build runs through webpack, which
+		// honours the "exports" map in package.json. Classic node resolution
+		// cannot see three's `three/addons/*` subpath and reports it missing
+		// even though the types are installed.
+		"moduleResolution": "bundler",
 		"jsx": "react-jsx",
 
 		// Relaxed strictness - allow implicit any for gradual typing
@@ -22,7 +26,14 @@
 		"isolatedModules": true,
 		"noEmit": true,
 		"lib": [ "ESNext", "DOM", "DOM.Iterable" ],
+		// `jest` and `node` are needed because `include` already covers
+		// src/**/*.test.ts, and one of those tests reads a PHP file off disk to
+		// pin the pattern markup. Both are ambient-only, so they cost nothing
+		// at build time.
 		"types": [
+			"jest",
+			"node",
+			"@testing-library/jest-dom",
 			"wordpress__block-editor",
 			"wordpress__blocks",
 			"wordpress__components",
@@ -35,5 +46,13 @@
 		}
 	},
 	"include": [ "src/**/*" ],
-	"exclude": [ "node_modules", "build" ]
+	// Integration tests boot the Go runtime and read the corpus off disk, so
+	// they need Node globals that production source has no business seeing.
+	// tsconfig.test.json picks them up instead.
+	"exclude": [
+		"node_modules",
+		"build",
+		"src/**/*.integration.test.ts",
+		"src/**/*.integration.test.tsx"
+	]
 }

@@ -16,8 +16,10 @@
 		"test": "wp-scripts test-unit-js",
 		"test:watch": "wp-scripts test-unit-js --watch",
 		"test:unit": "wp-scripts test-unit-js --selectProjects unit",
-		"test:integration": "wp-scripts test-unit-js --selectProjects integration",
-		"test:coverage": "wp-scripts test-unit-js --coverage"
+		"test:integration": "wp-scripts test-unit-js --selectProjects integration --maxWorkers=1",
+		"test:integration:full": "GLL_CORPUS_FULL=1 wp-scripts test-unit-js --selectProjects integration --maxWorkers=1",
+		"test:coverage": "wp-scripts test-unit-js --selectProjects unit --coverage",
+		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json"
 	},
 	"dependencies": {
 		"@wordpress/block-editor": "latest",
@@ -41,6 +43,7 @@
 		"@types/wordpress__components": "^23.0.12",
 		"@types/wordpress__element": "^2.4.1",
 		"@types/wordpress__i18n": "^3.4.0",
+		"@wordpress/env": "^10.39.0",
 		"@wordpress/scripts": "^31.3.0",
 		"typescript": "^5.9.3"
 	}

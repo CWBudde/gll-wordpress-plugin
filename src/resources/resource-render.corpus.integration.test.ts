@@ -17,28 +17,13 @@
  * @jest-environment jsdom
  */
 
-import { existsSync, promises as fs } from 'node:fs';
-import path from 'node:path';
-
 import { normalizeGllData } from '../shared/gll-normalize';
+import {
+	describeCorpus,
+	parseCorpusFile,
+	teardownWasm,
+} from '../../tests/helpers/wasm-harness';
 import { renderResources } from './resource-render';
-
-const PROJECT_ROOT = path.resolve( __dirname, '..', '..' );
-const WASM_PATH = path.join( PROJECT_ROOT, 'assets', 'wasm', 'gll.wasm' );
-const WASM_EXEC_PATH = path.join(
-	PROJECT_ROOT,
-	'assets',
-	'wasm',
-	'wasm_exec.js'
-);
-
-const CORPUS_PATH =
-	process.env.GLL_CORPUS || '/mnt/projekte/Code/gll-tools/testdata/gll';
-
-const hasCorpus = existsSync( CORPUS_PATH );
-const maybeDescribe = hasCorpus ? describe : describe.skip;
-
-jest.setTimeout( 120000 );
 
 const OPTIONS = {
 	showDocumentation: true,
@@ -69,10 +54,7 @@ function makeBlock(): HTMLElement {
  * @return {Promise<HTMLElement>} The rendered block.
  */
 async function renderCorpusFile( file: string ): Promise< HTMLElement > {
-	const bytes = await fs.readFile( path.join( CORPUS_PATH, file ) );
-	const result = JSON.parse(
-		( globalThis as any ).parseGLL( new Uint8Array( bytes ) )
-	);
+	const result = await parseCorpusFile( file );
 	expect( result.success ).toBe( true );
 
 	const block = makeBlock();
@@ -80,27 +62,8 @@ async function renderCorpusFile( file: string ): Promise< HTMLElement > {
 	return block;
 }
 
-maybeDescribe( 'rendering real GLL files', () => {
-	beforeAll( async () => {
-		// jsdom ships neither, and the Go runtime refuses to load without
-		// them. Node's own implementations are the ones the node-based
-		// integration tests already run against.
-		if ( ! ( globalThis as any ).TextEncoder ) {
-			const { TextEncoder, TextDecoder } = require( 'node:util' );
-			( globalThis as any ).TextEncoder = TextEncoder;
-			( globalThis as any ).TextDecoder = TextDecoder;
-		}
-
-		require( WASM_EXEC_PATH );
-
-		const wasmBytes = await fs.readFile( WASM_PATH );
-		const go = new ( globalThis as any ).Go();
-		const { instance } = await WebAssembly.instantiate(
-			wasmBytes,
-			go.importObject
-		);
-		void go.run( instance );
-	} );
+describeCorpus( 'rendering real GLL files', () => {
+	afterAll( () => teardownWasm() );
 
 	it( 'renders the Coda datasheets as working PDF downloads', async () => {
 		const block = await renderCorpusFile( 'Coda-Audio G-Series-V1_2.gll' );
@@ -127,7 +90,7 @@ maybeDescribe( 'rendering real GLL files', () => {
 					.toString( 'latin1' )
 			).toBe( '%PDF' );
 		} );
-	} );
+	}, 60000 );
 
 	it( 'previews the embedded logo of a typical file', async () => {
 		const block = await renderCorpusFile( 'APS-V1_1.gll' );
@@ -148,7 +111,7 @@ maybeDescribe( 'rendering real GLL files', () => {
 				).subarray( 0, 4 )
 			)
 		).toEqual( [ 0x89, 0x50, 0x4e, 0x47 ] );
-	} );
+	}, 60000 );
 
 	it( 'renders no blank rows for a file whose slots are all unused', async () => {
 		const block = await renderCorpusFile( '3Way-LR.gll' );
@@ -159,7 +122,7 @@ maybeDescribe( 'rendering real GLL files', () => {
 		expect(
 			block.querySelector( '.gll-resources-empty' )!.textContent
 		).toBe( 'This GLL file contains no embedded resources.' );
-	} );
+	}, 60000 );
 
 	it( 'never leaves a path separator in a download name', async () => {
 		// Data-file names arrive as `.\Drawings\...`; a stray separator would
@@ -177,5 +140,5 @@ maybeDescribe( 'rendering real GLL files', () => {
 			expect( name ).not.toMatch( /[\\/]/ );
 			expect( name ).not.toBe( '' );
 		} );
-	} );
+	}, 60000 );
 } );

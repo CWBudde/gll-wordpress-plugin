@@ -10,9 +10,6 @@
  * Mirrors the WASM bootstrap in wasm-parser.integration.test.ts.
  */
 
-import { existsSync, promises as fs } from 'node:fs';
-import path from 'node:path';
-
 import { normalizeGllData } from '../src/shared/gll-normalize';
 import { getBalloonGrid, computePolarSlices } from '../src/shared/polar-utils';
 import { buildSourceResponseSeries } from '../src/shared/charting-utils';
@@ -21,43 +18,23 @@ import {
 	computeGlobalMaxLevel,
 } from '../src/shared/balloon-utils';
 import { getCaseGeometryVertices } from '../src/shared/geometry-utils';
+import {
+	describeCorpus,
+	describeFixture,
+	describeFullCorpus,
+	listCorpusFiles,
+	parseCorpusFile,
+	parseFixture,
+	teardownWasm,
+} from './helpers/wasm-harness';
 
-const PROJECT_ROOT = path.resolve( __dirname, '..' );
-const WASM_PATH = path.join( PROJECT_ROOT, 'assets', 'wasm', 'gll.wasm' );
-const WASM_EXEC_PATH = path.join(
-	PROJECT_ROOT,
-	'assets',
-	'wasm',
-	'wasm_exec.js'
-);
-const FIXTURE_PATH = path.join(
-	PROJECT_ROOT,
-	'tests',
-	'fixtures',
-	'sample.gll'
-);
-
-const hasFixture = existsSync( FIXTURE_PATH );
-const maybeDescribe = hasFixture ? describe : describe.skip;
-
-maybeDescribe( 'normalizeGllData against the real parser', () => {
+describeFixture( 'normalizeGllData against the real parser', () => {
 	let normalized: any;
 
+	afterAll( () => teardownWasm() );
+
 	beforeAll( async () => {
-		require( WASM_EXEC_PATH );
-
-		const wasmBytes = await fs.readFile( WASM_PATH );
-		const go = new ( globalThis as any ).Go();
-		const { instance } = await WebAssembly.instantiate(
-			wasmBytes,
-			go.importObject
-		);
-		void go.run( instance );
-
-		const fileBytes = await fs.readFile( FIXTURE_PATH );
-		const result = JSON.parse(
-			( globalThis as any ).parseGLL( new Uint8Array( fileBytes ) )
-		);
+		const result = await parseFixture();
 		expect( result.success ).toBe( true );
 
 		normalized = normalizeGllData( result.data );
@@ -125,12 +102,18 @@ maybeDescribe( 'normalizeGllData against the real parser', () => {
 	it( 'drives the 3D balloon levels end to end', () => {
 		const source = normalized.Database.SourceDefinitions[ 0 ];
 		const grid = getBalloonGrid( source );
-		const maxLevel = computeGlobalMaxLevel( source, grid );
+		const maxLevel = computeGlobalMaxLevel( source );
 		const levels = buildFullSphereLevels( source, grid, 0 );
 
 		expect( Number.isFinite( maxLevel ) ).toBe( true );
 		expect( levels.length ).toBeGreaterThan( 0 );
-		expect( levels.some( ( v ) => v > -100 ) ).toBe( true );
+		// buildFullSphereLevels returns a 2D grid indexed [parallel][meridian],
+		// so this has to descend into the rows. Comparing a row array against a
+		// number instead coerces it to a string and then to NaN, which made the
+		// old form silently vacuous for every multi-meridian grid.
+		expect(
+			levels.some( ( row ) => row.some( ( level ) => level > -100 ) )
+		).toBe( true );
 	} );
 
 	it( 'exposes case geometries as a flat, indexable list', () => {
@@ -199,45 +182,27 @@ maybeDescribe( 'normalizeGllData against the real parser', () => {
  * list can only be exercised against the reference corpus. Five of its files
  * have frames and every one of those frames has geometry, which is exactly the
  * case the appended-geometry design exists to serve.
+ *
+ * One case per file rather than one case sweeping all of them: a failure then
+ * names the file, each case gets its own timeout instead of sharing a single
+ * budget across the suite, and the multi-megabyte parse result of one file is
+ * collectable before the next is read.
  */
-const CORPUS_PATH =
-	process.env.GLL_CORPUS || '/mnt/projekte/Code/gll-tools/testdata/gll';
-const hasCorpus = existsSync( CORPUS_PATH );
-const maybeDescribeCorpus = hasCorpus ? describe : describe.skip;
+const corpusFiles = listCorpusFiles();
 
-jest.setTimeout( 300000 );
+describeCorpus( 'frame geometry across the reference corpus', () => {
+	afterAll( () => teardownWasm() );
 
-maybeDescribeCorpus( 'frame geometry across the reference corpus', () => {
-	let parse: ( bytes: Uint8Array ) => string;
-
-	beforeAll( async () => {
-		require( WASM_EXEC_PATH );
-
-		const wasmBytes = await fs.readFile( WASM_PATH );
-		const go = new ( globalThis as any ).Go();
-		const { instance } = await WebAssembly.instantiate(
-			wasmBytes,
-			go.importObject
-		);
-		void go.run( instance );
-
-		parse = ( globalThis as any ).parseGLL;
+	it( 'has files to sweep', () => {
+		expect( corpusFiles.length ).toBeGreaterThan( 0 );
 	} );
 
-	it( 'resolves every frame back-pointer to a real geometry', async () => {
-		const files = ( await fs.readdir( CORPUS_PATH ) ).filter( ( name ) =>
-			name.toLowerCase().endsWith( '.gll' )
-		);
-		expect( files.length ).toBeGreaterThan( 0 );
-
-		let filesWithFrames = 0;
-		let framesWithGeometry = 0;
-
-		for ( const name of files ) {
-			const bytes = await fs.readFile( path.join( CORPUS_PATH, name ) );
-			const result = JSON.parse( parse( new Uint8Array( bytes ) ) );
+	it.each( corpusFiles )(
+		'%s resolves every frame back-pointer to a real geometry',
+		async ( name ) => {
+			const result = await parseCorpusFile( name );
 			if ( ! result.success ) {
-				continue;
+				return;
 			}
 
 			const data = normalizeGllData( result.data );
@@ -245,10 +210,6 @@ maybeDescribeCorpus( 'frame geometry across the reference corpus', () => {
 			const geometries = data.Database.CaseGeometries;
 
 			expect( Array.isArray( frames ) ).toBe( true );
-			if ( frames.length === 0 ) {
-				continue;
-			}
-			filesWithFrames++;
 
 			frames.forEach( ( frame: any ) => {
 				expect( typeof frame.CaseGeometryIndex ).toBe( 'number' );
@@ -267,8 +228,6 @@ maybeDescribeCorpus( 'frame geometry across the reference corpus', () => {
 				expect(
 					getCaseGeometryVertices( geometry ).length
 				).toBeGreaterThan( 0 );
-
-				framesWithGeometry++;
 			} );
 
 			// Appending must not disturb the box geometries the saved
@@ -279,9 +238,43 @@ maybeDescribeCorpus( 'frame geometry across the reference corpus', () => {
 			boxGeometries.forEach( ( geometry: any, index: number ) => {
 				expect( geometries[ index ] ).toBe( geometry );
 			} );
+		},
+		60000
+	);
+} );
+
+/**
+ * An exact tally is only meaningful over the whole corpus, so it is gated
+ * behind `GLL_CORPUS_FULL=1` rather than quietly counting a subset.
+ */
+describeFullCorpus( 'frame coverage across the complete corpus', () => {
+	afterAll( () => teardownWasm() );
+
+	it( 'finds frames in exactly five files, all with geometry', async () => {
+		const names = listCorpusFiles();
+		let filesWithFrames = 0;
+		let framesWithGeometry = 0;
+
+		for ( const name of names ) {
+			const result = await parseCorpusFile( name );
+			if ( ! result.success ) {
+				continue;
+			}
+
+			const data = normalizeGllData( result.data );
+			if ( data.Database.Frames.length === 0 ) {
+				continue;
+			}
+			filesWithFrames++;
+
+			data.Database.Frames.forEach( ( frame: any ) => {
+				if ( frame.CaseGeometryIndex >= 0 ) {
+					framesWithGeometry++;
+				}
+			} );
 		}
 
 		expect( filesWithFrames ).toBe( 5 );
 		expect( framesWithGeometry ).toBeGreaterThan( 0 );
-	} );
+	}, 600000 );
 } );

@@ -51,7 +51,10 @@ describe( 'geometry markup embedded in the block patterns', () => {
 	} );
 
 	it( 'matches the serialized default geometry block', () => {
-		const serialized = serialize( createBlock( 'gll-info/geometry' ) );
+		// Array form: `serialize` casts a lone block to an array internally and
+		// joins with a blank line, so a single-element array is byte-identical
+		// and matches the declared signature.
+		const serialized = serialize( [ createBlock( 'gll-info/geometry' ) ] );
 		const [ opener, markup, closer ] = serialized.split( '\n' );
 
 		expect( opener ).toBe( '<!-- wp:gll-info/geometry -->' );

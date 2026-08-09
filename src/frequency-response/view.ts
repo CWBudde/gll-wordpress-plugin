@@ -600,7 +600,10 @@ function renderChart( block, data, options ) {
 	// which series is which.
 	applyChartThemeFrom( chartConfig, chartWrapper );
 
-	new Chart( ctx, chartConfig );
+	// Cast as in polar-plot/view.ts: the config is assembled dynamically as a
+	// plain record, and Chart.js' generic config type cannot be satisfied
+	// without pinning the chart type and dataset shapes at construction.
+	new Chart( ctx, chartConfig as any );
 }
 
 /**

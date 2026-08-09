@@ -1,0 +1,24 @@
+{
+	// Type-checking config for the test tree.
+	//
+	// `tests/` is deliberately outside the main tsconfig's `include`: that file
+	// describes the production source set and drives editor semantics, and
+	// widening it would pull Node globals into every block's type environment.
+	// This config exists only to add the test tree and the Node types the
+	// integration harness needs.
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"types": [
+			"jest",
+			"node",
+			"@testing-library/jest-dom",
+			"wordpress__block-editor",
+			"wordpress__blocks",
+			"wordpress__components",
+			"wordpress__element",
+			"wordpress__i18n"
+		]
+	},
+	"include": [ "src/**/*", "tests/**/*" ],
+	"exclude": [ "node_modules", "build" ]
+}

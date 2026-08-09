@@ -2,6 +2,7 @@ import {
 	buildGeometryMarkers,
 	computeBounds,
 	computeScaleFactor,
+	getCaseGeometryVertices,
 	getCenterOfMassPoint,
 	getEulerHvr,
 	getNextPivotPoint,
@@ -71,7 +72,13 @@ describe( 'geometry marker utilities', () => {
 			CenterOfMass: { X: 3, Y: 4, Z: 5 },
 			NextPivot: { X: 4, Y: 5, Z: 6 },
 		};
-		const viewVertices = geometry.Vertices.map( toViewPoint );
+		// Through the case-tolerant extractor, not straight off `Vertices`:
+		// `toViewPoint` reads lowercase x/y/z, so handing it the PascalCase
+		// records the normalizer emits yields undefined on every axis. That
+		// made the bounds NaN and every position assertion below a vacuous
+		// NaN-to-NaN comparison, which is how it passed while testing nothing.
+		const viewVertices =
+			getCaseGeometryVertices( geometry ).map( toViewPoint );
 		const bounds = computeBounds( viewVertices );
 		const scale = computeScaleFactor( bounds, 1.2 );
 

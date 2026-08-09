@@ -36,6 +36,22 @@ const hasFixture = existsSync( FIXTURE_PATH );
 const maybeIt = hasFixture ? it : it.skip;
 
 describe( 'real WASM parser (integration)', () => {
+	/**
+	 * The failure mode a corpus-gated suite is most likely to hit is becoming a
+	 * silent no-op: delete the fixture and every gated `describe` skips, the run
+	 * goes green, and nobody notices the integration project stopped testing
+	 * anything. Both `assets/wasm/gll.wasm` and the fixture are tracked, so in
+	 * CI their absence is a defect rather than a local convenience.
+	 */
+	it( 'has the tracked fixture and WASM module available in CI', () => {
+		if ( ! process.env.CI ) {
+			return;
+		}
+
+		expect( hasFixture ).toBe( true );
+		expect( existsSync( WASM_PATH ) ).toBe( true );
+	} );
+
 	beforeAll( () => {
 		// Loading wasm_exec.js mutates globalThis (sets `Go`). The integration
 		// project runs in its own worker so this won't pollute jsdom tests.

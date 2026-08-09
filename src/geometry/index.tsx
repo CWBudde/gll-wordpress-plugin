@@ -27,7 +27,11 @@ const { appearance: _appearance, ...v1Attributes } =
  */
 const deprecated = [
 	{
-		attributes: v1Attributes,
+		// Cast for the same reason `metadata` is cast below: attributes read out
+		// of block.json widen to `{ type: string }`, while the block types want
+		// the literal `'number' | 'string' | ...` union. Only the attribute map
+		// is cast, so `save` stays type-checked.
+		attributes: v1Attributes as any,
 		save: saveV1,
 	},
 ];

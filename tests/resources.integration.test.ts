@@ -16,29 +16,14 @@
  * Mirrors the WASM bootstrap in gll-normalize.integration.test.ts.
  */
 
-import { existsSync, promises as fs } from 'node:fs';
-import path from 'node:path';
-
 import { normalizeGllData } from '../src/shared/gll-normalize';
-
-const PROJECT_ROOT = path.resolve( __dirname, '..' );
-const WASM_PATH = path.join( PROJECT_ROOT, 'assets', 'wasm', 'gll.wasm' );
-const WASM_EXEC_PATH = path.join(
-	PROJECT_ROOT,
-	'assets',
-	'wasm',
-	'wasm_exec.js'
-);
-
-const CORPUS_PATH =
-	process.env.GLL_CORPUS || '/mnt/projekte/Code/gll-tools/testdata/gll';
-
-const hasCorpus = existsSync( CORPUS_PATH );
-const maybeDescribe = hasCorpus ? describe : describe.skip;
-
-// Several corpus files run to 16 MB and the whole sweep parses ~30 of them, so
-// the 30 s global timeout in jest.config.js is not enough.
-jest.setTimeout( 300000 );
+import {
+	describeCorpus,
+	describeFullCorpus,
+	listCorpusFiles,
+	parseCorpusFile as parseRawCorpusFile,
+	teardownWasm,
+} from './helpers/wasm-harness';
 
 /**
  * Parse one GLL through the real WASM parser and normalize it.
@@ -50,10 +35,7 @@ jest.setTimeout( 300000 );
  * @return {Promise<Object>} Normalized GLL data.
  */
 async function parseCorpusFile( file: string ): Promise< any > {
-	const bytes = await fs.readFile( path.join( CORPUS_PATH, file ) );
-	const result = JSON.parse(
-		( globalThis as any ).parseGLL( new Uint8Array( bytes ) )
-	);
+	const result = await parseRawCorpusFile( file );
 	expect( result.success ).toBe( true );
 	return normalizeGllData( result.data );
 }
@@ -69,35 +51,18 @@ function decodedLength( dataUri: string ): number {
 		.length;
 }
 
-maybeDescribe( 'embedded resources against the real corpus', () => {
-	let files: string[] = [];
+const corpusFiles = listCorpusFiles();
 
-	beforeAll( async () => {
-		require( WASM_EXEC_PATH );
+describeCorpus( 'embedded resources against the real corpus', () => {
+	afterAll( () => teardownWasm() );
 
-		const wasmBytes = await fs.readFile( WASM_PATH );
-		const go = new ( globalThis as any ).Go();
-		const { instance } = await WebAssembly.instantiate(
-			wasmBytes,
-			go.importObject
-		);
-		void go.run( instance );
-
-		files = ( await fs.readdir( CORPUS_PATH ) )
-			.filter( ( f ) => f.toLowerCase().endsWith( '.gll' ) )
-			.sort();
-		expect( files.length ).toBeGreaterThan( 0 );
+	it( 'has files to sweep', () => {
+		expect( corpusFiles.length ).toBeGreaterThan( 0 );
 	} );
 
-	// One sweep, not two: the corpus is 180 MB and parsing it takes about a
-	// minute, so the per-entry invariants and the aggregate counts share a
-	// single pass rather than each paying for their own.
-	it( 'holds its invariants and its distribution across the whole corpus', async () => {
-		let withDocs = 0;
-		let withDataFiles = 0;
-		let withNeither = 0;
-
-		for ( const file of files ) {
+	it.each( corpusFiles )(
+		'%s holds the embedded-file invariants',
+		async ( file ) => {
 			const data = await parseCorpusFile( file );
 			const docs = data.Database.IncludeFiles;
 			const dataFiles = data.Database.DataFiles;
@@ -117,24 +82,9 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 					expect( decodedLength( entry.DataUri ) ).toBe( entry.Size );
 				}
 			}
-
-			if ( docs.length > 0 ) {
-				withDocs++;
-			}
-			if ( dataFiles.length > 0 ) {
-				withDataFiles++;
-			}
-			if ( docs.length === 0 && dataFiles.length === 0 ) {
-				withNeither++;
-			}
-		}
-
-		// If these move, either the parser changed or the blank-slot filter
-		// did. Both are worth a deliberate look rather than a silent pass.
-		expect( withDocs ).toBe( 3 );
-		expect( withDataFiles ).toBe( 24 );
-		expect( withNeither ).toBe( 5 );
-	} );
+		},
+		60000
+	);
 
 	it( 'reads the four labelled datasheets out of the Coda G-Series', async () => {
 		const data = await parseCorpusFile( 'Coda-Audio G-Series-V1_2.gll' );
@@ -160,7 +110,7 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 					.toString( 'latin1' )
 			).toBe( '%PDF' );
 		} );
-	} );
+	}, 60000 );
 
 	it( 'folds the two-level drawing path in HOPS7-Pro', async () => {
 		// The only corpus file nesting a second directory level, and the
@@ -175,7 +125,7 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 		);
 		expect( nested ).toBeDefined();
 		expect( nested.Name ).not.toMatch( /[\\/]/ );
-	} );
+	}, 60000 );
 
 	it( 'drops both blank slots in 3Way-LR', async () => {
 		// The parser emits two data-file records here and both are unused
@@ -184,5 +134,43 @@ maybeDescribe( 'embedded resources against the real corpus', () => {
 
 		expect( data.Database.DataFiles ).toEqual( [] );
 		expect( data.Database.IncludeFiles ).toEqual( [] );
-	} );
+	}, 60000 );
+} );
+
+/**
+ * The distribution of embedded files across the corpus.
+ *
+ * These are exact counts over all 30 files, so they are meaningless against the
+ * size-bounded default sweep and only run under `GLL_CORPUS_FULL=1`. If they
+ * move, either the parser changed or the blank-slot filter did — both worth a
+ * deliberate look rather than a silent pass.
+ */
+describeFullCorpus( 'resource distribution across the complete corpus', () => {
+	afterAll( () => teardownWasm() );
+
+	it( 'matches the recorded documentation and data-file counts', async () => {
+		let withDocs = 0;
+		let withDataFiles = 0;
+		let withNeither = 0;
+
+		for ( const file of listCorpusFiles() ) {
+			const data = await parseCorpusFile( file );
+			const docs = data.Database.IncludeFiles;
+			const dataFiles = data.Database.DataFiles;
+
+			if ( docs.length > 0 ) {
+				withDocs++;
+			}
+			if ( dataFiles.length > 0 ) {
+				withDataFiles++;
+			}
+			if ( docs.length === 0 && dataFiles.length === 0 ) {
+				withNeither++;
+			}
+		}
+
+		expect( withDocs ).toBe( 3 );
+		expect( withDataFiles ).toBe( 24 );
+		expect( withNeither ).toBe( 5 );
+	}, 600000 );
 } );
