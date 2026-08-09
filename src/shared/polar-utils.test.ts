@@ -584,17 +584,20 @@ describe( 'computePolarSlices', () => {
 	} );
 
 	/**
-	 * The `canCombineOnAxis` guard contains the tautology
-	 * `onAxisLevel.length === onAxisLevel.length`, which reads like a typo for
-	 * a comparison against the response length. It is redundant rather than
-	 * broken: the preceding `sampleFreqs.length === onAxisFreqs.length` already
-	 * enforces the intended rule, because `onAxisFreqs` is generated with
-	 * `onAxisLevel.length` as its count override and therefore always has
-	 * exactly that many entries.
+	 * The `canCombineOnAxis` guard used to carry the tautology
+	 * `onAxisLevel.length === onAxisLevel.length`, which read like a typo for a
+	 * comparison against the response length. It was redundant rather than
+	 * broken, and has been removed: the preceding
+	 * `sampleFreqs.length === onAxisFreqs.length` already enforces the intended
+	 * rule, because `onAxisFreqs` is generated with `onAxisLevel.length` as its
+	 * count override and therefore always has exactly that many entries.
 	 *
-	 * This test is what makes that reasoning checkable — a mismatched on-axis
-	 * array is rejected, via the frequency-length check rather than the
-	 * tautology. Repairing the line must not change this outcome.
+	 * This test is what made that reasoning checkable, and it passed unchanged
+	 * across the removal — a mismatched on-axis array is still rejected, via
+	 * the frequency-length check. The correctly written twin of this guard,
+	 * which compares both the frequency and the level lengths because it has no
+	 * such construction guarantee, is in `charting-utils.ts`
+	 * (`buildSourceResponseSeries`).
 	 */
 	it( 'rejects a mismatched on-axis level array via the frequency lengths', () => {
 		const source = axialSource();

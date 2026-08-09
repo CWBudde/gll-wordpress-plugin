@@ -675,14 +675,15 @@ function SourceResponseControls( { source, index } ) {
 /**
  * Single source card component with collapsible details.
  *
- * @param {Object}   props             Component props.
- * @param {Object}   props.source      Source data.
- * @param {Array}    props.placements  Placement data for this source.
- * @param {number}   props.index       Source index.
- * @param {string}   props.displayMode Display mode (compact, detailed, expandable).
- * @param {boolean}  props.showCharts  Whether to show response charts.
- * @param {boolean}  props.isExpanded  Whether card is expanded.
- * @param {Function} props.onToggle    Toggle callback.
+ * @param {Object}   props               Component props.
+ * @param {Object}   props.source        Source data.
+ * @param {Array}    props.placements    Placement data for this source.
+ * @param {number}   props.index         Source index.
+ * @param {string}   props.displayMode   Display mode (compact, detailed, expandable).
+ * @param {boolean}  props.showCharts    Whether to show response charts.
+ * @param {boolean}  props.showResponses Whether to show the response summary.
+ * @param {boolean}  props.isExpanded    Whether card is expanded.
+ * @param {Function} props.onToggle      Toggle callback.
  * @return {JSX.Element} Source card component.
  */
 function SourceCard( {
@@ -691,6 +692,7 @@ function SourceCard( {
 	index,
 	displayMode,
 	showCharts,
+	showResponses = true,
 	isExpanded,
 	onToggle,
 } ) {
@@ -861,7 +863,7 @@ function SourceCard( {
 							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong>{ ' ' }
 							{ formatDataType( def.DataType ) }
 						</div>
-						{ balloon && (
+						{ showResponses && balloon && (
 							<>
 								<div className="gll-source-detail">
 									<strong>
@@ -932,7 +934,7 @@ function SourceCard( {
 							<strong>{ __( 'Data Type:', 'gll-info' ) }</strong>{ ' ' }
 							{ formatDataType( def.DataType ) }
 						</div>
-						{ balloon && (
+						{ showResponses && balloon && (
 							<>
 								<div className="gll-source-detail">
 									<strong>
@@ -977,10 +979,11 @@ function SourceCard( {
 /**
  * Sources list component.
  *
- * @param {Object}  props             Component props.
- * @param {Object}  props.data        Parsed GLL data.
- * @param {string}  props.displayMode Display mode (compact, detailed, expandable).
- * @param {boolean} props.showCharts  Whether to show response charts.
+ * @param {Object}  props               Component props.
+ * @param {Object}  props.data          Parsed GLL data.
+ * @param {string}  props.displayMode   Display mode (compact, detailed, expandable).
+ * @param {boolean} props.showCharts    Whether to show response charts.
+ * @param {boolean} props.showResponses Whether to show the response summary.
  * @return {JSX.Element} Sources list component.
  */
 const VIRTUALIZATION_THRESHOLD = 20;
@@ -990,6 +993,7 @@ function GLLSources( {
 	data,
 	displayMode = 'expandable',
 	showCharts = false,
+	showResponses = true,
 } ) {
 	const [ expandedSources, setExpandedSources ] = useState( {} );
 	const placementsMap = useMemo(
@@ -1080,6 +1084,7 @@ function GLLSources( {
 						index={ index }
 						displayMode={ displayMode }
 						showCharts={ showCharts }
+						showResponses={ showResponses }
 						placements={ placementsMap.get( source.Key ) || [] }
 						isExpanded={ expandedSources[ index ] || false }
 						onToggle={ () => handleToggle( index ) }
@@ -1282,6 +1287,17 @@ export default function Edit( { attributes, setAttributes } ) {
 								) }
 							/>
 							<ToggleControl
+								label={ __( 'Show Responses', 'gll-info' ) }
+								checked={ showResponses }
+								onChange={ ( value ) =>
+									setAttributes( { showResponses: value } )
+								}
+								help={ __(
+									'Display the response count and angular resolution for each source. Applies to the editor and the published page.',
+									'gll-info'
+								) }
+							/>
+							<ToggleControl
 								label={ __(
 									'Show Response Charts',
 									'gll-info'
@@ -1293,23 +1309,12 @@ export default function Edit( { attributes, setAttributes } ) {
 									} )
 								}
 								help={ __(
-									'Display frequency response controls and chart for each source.',
+									'Display frequency response controls and chart for each source. Editor preview only.',
 									'gll-info'
 								) }
 							/>
 						</>
 					) }
-					<ToggleControl
-						label={ __( 'Show Responses', 'gll-info' ) }
-						checked={ showResponses }
-						onChange={ ( value ) =>
-							setAttributes( { showResponses: value } )
-						}
-						help={ __(
-							'Coming soon: frequency response charts',
-							'gll-info'
-						) }
-					/>
 				</PanelBody>
 
 				<AppearanceControl
@@ -1353,6 +1358,7 @@ export default function Edit( { attributes, setAttributes } ) {
 								data={ data }
 								displayMode={ sourcesDisplayMode }
 								showCharts={ showSourceResponseCharts }
+								showResponses={ showResponses }
 							/>
 						) }
 					</div>

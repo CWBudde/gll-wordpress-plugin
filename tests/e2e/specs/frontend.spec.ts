@@ -120,6 +120,42 @@ test.describe( 'published page', () => {
 		expect( wasm ).not.toContain( 404 );
 	} );
 
+	// This is the only coverage the `showResponses` gate has on the published
+	// page: `renderSources` lives inside `view.ts`'s module closure, where
+	// jsdom cannot reach it. The editor half is unit-tested in `edit.test.tsx`.
+	//
+	// The figures come from the fixture: 19 measured responses at a 360° × 10°
+	// angular resolution.
+	test( 'gates the per-source response summary on showResponses', async ( {
+		admin,
+		editor,
+		page,
+	} ) => {
+		await publishWithBlock( { admin, editor, page }, 'gll-info/gll-info' );
+
+		await expect( page.locator( '.gll-source-responses' ) ).toHaveText(
+			'19 responses'
+		);
+		await expect( page.locator( '.gll-source-resolution' ) ).toHaveText(
+			'360° × 10°'
+		);
+
+		await publishWithBlock( { admin, editor, page }, 'gll-info/gll-info', {
+			showResponses: false,
+		} );
+
+		// The sources list still renders — only the summary is withheld. Both
+		// halves matter: a block that failed to hydrate at all would satisfy
+		// the second assertion on its own.
+		await expect( page.locator( '.gll-source-item' ) ).toHaveCount( 1 );
+		await expect( page.locator( '.gll-source-responses' ) ).toHaveCount(
+			0
+		);
+		await expect( page.locator( '.gll-source-resolution' ) ).toHaveCount(
+			0
+		);
+	} );
+
 	test( 'draws the frequency response chart', async ( {
 		admin,
 		editor,

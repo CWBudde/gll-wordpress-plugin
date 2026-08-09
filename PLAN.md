@@ -4,10 +4,10 @@ A WordPress Gutenberg plugin that displays GLL (Generic Loudspeaker Library)
 file data, built on the `gll-tools` Go/WASM parser with the web demo at
 <https://meko-christian.github.io/gll-tools/> as the visual reference.
 
-**Status: Phases 1–12 complete.** What is left is collected in
-[Phase 13 — Remaining work](#phase-13--remaining-work) at the end of this
-document: screen-reader testing, tagging the release, two remaining tracked
-defects, and the features deliberately never built.
+**Status: Phases 1–12 complete, and the defect backlog is empty.** What is left
+is collected in [Phase 13 — Remaining work](#phase-13--remaining-work) at the
+end of this document: screen-reader testing, tagging the release, and the
+features deliberately never built.
 
 ---
 
@@ -345,9 +345,9 @@ in `.wp-env.json` and made usable by `scripts/wp-env-after-start.sh`.
 
 | Command | What it runs |
 |---|---|
-| `npm test` | 655 Jest tests — jsdom `unit` + node `integration` (drives real `gll.wasm`) |
-| `npm run test:php` | 31 PHPUnit tests against real WordPress in wp-env |
-| `npm run test:e2e` | 23 Playwright specs against a real browser |
+| `npm test` | 660 Jest tests — jsdom `unit` + node `integration` (drives real `gll.wasm`) |
+| `npm run test:php` | 33 PHPUnit tests against real WordPress in wp-env |
+| `npm run test:e2e` | 27 Playwright specs against a real browser |
 | `npm run typecheck` | tsc — `wp-scripts` compiles through babel, which strips types without checking |
 | `npm run perf` | Sweeps the 29-file corpus, writes `docs/performance.md` |
 
@@ -551,11 +551,11 @@ Chrome and defensible for Edge; Playwright's WebKit is not Safari, and Safari
 applies its own WebAssembly memory limits — precisely where this plugin is most
 exposed. `readme.txt` already says so; keep it that way.
 
-### 13.3 Defect backlog — work to do
+### 13.3 Defect backlog — empty
 
-Each defect below is characterized by a *passing* test describing today's
-behaviour, so the first step of every fix is to flip that test to assert the
-intended behaviour and watch it go red.
+All three tracked defects are fixed. Each had been characterized by a *passing*
+test describing what actually happened, so the first step of every fix was to
+flip that test to assert the intended behaviour and watch it go red.
 
 #### 13.3.1 Fix `has_block()` frontend asset gating [DONE]
 
@@ -623,33 +623,63 @@ hardcoded fallback keeps being exercised as it would be on a real install. The
 failure this fixes is therefore not reproducible there by path; the tests assert
 the presence of `gllInfoSettings` instead, which is the thing that was missing.
 
-#### 13.3.2 Resolve `showResponses`
+#### 13.3.2 Resolve `showResponses` [DONE]
 
-The main block's attribute serializes to `data-show-responses` and nothing reads
-it. Decide, then do one of:
+Wired up, as recommended — but not to the feature the old help text promised.
 
-- [ ] **Wire it up** — have `gll-info/view.ts` and `edit.tsx` honour it the way
-      `showOverview` and `showSources` are honoured, and add tests, or
-- [ ] **Remove it** — and add a `deprecated` entry to the block, because dropping
-      an attribute from `save()` output invalidates every published post that
-      contains the block. A demo page carrying the current markup is already
-      live, so this is not hypothetical
-- [ ] Either way, update the InspectorControls label so the editor stops offering
-      a toggle that does nothing
+- [x] `showResponses` now gates the per-source **response summary** — measured
+      response count and angular resolution — in `edit.tsx` and, through
+      `data-show-responses`, in `view.ts`
+- [x] The frontend `renderSources` gained that summary; it previously rendered
+      label, bandwidth and placements and no response information at all
+- [x] InspectorControls help text replaced, and the toggle moved inside the
+      `showSources` group where it belongs
+- [x] Editor tests (`edit.test.tsx`) and a frontend E2E spec
 
-Recommendation: wire it up. The attribute exists because the feature was
-intended, and the deprecation machinery is the more expensive path.
+**There were two responses toggles, and the plan only knew about one.**
+`showSourceResponseCharts` (default `false`, editor-only, deliberately *not*
+serialized) is what gates the Chart.js `SourceResponseControls`. So
+`showResponses` could not simply become "the chart toggle" — that job was taken.
+Do not merge them: one controls a cheap text summary that ships to visitors, the
+other an editor-only preview of a chart the dedicated
+`gll-info/frequency-response` block exists to render.
 
-#### 13.3.3 Remove the redundant `polar-utils` guard
+**Frontend charts were the wrong reading of "wire it up".** Porting
+`SourceResponseControls` into `view.ts` would pull Chart.js into the main
+block's view bundle to duplicate a block that already exists — the same trade
+Phase 10 refused when it made "show geometry if available" a summary line rather
+than an inline viewer (18 KB against 538 KB). The summary is what the frontend
+was actually missing.
 
-- [ ] Delete `onAxisLevel.length === onAxisLevel.length` from `canCombineOnAxis`
-- [ ] Confirm the pinning test still passes unchanged — the preceding
-      frequency-length comparison already enforces the intended rule, so removal
-      must be a no-op. If the test moves, the analysis was wrong and the guard
-      was load-bearing after all
+**No `deprecated` entry was needed, and that is why this option was cheap.**
+`save()` is unchanged — `data-show-responses` was already being emitted, just
+never read. Note for whoever revisits the *removal* option: `deprecated.tsx`
+derives its v1 attribute list from live `metadata.attributes`, so deleting an
+attribute from `block.json` silently strips it from v1 too, and v1 then stops
+matching the published markup it exists to rescue. Its list has to be frozen
+literally first.
 
-Five minutes of work. Listed because the line reads like a typo for something
-else and will keep drawing attention until it is gone.
+`showResponses` defaults to `true`, so every existing post — including the
+published demo page — now shows the summary. Additive and intended.
+
+The frontend half is covered by E2E rather than jsdom because `renderSources`
+lives inside `view.ts`'s module closure and is not exported. Extracting it the
+way Phase 9 extracted `resource-render.ts` remains the better long-term shape;
+it was not worth doing opportunistically. The spec was mutation-checked — with
+the gate bypassed it fails — because an assertion that something is *absent*
+passes just as well against a block that never rendered.
+
+#### 13.3.3 Remove the redundant `polar-utils` guard [DONE]
+
+- [x] Deleted `onAxisLevel.length === onAxisLevel.length` from `canCombineOnAxis`
+- [x] The pinning test passed unchanged, confirming the analysis: the preceding
+      frequency-length comparison already enforces the rule, because
+      `onAxisFreqs` is built with `onAxisLevel.length` as its count override
+
+The correctly written twin, which compares both lengths because it has no such
+construction guarantee, is in `charting-utils.ts` — the removed line was a
+botched port of it. The test's doc comment now records that rather than
+describing a tautology that is no longer there.
 
 ### 13.4 Feature backlog — work that can and should be done
 
