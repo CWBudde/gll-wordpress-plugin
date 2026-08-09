@@ -1231,7 +1231,7 @@ Begin with Phase 1 to establish the foundation, then proceed sequentially. The m
 - **Phase 6** (3D Balloon) - Very High complexity, advanced Three.js mesh generation
 - **Phase 8** (Geometry Viewer) - Very High complexity, Three.js with OrbitControls
 
-The existing web demo at `https://meko-christian.github.io/gll-tools/` serves as the reference implementation for all visualizations.
+The existing web demo at `https://cwbudde.github.io/gll-tools/` serves as the reference implementation for all visualizations.
 
 ## Implementation Notes
 
