@@ -15,8 +15,8 @@
 		},
 		{
 			"files": [ "scripts/*.mjs" ],
-			"env": { "node": true, "browser": false },
-			"parserOptions": { "sourceType": "module" },
+			"env": { "node": true, "browser": false, "es2022": true },
+			"parserOptions": { "sourceType": "module", "ecmaVersion": 2022 },
 			"rules": {
 				"no-console": "off"
 			}
