@@ -143,11 +143,36 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
 - ✅ Phase 10: Configuration block (box types, frames, filters, limits, warnings)
 - ✅ Phase 7: Sources list (integrated into main block, placements included)
 - ✅ Phase 6: 3D balloon block (Three.js, quality presets, lazy init)
-- 🔶 Phase 11: Integration and polish (patterns, variations, i18n, a11y, docs;
-  the `.pot` catalogue and screen-reader testing are outstanding)
-- ⏳ Phase 12: Testing and release
+- ✅ Phase 11: Integration and polish (patterns, variations, i18n, a11y, docs;
+  the `.pot` catalogue now ships — screen-reader testing is still outstanding)
+- 🔶 Phase 12: Testing and release (all suites in place and green; screen-reader
+  testing remains open and no release has been tagged)
 
 The main block (`gll-info/gll-info`) currently integrates overview and sources display with toggle controls in the InspectorControls panel.
+
+## Testing
+
+Four suites, all green. `npm test` runs the two Jest projects (655 tests): a
+jsdom `unit` project and a node `integration` project that drives the real
+`gll.wasm`. `npm run test:php` runs 31 PHPUnit tests against real WordPress
+inside wp-env. `npm run test:e2e` runs 23 Playwright specs against a real
+browser. `npm run typecheck` exists because `wp-scripts` compiles through babel,
+which strips types without checking them.
+
+wp-env is required for the PHP and E2E suites: `npm run env:start`. The plugin
+is mounted at the `gll-info` slug rather than the repository directory name,
+because `wasm-loader` falls back to `/wp-content/plugins/gll-info/...` and a
+differently named directory would exercise a path no real install takes.
+
+Two environment traps, both already handled but worth knowing:
+`scripts/wp-env-after-start.sh` activates a theme, without which core resolves
+every block stylesheet to a 404 and no block renders at all; and the PHP suite
+reinstalls the tests site, so the E2E suite re-activates what it needs in its
+own `globalSetup`.
+
+The corpus-backed integration tests skip unless `GLL_CORPUS` points at a
+directory of `.gll` files. The default sweep is size-bounded; run
+`npm run test:integration:full` before a release.
 
 `src/shared/gll-normalize.ts` is the single translation point between the raw
 parser output (snake_case) and everything downstream (PascalCase). A block that
