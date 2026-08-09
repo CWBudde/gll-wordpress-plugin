@@ -27,6 +27,34 @@ class GLL_Media {
 		add_filter( 'post_mime_types', array( __CLASS__, 'add_gll_post_mime_type' ) );
 		add_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'gll_attachment_image' ), 10, 4 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_styles' ) );
+		add_action( 'add_attachment', array( __CLASS__, 'warm_cache_on_upload' ) );
+	}
+
+	/**
+	 * Parse and cache a GLL file as it is uploaded.
+	 *
+	 * This is what makes the cache warm for files nobody has opened in the block
+	 * editor yet, and it is the whole point of having a server-side parser. On a
+	 * host with no usable backend it does nothing at all, and the plugin behaves
+	 * as it did before: the editor warms the cache when an author picks a file,
+	 * and the frontend parses in the browser when it is cold.
+	 *
+	 * Deliberately synchronous rather than deferred to cron. WordPress already
+	 * does comparable work inline on upload — generating the sub-sizes of a large
+	 * image takes seconds — and a scheduled event would mean the cache is warm
+	 * only on sites whose cron actually runs, which is a poor thing for a
+	 * behaviour an administrator is about to go and verify. The cost is bounded
+	 * by the backend's size ceiling and its subprocess timeout, and every failure
+	 * simply leaves the cache cold.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 */
+	public static function warm_cache_on_upload( $attachment_id ) {
+		if ( 'application/x-gll' !== get_post_mime_type( $attachment_id ) ) {
+			return;
+		}
+
+		GLL_Parser::warm( $attachment_id );
 	}
 
 	/**

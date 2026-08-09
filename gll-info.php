@@ -141,7 +141,7 @@ function gll_info_enqueue_editor_assets() {
 		'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
 		'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
 		'pluginUrl'   => GLL_INFO_PLUGIN_URL,
-		'restUrl'     => rest_url( 'gll-info/v1/' ),
+		'restUrl'     => rest_url( GLL_REST::NAMESPACE . '/' ),
 		'nonce'       => wp_create_nonce( 'wp_rest' ),
 	);
 
@@ -213,6 +213,11 @@ function gll_info_enqueue_frontend_assets() {
 		'wasmUrl'     => GLL_INFO_PLUGIN_URL . 'assets/wasm/gll.wasm',
 		'wasmExecUrl' => GLL_INFO_PLUGIN_URL . 'assets/wasm/wasm_exec.js',
 		'pluginUrl'   => GLL_INFO_PLUGIN_URL,
+		// The cached-subset endpoint the views try before booting WASM. No
+		// nonce goes with it: the read route is public, because the visitors
+		// who benefit from the cache are anonymous by definition, and a nonce
+		// printed on a page served from a full-page cache would be stale anyway.
+		'restUrl'     => rest_url( GLL_REST::NAMESPACE . '/' ),
 	);
 
 	foreach ( gll_info_get_block_names() as $block_name ) {
@@ -231,3 +236,14 @@ add_action( 'wp_enqueue_scripts', 'gll_info_enqueue_frontend_assets' );
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-i18n.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-media.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-patterns.php';
+// Ordered by dependency: the cache reads `GLL_Subset::VERSION` and writes
+// through `GLL_Media`, and the REST routes use both.
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-subset.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-cache.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-backend.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-node.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-cli.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-phpwasm.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-rest.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-settings.php';
