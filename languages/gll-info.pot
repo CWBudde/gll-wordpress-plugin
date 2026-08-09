@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-09T19:03:27+00:00\n"
+"POT-Creation-Date: 2026-08-09T20:34:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gll-info\n"
@@ -284,15 +284,19 @@ msgstr ""
 msgid "The submitted GLL data could not be stored."
 msgstr ""
 
-#: includes/class-gll-rest.php:168
+#: includes/class-gll-rest.php:178
+msgid "The file changed while it was being read. Nothing was stored."
+msgstr ""
+
+#: includes/class-gll-rest.php:185
 msgid "The GLL data could not be saved."
 msgstr ""
 
-#: includes/class-gll-rest.php:210
+#: includes/class-gll-rest.php:227
 msgid "No cached data is available for this file."
 msgstr ""
 
-#: includes/class-gll-rest.php:223
+#: includes/class-gll-rest.php:240
 msgid "That attachment is not a GLL file."
 msgstr ""
 
@@ -348,27 +352,27 @@ msgstr ""
 msgid "No server-side parser is available, so files are parsed in the browser. This is a supported configuration and nothing is broken."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:128
+#: includes/parser/class-gll-parser-backend.php:136
 msgid "This site is not allowed to run external commands."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:146
+#: includes/parser/class-gll-parser-backend.php:152
 msgid "The parser could not be started."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:168
+#: includes/parser/class-gll-parser-backend.php:174
 msgid "The parser took too long and was stopped."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:228
+#: includes/parser/class-gll-parser-backend.php:234
 msgid "The parser produced no output."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:237
+#: includes/parser/class-gll-parser-backend.php:243
 msgid "The parser produced output that could not be read."
 msgstr ""
 
-#: includes/parser/class-gll-parser-backend.php:247
+#: includes/parser/class-gll-parser-backend.php:253
 msgid "The GLL file could not be parsed."
 msgstr ""
 

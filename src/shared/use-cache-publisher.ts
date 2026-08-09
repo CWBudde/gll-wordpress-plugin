@@ -35,19 +35,41 @@ import { buildDisplaySubset } from './gll-subset';
  * something they can act on. The cache stays cold, the frontend parses, and the
  * next editor load tries again.
  *
- * @param {number} fileId Attachment ID of the selected file, 0 when none.
- * @param {Object} data   Normalized parse, or null while loading.
+ * @param {Object}      options            Options.
+ * @param {number}      options.fileId     Attachment ID of the selected file, 0 when none.
+ * @param {string}      options.fileUrl    URL of the selected file.
+ * @param {Object}      options.data       Normalized parse, or null while loading.
+ * @param {Object|null} options.parsedFrom Which file `data` came from, from `useGLLLoader()`.
  * @return {Function} `rebuild()`, which discards the stored subset and writes it
  *                    again from the parse in hand. Resolves to whether it stuck.
  */
-export function useCachePublisher( fileId, data ) {
+export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 	// Which attachment this hook has already settled, so that a re-render with
 	// the same data does not re-request. A ref rather than state: nothing
 	// renders differently as a result.
 	const settled = useRef( null );
 
+	// THE PARSE MUST BELONG TO THE SELECTED FILE, and this is the check that
+	// makes sure of it.
+	//
+	// Selecting a new file updates `fileId` and `fileUrl` immediately, but six of
+	// the seven blocks leave the previous parse in place while the new one loads
+	// — only the file viewer calls `clear()`. Without this guard the effect would
+	// run with the NEW attachment ID and the OLD file's data, win the race
+	// against the parse that has not finished yet, store one file's summary under
+	// another file's ID, and then mark that ID settled so the correct data could
+	// never replace it. Visitors would be served metadata for the wrong file,
+	// permanently.
+	//
+	// `parsedFrom.url` is set by `useGLLLoader()` in the same commit as `data`, so
+	// comparing it to the currently selected URL answers exactly the right
+	// question: is what I am holding a parse of the file I am being asked about?
+	const matches = Boolean(
+		parsedFrom && fileUrl && parsedFrom.url === fileUrl
+	);
+
 	useEffect( () => {
-		if ( ! fileId || ! data ) {
+		if ( ! fileId || ! data || ! matches ) {
 			return undefined;
 		}
 
@@ -75,7 +97,7 @@ export function useCachePublisher( fileId, data ) {
 				return;
 			}
 
-			await publishSubset( fileId, subset );
+			await publishSubset( fileId, subset, parsedFrom?.hash );
 
 			if ( ! cancelled ) {
 				settled.current = key;
@@ -85,10 +107,10 @@ export function useCachePublisher( fileId, data ) {
 		return () => {
 			cancelled = true;
 		};
-	}, [ fileId, data ] );
+	}, [ fileId, data, matches, parsedFrom ] );
 
 	return useCallback( async () => {
-		if ( ! fileId || ! data ) {
+		if ( ! fileId || ! data || ! matches ) {
 			return false;
 		}
 
@@ -102,14 +124,14 @@ export function useCachePublisher( fileId, data ) {
 		// be sure nothing of the old entry survived.
 		await deleteCachedSubset( fileId );
 
-		const stored = await publishSubset( fileId, subset );
+		const stored = await publishSubset( fileId, subset, parsedFrom?.hash );
 
 		// Whatever happened, this attachment is no longer settled from the
 		// effect's point of view unless the write actually landed.
 		settled.current = stored ? String( fileId ) : null;
 
 		return stored;
-	}, [ fileId, data ] );
+	}, [ fileId, data, matches, parsedFrom ] );
 }
 
 export default useCachePublisher;

@@ -716,9 +716,20 @@ neither the parser nor the GLL.
       and now reaches the frontend payload too
 - [x] Populated on upload where a backend exists, from the block editor
       otherwise, and on demand from a "Refresh stored summary" inspector control
-- [x] Invalidated by re-upload — the envelope stores a hash of the file computed
-      server-side, so replaced bytes stop matching their own cache — and by
-      attachment delete, for free
+- [x] Invalidated by re-upload — the envelope stores a fingerprint of the file
+      computed server-side, so replaced bytes stop matching their own cache — and
+      by attachment delete, for free. **Reads do not normally hash anything**:
+      the read route is public, so a digest per GET would let an anonymous caller
+      force repeated full reads of a file that can run to tens of megabytes.
+      `get()` compares size and mtime — a `stat()` — and falls back to the digest
+      only when those disagree, which is also what stops a `touch` or a backup
+      restore from discarding every cached subset on the site
+- [x] The editor sends the SHA-256 of the bytes it parsed, and the server refuses
+      the write unless it still matches the file. Without that, a file replaced
+      between the browser's fetch and its save would have the *old* subset
+      stamped with the *new* file's fingerprint and served as fresh indefinitely.
+      Optional, because `crypto.subtle` needs a secure context and a plain-HTTP
+      site would otherwise lose caching altogether
 - [x] The frontend prefers the cache and falls back to WASM. A cold cache is
       signalled as 404, which is also what a stale hash and an old subset version
       produce, so all three take one path

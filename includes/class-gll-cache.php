@@ -14,17 +14,37 @@
  *
  *     array(
  *       'version'   => GLL_Subset::VERSION,
- *       'hash'      => md5 of the file the subset was built from,
+ *       'hash'      => sha256 of the file the subset was built from,
+ *       'size'      => its size in bytes,
+ *       'mtime'     => its modification time,
  *       'generated' => unix timestamp,
  *       'producer'  => 'node' | 'cli' | 'phpwasm' | 'browser',
  *       'data'      => the subset,
  *     )
  *
- * THE HASH IS COMPUTED HERE, FROM THE FILE ON DISK, and never accepted from the
- * caller. That is what makes invalidation real rather than advisory: a replaced
- * file stops matching its own cache with no hook involved, and a browser that
- * POSTs a subset cannot claim it parsed bytes it did not. `get()` re-hashes and
- * refuses to serve a payload whose file has moved on.
+ * THE HASH IS COMPUTED HERE, FROM THE FILE ON DISK, and never taken on trust
+ * from the caller. That is what makes invalidation real rather than advisory: a
+ * replaced file stops matching its own cache with no hook involved.
+ *
+ * READS DO NOT NORMALLY HASH ANYTHING. The read route is public, so hashing on
+ * every GET would let an anonymous caller force a full re-read of a file that
+ * can run to tens of megabytes, once per cache-backed block per page view.
+ * `get()` therefore compares the cheap signature first — size and mtime, which
+ * cost a `stat()` — and only falls back to hashing when that disagrees. The
+ * fallback is what keeps a file whose mtime was touched but whose bytes are
+ * unchanged from losing its cache. Within one request the answer is memoized,
+ * so two blocks sharing a file do not stat it twice.
+ *
+ * The boundary of that, stated plainly: a replacement that keeps the file's
+ * exact byte count AND lands in the same one-second mtime tick as the write the
+ * cache was built from is invisible to `stat()`, and would be served stale. That
+ * requires overwriting a file within the same second it was first written, which
+ * a media replace — an upload, then a human action, then another upload — cannot
+ * do. Hashing every public read to close it would hand an anonymous caller a way
+ * to force unbounded disk reads, which is the worse trade.
+ *
+ * The digest is SHA-256 rather than MD5 so that a browser can compute the same
+ * value with `crypto.subtle` and prove which bytes it parsed; see `set()`.
  *
  * @package
  */
@@ -45,6 +65,23 @@ class GLL_Cache {
 	 * @var string
 	 */
 	const META_KEY = '_gll_metadata';
+
+	/**
+	 * Digest used to fingerprint a GLL file.
+	 *
+	 * SHA-256 because `crypto.subtle` in a browser can produce it and MD5 it
+	 * cannot, which is what lets the editor prove which bytes it parsed.
+	 *
+	 * @var string
+	 */
+	const HASH_ALGO = 'sha256';
+
+	/**
+	 * Resolved subsets for this request, keyed by attachment ID.
+	 *
+	 * @var array
+	 */
+	private static $memo = array();
 
 	/**
 	 * Largest subset accepted, in bytes of encoded JSON.
@@ -100,6 +137,24 @@ class GLL_Cache {
 	 * @return array|false The subset, or false when there is no usable cache.
 	 */
 	public static function get( $attachment_id ) {
+		$attachment_id = (int) $attachment_id;
+
+		if ( array_key_exists( $attachment_id, self::$memo ) ) {
+			return self::$memo[ $attachment_id ];
+		}
+
+		self::$memo[ $attachment_id ] = self::resolve( $attachment_id );
+
+		return self::$memo[ $attachment_id ];
+	}
+
+	/**
+	 * Work out what `get()` should return, ignoring the memo.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array|false The subset, or false.
+	 */
+	private static function resolve( $attachment_id ) {
 		if ( ! self::is_gll( $attachment_id ) ) {
 			return false;
 		}
@@ -114,12 +169,42 @@ class GLL_Cache {
 			return false;
 		}
 
-		$hash = self::file_hash( $attachment_id );
-		if ( ! $hash || ! isset( $envelope['hash'] ) || ! hash_equals( (string) $envelope['hash'], $hash ) ) {
+		return self::describes_current_file( $attachment_id, $envelope )
+			? $envelope['data']
+			: false;
+	}
+
+	/**
+	 * Whether an envelope still describes the file it was built from.
+	 *
+	 * The cheap check first, and the expensive one only when it fails — see the
+	 * note in the class docblock about this being a public, unauthenticated read.
+	 *
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $envelope      Stored envelope.
+	 * @return bool True when the payload may be served.
+	 */
+	private static function describes_current_file( $attachment_id, $envelope ) {
+		$signature = self::file_signature( $attachment_id );
+
+		if ( ! $signature ) {
 			return false;
 		}
 
-		return $envelope['data'];
+		if ( isset( $envelope['size'], $envelope['mtime'] )
+			&& (int) $envelope['size'] === $signature['size']
+			&& (int) $envelope['mtime'] === $signature['mtime'] ) {
+			return true;
+		}
+
+		// Signature mismatch is not proof of a change: a backup restore or a
+		// `touch` moves the mtime without moving a byte. Only the digest can
+		// settle it, and only here, which is rare.
+		$hash = self::file_hash( $attachment_id );
+
+		return $hash
+			&& isset( $envelope['hash'] )
+			&& hash_equals( (string) $envelope['hash'], $hash );
 	}
 
 	/**
@@ -140,12 +225,24 @@ class GLL_Cache {
 	/**
 	 * Store a subset for an attachment.
 	 *
-	 * @param int    $attachment_id Attachment ID.
-	 * @param array  $subset        Display subset, as `GLL_Subset::from_raw()` builds.
-	 * @param string $producer      Which parser produced it.
+	 * `$expected_hash` closes a window the server cannot otherwise see. A browser
+	 * fetches the file, parses it, and only then POSTs; if the bytes were replaced
+	 * in between, hashing the file here would stamp the OLD subset with the NEW
+	 * file's fingerprint and `get()` would serve it as fresh forever. When the
+	 * caller says which digest it parsed against, a mismatch is refused instead.
+	 *
+	 * It is optional rather than required because `crypto.subtle` needs a secure
+	 * context: on a plain-HTTP site the editor cannot produce a digest, and
+	 * refusing the write there would disable caching for that site entirely.
+	 * Supplying it hardens the write; omitting it is exactly the old behaviour.
+	 *
+	 * @param int         $attachment_id Attachment ID.
+	 * @param array       $subset        Display subset, as `GLL_Subset::from_raw()` builds.
+	 * @param string      $producer      Which parser produced it.
+	 * @param string|null $expected_hash Digest the caller parsed against, if known.
 	 * @return bool Whether the subset was stored.
 	 */
-	public static function set( $attachment_id, $subset, $producer = 'browser' ) {
+	public static function set( $attachment_id, $subset, $producer = 'browser', $expected_hash = null ) {
 		if ( ! self::is_gll( $attachment_id ) || ! self::validate( $subset ) ) {
 			return false;
 		}
@@ -155,9 +252,22 @@ class GLL_Cache {
 			return false;
 		}
 
+		if ( null !== $expected_hash && ! hash_equals( $hash, (string) $expected_hash ) ) {
+			return false;
+		}
+
+		$signature = self::file_signature( $attachment_id );
+		if ( ! $signature ) {
+			return false;
+		}
+
+		unset( self::$memo[ (int) $attachment_id ] );
+
 		$envelope = array(
 			'version'   => GLL_Subset::VERSION,
 			'hash'      => $hash,
+			'size'      => $signature['size'],
+			'mtime'     => $signature['mtime'],
 			'generated' => time(),
 			'producer'  => self::producer( $producer ),
 			'data'      => $subset,
@@ -177,7 +287,48 @@ class GLL_Cache {
 	 * @return bool Whether anything was removed.
 	 */
 	public static function delete( $attachment_id ) {
+		unset( self::$memo[ (int) $attachment_id ] );
+
 		return delete_post_meta( $attachment_id, self::META_KEY );
+	}
+
+	/**
+	 * Forget everything resolved during this request.
+	 *
+	 * Only tests need this: within a real request the file does not change under
+	 * the process, which is the assumption the memo is built on.
+	 */
+	public static function flush_memo() {
+		self::$memo = array();
+	}
+
+	/**
+	 * Cheap change signature of the file backing an attachment.
+	 *
+	 * A `stat()` rather than a read, which is the whole point: this runs on every
+	 * public cache read.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array|false `array( 'size' => int, 'mtime' => int )`, or false.
+	 */
+	public static function file_signature( $attachment_id ) {
+		$path = get_attached_file( $attachment_id );
+
+		if ( ! $path || ! is_file( $path ) || ! is_readable( $path ) ) {
+			return false;
+		}
+
+		$size  = filesize( $path );
+		$mtime = filemtime( $path );
+
+		if ( false === $size || false === $mtime ) {
+			return false;
+		}
+
+		return array(
+			'size'  => (int) $size,
+			'mtime' => (int) $mtime,
+		);
 	}
 
 	/**
@@ -199,12 +350,11 @@ class GLL_Cache {
 	/**
 	 * Hash of the file backing an attachment.
 	 *
-	 * MD5 rather than a cryptographic digest on purpose: this answers "are these
-	 * the same bytes as last time", not "did someone forge these bytes", and it
-	 * is the one hash every supported PHP has without an extension. The file is
-	 * read from disk each time `get()` runs, which costs a few milliseconds even
-	 * for the largest corpus file and is the price of an invalidation rule that
-	 * cannot be forgotten.
+	 * This reads the whole file, so it is called when writing and only rarely
+	 * when reading — `describes_current_file()` explains when. SHA-256 is chosen
+	 * for what a browser can reproduce rather than for its strength; the question
+	 * being answered is "are these the same bytes", and the caller may need to
+	 * answer it too.
 	 *
 	 * @param int $attachment_id Attachment ID.
 	 * @return string|false Hash, or false when the file is unreadable.
@@ -216,7 +366,7 @@ class GLL_Cache {
 			return false;
 		}
 
-		$hash = md5_file( $path );
+		$hash = hash_file( self::HASH_ALGO, $path );
 
 		return $hash ? $hash : false;
 	}

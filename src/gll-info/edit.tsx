@@ -1134,11 +1134,16 @@ export default function Edit( { attributes, setAttributes } ) {
 		showResponses,
 		appearance,
 	} = attributes;
-	const { data, isLoading, error, load, clear } = useGLLLoader();
+	const { data, parsedFrom, isLoading, error, load, clear } = useGLLLoader();
 
 	// This block is one of the two served from the cache on the frontend, so
 	// keeping it warm here is what stops visitors downloading the parser.
-	const rebuildCache = useCachePublisher( fileId, data );
+	const rebuildCache = useCachePublisher( {
+		fileId,
+		fileUrl,
+		data,
+		parsedFrom,
+	} );
 
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 

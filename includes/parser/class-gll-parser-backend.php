@@ -108,10 +108,18 @@ abstract class GLL_Parser_Backend {
 	/**
 	 * Run a command and capture its output.
 	 *
-	 * Arguments are passed as a list and escaped individually; nothing here ever
-	 * interpolates a caller's string into a shell command. The only argument any
-	 * backend passes is a path resolved from an attachment ID, never a value
-	 * taken from a request.
+	 * The command is handed to `proc_open()` as an ARRAY, not a string, and that
+	 * matters for more than quoting. Given a string, PHP runs the command through
+	 * `sh -c`, so the process resource refers to the shell rather than to the
+	 * parser — and `proc_terminate()` on a timeout would then kill the shell and
+	 * leave Node running with its whole WebAssembly allocation. Passing an array
+	 * execs the binary directly, so the resource is the process that must be
+	 * stopped. It also removes the shell from the picture entirely, which is a
+	 * better guarantee than escaping. Supported since PHP 7.4, which is this
+	 * plugin's floor.
+	 *
+	 * The only argument any backend passes is a path resolved from an attachment
+	 * ID, never a value taken from a request.
 	 *
 	 * Reads both pipes through `stream_select()` rather than draining one and
 	 * then the other: a child that fills the pipe it is not being read from
@@ -129,8 +137,6 @@ abstract class GLL_Parser_Backend {
 			);
 		}
 
-		$escaped = implode( ' ', array_map( 'escapeshellarg', $command ) );
-
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
 			1 => array( 'pipe', 'w' ),
@@ -138,7 +144,7 @@ abstract class GLL_Parser_Backend {
 		);
 
 		$pipes   = array();
-		$process = @proc_open( $escaped, $descriptors, $pipes );
+		$process = @proc_open( array_values( $command ), $descriptors, $pipes );
 
 		if ( ! is_resource( $process ) ) {
 			return new WP_Error(

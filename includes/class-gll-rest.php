@@ -162,7 +162,24 @@ class GLL_REST {
 			);
 		}
 
-		if ( ! GLL_Cache::set( $attachment_id, $subset, 'browser' ) ) {
+		// The digest the caller says it parsed against, when it could compute one.
+		// Verified against the file as it is now, so a payload describing bytes
+		// that have since been replaced is refused rather than stored under the
+		// new file's fingerprint. See `GLL_Cache::set()` for why it is optional.
+		$expected = null;
+		if ( isset( $body['hash'] ) && is_string( $body['hash'] ) && preg_match( '/^[a-f0-9]{64}$/', $body['hash'] ) ) {
+			$expected = $body['hash'];
+		}
+
+		if ( ! GLL_Cache::set( $attachment_id, $subset, 'browser', $expected ) ) {
+			if ( null !== $expected ) {
+				return new WP_Error(
+					'gll_info_file_changed',
+					__( 'The file changed while it was being read. Nothing was stored.', 'gll-info' ),
+					array( 'status' => 409 )
+				);
+			}
+
 			return new WP_Error(
 				'gll_info_store_failed',
 				__( 'The GLL data could not be saved.', 'gll-info' ),

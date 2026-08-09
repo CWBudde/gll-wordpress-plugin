@@ -33,6 +33,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TextDecoder, TextEncoder } from 'node:util';
+import { webcrypto } from 'node:crypto';
 
 const require = createRequire( import.meta.url );
 
@@ -58,6 +59,15 @@ if ( ! file ) {
 // the global object until v11+/undici — set them explicitly rather than assume.
 globalThis.TextEncoder = TextEncoder;
 globalThis.TextDecoder = TextDecoder;
+
+// `wasm_exec.js` throws outright when `globalThis.crypto` is missing, and Node
+// only exposes Web Crypto globally from v19 — v18 keeps it behind a flag. Without
+// this the backend would detect itself as available on Node 16 and 18 and then
+// fail on every parse. Assigned rather than defaulted with `??=` because the
+// property is read-only on some versions.
+if ( ! globalThis.crypto ) {
+	globalThis.crypto = webcrypto;
+}
 
 let raw;
 try {

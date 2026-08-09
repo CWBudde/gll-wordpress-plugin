@@ -12,8 +12,9 @@ import {
 	useState,
 	useCallback,
 	useMemo,
+	useRef,
 } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import {
 	initWasm,
@@ -238,10 +239,18 @@ export function useGLL() {
  */
 export function useGLLLoader() {
 	const [ data, setData ] = useState( null );
+	const [ parsedFrom, setParsedFrom ] = useState( null );
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ error, setError ] = useState( null );
 
+	// Which load is the current one. A block whose file is changed twice in
+	// quick succession gets two parses in flight, and the slower one must not
+	// win just because it finished last.
+	const generation = useRef( 0 );
+
 	const load = useCallback( async ( fileOrUrl, isUrl = false ) => {
+		const mine = ++generation.current;
+
 		setIsLoading( true );
 		setError( null );
 
@@ -249,17 +258,55 @@ export function useGLLLoader() {
 			await initWasm();
 
 			let parsedData;
+			let digest = null;
+
 			if ( isUrl ) {
-				parsedData = await parseGLLFromUrl( fileOrUrl );
+				// Fetched here rather than through `parseGLLFromUrl()` so the
+				// bytes can be fingerprinted on the way past. Re-fetching to
+				// hash would double the download of a file that can run to
+				// tens of megabytes.
+				const response = await fetch( fileOrUrl );
+				if ( ! response.ok ) {
+					throw new Error(
+						sprintf(
+							/* translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found". */
+							__(
+								'Failed to fetch GLL file: %1$d %2$s',
+								'gll-info'
+							),
+							response.status,
+							response.statusText
+						)
+					);
+				}
+
+				const arrayBuffer = await response.arrayBuffer();
+				digest = await sha256Hex( arrayBuffer );
+				parsedData = await parseGLL( arrayBuffer );
 			} else {
 				const arrayBuffer = await fileOrUrl.arrayBuffer();
+				digest = await sha256Hex( arrayBuffer );
 				parsedData = await parseGLL( arrayBuffer );
 			}
 
+			if ( mine !== generation.current ) {
+				return null;
+			}
+
+			// Set together, and never separately: everything downstream relies
+			// on `parsedFrom` describing the file `data` came from.
+			setParsedFrom( {
+				url: isUrl ? fileOrUrl : null,
+				hash: digest,
+			} );
 			setData( parsedData );
 			setIsLoading( false );
 			return parsedData;
 		} catch ( err ) {
+			if ( mine !== generation.current ) {
+				return null;
+			}
+
 			setError( err );
 			setIsLoading( false );
 			return null;
@@ -267,11 +314,46 @@ export function useGLLLoader() {
 	}, [] );
 
 	const clear = useCallback( () => {
+		++generation.current;
 		setData( null );
+		setParsedFrom( null );
 		setError( null );
 	}, [] );
 
-	return { data, isLoading, error, load, clear };
+	return { data, parsedFrom, isLoading, error, load, clear };
+}
+
+/**
+ * SHA-256 of a buffer, as lowercase hex.
+ *
+ * Lets the editor prove to the server which bytes it parsed, so a file replaced
+ * between the fetch and the save cannot have the old parse stored against it.
+ *
+ * Returns null rather than throwing where `crypto.subtle` is unavailable, which
+ * is any page not in a secure context — a plain-HTTP site. The server treats a
+ * missing digest as "cannot prove it" and stores the payload anyway, so caching
+ * still works there; it simply loses this one guarantee.
+ *
+ * @param {ArrayBuffer} buffer Bytes to digest.
+ * @return {Promise<string|null>} Hex digest, or null when unavailable.
+ */
+async function sha256Hex( buffer ) {
+	if ( ! globalThis.crypto?.subtle ) {
+		return null;
+	}
+
+	try {
+		const digest = await globalThis.crypto.subtle.digest(
+			'SHA-256',
+			buffer
+		);
+
+		return Array.from( new Uint8Array( digest ) )
+			.map( ( byte ) => byte.toString( 16 ).padStart( 2, '0' ) )
+			.join( '' );
+	} catch ( error ) {
+		return null;
+	}
 }
 
 export default GLLContext;

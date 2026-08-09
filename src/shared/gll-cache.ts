@@ -127,21 +127,31 @@ export async function fetchCachedSubset( fileId ) {
 /**
  * Store a subset for an attachment.
  *
+ * `hash` is the SHA-256 of the bytes this subset was built from. Sending it lets
+ * the server refuse the write if the file has been replaced since they were
+ * read, instead of stamping this payload with the new file's fingerprint and
+ * serving it as fresh forever. It is omitted where `crypto.subtle` is
+ * unavailable — any page not in a secure context — and the server then stores
+ * the payload without that guarantee rather than refusing it.
+ *
  * @param {number|string} fileId Attachment ID.
  * @param {Object}        subset Display subset.
+ * @param {string|null}   hash   Digest of the parsed bytes, when known.
  * @return {Promise<boolean>} Whether it was stored.
  */
-export async function publishSubset( fileId, subset ) {
+export async function publishSubset( fileId, subset, hash = null ) {
 	if ( ! fileId || ! subset ) {
 		return false;
 	}
+
+	const body = hash ? { data: subset, hash } : { data: subset };
 
 	try {
 		const response = await fetch( cacheUrl( fileId ), {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: writeHeaders(),
-			body: JSON.stringify( { data: subset } ),
+			body: JSON.stringify( body ),
 		} );
 
 		return response.ok;

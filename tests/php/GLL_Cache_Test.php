@@ -118,9 +118,9 @@ class GLL_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * Replacing the file invalidates its cache, with no hook involved.
 	 *
-	 * This is the property that made post meta plus a server-computed hash the
-	 * right storage: nothing has to remember to call an invalidation function,
-	 * because the payload stops matching the bytes it describes.
+	 * This is the property that made post meta plus a server-computed fingerprint
+	 * the right storage: nothing has to remember to call an invalidation
+	 * function, because the payload stops matching the bytes it describes.
 	 */
 	public function test_rewriting_the_file_invalidates_the_cache() {
 		$id = $this->create_attachment( "ORIGINAL\n" );
@@ -128,7 +128,8 @@ class GLL_Cache_Test extends WP_UnitTestCase {
 
 		$this->assertNotFalse( GLL_Cache::get( $id ) );
 
-		file_put_contents( get_attached_file( $id ), "REPLACED\n" );
+		file_put_contents( get_attached_file( $id ), "A REPLACEMENT OF A DIFFERENT LENGTH\n" );
+		GLL_Cache::flush_memo();
 
 		$this->assertFalse(
 			GLL_Cache::get( $id ),
@@ -137,17 +138,117 @@ class GLL_Cache_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The hash is computed from disk, never taken from the caller.
+	 * A same-length replacement is caught too, by its modification time.
+	 *
+	 * Size alone would miss this, and a real replacement often keeps the byte
+	 * count nowhere near constant — but "nowhere near" is not "never".
 	 */
-	public function test_a_forged_hash_in_the_envelope_is_not_trusted() {
+	public function test_a_same_length_replacement_is_caught_by_its_mtime() {
+		$id = $this->create_attachment( "ORIGINAL\n" );
+		GLL_Cache::set( $id, $this->subset() );
+
+		$path = get_attached_file( $id );
+		file_put_contents( $path, "REPLACED\n" );
+		touch( $path, time() + 5 );
+		GLL_Cache::flush_memo();
+
+		$this->assertFalse( GLL_Cache::get( $id ) );
+	}
+
+	/**
+	 * A file that was touched but not changed keeps its cache.
+	 *
+	 * This is the reason a signature mismatch falls back to the digest instead of
+	 * simply invalidating: a backup restore or a deploy can move every mtime on
+	 * disk without moving a byte, and throwing away every cached subset for that
+	 * would be a self-inflicted stampede.
+	 */
+	public function test_touching_the_file_does_not_lose_the_cache() {
+		$id = $this->create_attachment( "ORIGINAL\n" );
+		GLL_Cache::set( $id, $this->subset() );
+
+		touch( get_attached_file( $id ), time() + 5 );
+		GLL_Cache::flush_memo();
+
+		$this->assertEquals( $this->subset(), GLL_Cache::get( $id ) );
+	}
+
+	/**
+	 * Reads do not hash the file when the cheap signature already agrees.
+	 *
+	 * The read route is public, so hashing on every GET would let an anonymous
+	 * caller force a full re-read of a file that can run to tens of megabytes,
+	 * once per cache-backed block per page view. Asserted by making the digest
+	 * impossible to match: if the read consulted it, this would fail.
+	 */
+	public function test_a_warm_read_does_not_consult_the_digest() {
 		$id = $this->create_attachment();
 		GLL_Cache::set( $id, $this->subset() );
 
 		$envelope         = GLL_Cache::get_envelope( $id );
-		$envelope['hash'] = md5( 'not the file' );
+		$envelope['hash'] = str_repeat( '0', 64 );
 		update_post_meta( $id, GLL_Cache::META_KEY, $envelope );
+		GLL_Cache::flush_memo();
+
+		$this->assertEquals( $this->subset(), GLL_Cache::get( $id ) );
+	}
+
+	/**
+	 * The digest is computed from disk, never taken from the caller.
+	 *
+	 * Once the signature disagrees the digest decides, and a forged one loses.
+	 */
+	public function test_a_forged_digest_is_not_trusted() {
+		$id = $this->create_attachment();
+		GLL_Cache::set( $id, $this->subset() );
+
+		$envelope          = GLL_Cache::get_envelope( $id );
+		$envelope['hash']  = str_repeat( '0', 64 );
+		$envelope['mtime'] = (int) $envelope['mtime'] - 60;
+		update_post_meta( $id, GLL_Cache::META_KEY, $envelope );
+		GLL_Cache::flush_memo();
 
 		$this->assertFalse( GLL_Cache::get( $id ) );
+	}
+
+	/**
+	 * A caller may prove which bytes it parsed, and is refused when it cannot.
+	 *
+	 * This closes the window the server cannot otherwise see: a browser fetches,
+	 * parses, and only then POSTs, and the file may have been replaced in
+	 * between. Without the expected digest the old subset would be stamped with
+	 * the new file's fingerprint and served as fresh indefinitely.
+	 */
+	public function test_a_write_can_be_bound_to_the_bytes_the_caller_parsed() {
+		$id   = $this->create_attachment( "ORIGINAL\n" );
+		$hash = GLL_Cache::file_hash( $id );
+
+		$this->assertTrue( GLL_Cache::set( $id, $this->subset(), 'browser', $hash ) );
+
+		// The file moves on, and a write still claiming the old digest is refused
+		// rather than being stamped with the new one.
+		file_put_contents( get_attached_file( $id ), "SOMETHING ELSE ENTIRELY\n" );
+		GLL_Cache::flush_memo();
+
+		$this->assertFalse( GLL_Cache::set( $id, $this->subset(), 'browser', $hash ) );
+
+		// And the same write succeeds once it names the bytes that are there.
+		$this->assertTrue(
+			GLL_Cache::set( $id, $this->subset(), 'browser', GLL_Cache::file_hash( $id ) )
+		);
+	}
+
+	/**
+	 * A caller that cannot compute a digest is still allowed to write.
+	 *
+	 * `crypto.subtle` needs a secure context, so on a plain-HTTP site the editor
+	 * has no way to produce one. Refusing the write there would disable caching
+	 * for that site entirely.
+	 */
+	public function test_a_write_without_a_digest_is_still_accepted() {
+		$id = $this->create_attachment();
+
+		$this->assertTrue( GLL_Cache::set( $id, $this->subset(), 'browser', null ) );
 	}
 
 	/**
