@@ -147,6 +147,21 @@
 		gap: 12px;
 	}
 
+	// Frontend source list items. The editor renders `.gll-source-card` for the
+	// same data; these classes only ever appear in `view.ts` output, where the
+	// per-source metadata sits inline after the label.
+	.gll-source-item {
+
+		.gll-source-bandwidth,
+		.gll-source-responses,
+		.gll-source-resolution {
+			margin-left: 8px;
+			color: var(--gll-text-muted);
+			font-size: 13px;
+			font-variant-numeric: tabular-nums;
+		}
+	}
+
 	.gll-sources-sentinel {
 		padding: 14px 16px;
 		text-align: center;

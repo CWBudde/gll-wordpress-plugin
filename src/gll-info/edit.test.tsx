@@ -317,6 +317,112 @@ describe( 'Edit (gll-info block) — loaded with file', () => {
 			sourcesDisplayMode: 'detailed',
 		} );
 	} );
+
+	// `showResponses` gates the per-source response summary — the measured
+	// response count and the angular resolution — in the editor and, via
+	// `data-show-responses`, on the frontend. It does not gate the Chart.js
+	// controls; that is `showSourceResponseCharts`, which is editor-only. The
+	// two are separate toggles and must not be merged.
+	describe( 'showResponses', () => {
+		const dataWithBalloon = {
+			GenSystem: { Label: 'X' },
+			Database: {
+				SourceDefinitions: [
+					{
+						Key: 'src-1',
+						Definition: {
+							Label: 'LF',
+							BalloonData: {
+								AngularResolution: {
+									MeridianStep: 5,
+									ParallelStep: 10,
+								},
+							},
+						},
+						Responses: [ {}, {}, {} ],
+					},
+				],
+			},
+		};
+
+		// Detailed mode renders every card expanded; the expandable default
+		// would hide the summary behind a click for reasons unrelated to the
+		// attribute under test.
+		const detailedAttributes = {
+			...attributesWithFile,
+			sourcesDisplayMode: 'detailed',
+		};
+
+		it( 'renders the response count and resolution when on', () => {
+			mockLoaderState.data = dataWithBalloon;
+			render(
+				<Edit
+					attributes={ detailedAttributes }
+					setAttributes={ jest.fn() }
+				/>
+			);
+
+			expect(
+				screen.getByText( 'Responses:' ).closest( '.gll-source-detail' )
+			).toHaveTextContent( '3' );
+			expect( screen.getByText( '5° × 10°' ) ).toBeInTheDocument();
+		} );
+
+		it( 'hides the summary when off, leaving the rest of the card', () => {
+			mockLoaderState.data = dataWithBalloon;
+			render(
+				<Edit
+					attributes={ {
+						...detailedAttributes,
+						showResponses: false,
+					} }
+					setAttributes={ jest.fn() }
+				/>
+			);
+
+			expect(
+				screen.queryByText( 'Responses:' )
+			).not.toBeInTheDocument();
+			expect( screen.queryByText( '5° × 10°' ) ).not.toBeInTheDocument();
+			// The card itself is still there — only the summary went away.
+			expect( screen.getByText( 'Data Type:' ) ).toBeInTheDocument();
+		} );
+
+		it( 'fires setAttributes when the toggle is changed', () => {
+			mockLoaderState.data = dataWithBalloon;
+			const setAttributes = jest.fn();
+			render(
+				<Edit
+					attributes={ detailedAttributes }
+					setAttributes={ setAttributes }
+				/>
+			);
+
+			fireEvent.click( screen.getByLabelText( 'Show Responses' ) );
+			expect( setAttributes ).toHaveBeenCalledWith( {
+				showResponses: false,
+			} );
+		} );
+
+		// The toggle lives inside the sources group: with the sources list
+		// hidden there is nothing for it to affect.
+		it( 'is not offered when the sources list is hidden', () => {
+			mockLoaderState.data = dataWithBalloon;
+			render(
+				<Edit
+					attributes={ {
+						...detailedAttributes,
+						showSources: false,
+					} }
+					setAttributes={ jest.fn() }
+				/>
+			);
+
+			expect(
+				screen.queryByLabelText( 'Show Responses' )
+			).not.toBeInTheDocument();
+		} );
+	} );
 } );
 
 describe( 'Edit (gll-info block) — appearance', () => {
