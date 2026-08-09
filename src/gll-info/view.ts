@@ -6,7 +6,13 @@
  * @package
  */
 
+import { __, sprintf } from '@wordpress/i18n';
 import { normalizeGllData } from '../shared/gll-normalize';
+import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
+// Replaces a local copy that assigned `textContent` directly. Behaviour differs
+// for one input: the local version rendered a missing field as the literal text
+// "undefined", where the shared one renders nothing.
+import { escapeHtml } from '../shared/escape-html';
 
 ( function () {
 	'use strict';
@@ -42,7 +48,9 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			script.src = getSettings().wasmExecUrl;
 			script.onload = () => resolve( undefined );
 			script.onerror = () =>
-				reject( new Error( 'Failed to load wasm_exec.js' ) );
+				reject(
+					new Error( __( 'Failed to load wasm_exec.js', 'gll-info' ) )
+				);
 			document.head.appendChild( script );
 		} );
 	}
@@ -66,7 +74,13 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			const response = await fetch( getSettings().wasmUrl );
 
 			if ( ! response.ok ) {
-				throw new Error( `Failed to fetch WASM: ${ response.status }` );
+				throw new Error(
+					sprintf(
+						// translators: %d: HTTP status code.
+						__( 'Failed to fetch WASM: %d', 'gll-info' ),
+						response.status
+					)
+				);
 			}
 
 			const result = await WebAssembly.instantiateStreaming(
@@ -77,7 +91,10 @@ import { normalizeGllData } from '../shared/gll-normalize';
 
 			if ( typeof window.parseGLL !== 'function' ) {
 				throw new Error(
-					'WASM module did not export parseGLL function'
+					__(
+						'WASM module did not export parseGLL function',
+						'gll-info'
+					)
 				);
 			}
 
@@ -96,7 +113,13 @@ import { normalizeGllData } from '../shared/gll-normalize';
 
 		const response = await fetch( url );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch GLL file: ${ response.status }` );
+			throw new Error(
+				sprintf(
+					// translators: %d: HTTP status code.
+					__( 'Failed to fetch GLL file: %d', 'gll-info' ),
+					response.status
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -105,7 +128,9 @@ import { normalizeGllData } from '../shared/gll-normalize';
 		const result = JSON.parse( resultJson );
 
 		if ( ! result.success ) {
-			throw new Error( result.error || 'Failed to parse GLL file' );
+			throw new Error(
+				result.error || __( 'Failed to parse GLL file', 'gll-info' )
+			);
 		}
 
 		return normalizeGllData( result.data );
@@ -120,27 +145,41 @@ import { normalizeGllData } from '../shared/gll-normalize';
 		let html = '';
 
 		if ( GenSystem ) {
-			html += '<div class="gll-section"><h4>System Information</h4>';
+			html += `<div class="gll-section"><h4>${ __(
+				'System Information',
+				'gll-info'
+			) }</h4>`;
 			html += '<table class="gll-info-table"><tbody>';
 
 			if ( GenSystem.Label ) {
-				html += `<tr><th>Label</th><td>${ escapeHtml(
-					GenSystem.Label
-				) }</td></tr>`;
+				html += `<tr><th>${ __(
+					'Label',
+					'gll-info'
+				) }</th><td>${ escapeHtml( GenSystem.Label ) }</td></tr>`;
 			}
 			if ( GenSystem.Version ) {
-				html += `<tr><th>Version</th><td>${ escapeHtml(
-					GenSystem.Version
-				) }</td></tr>`;
+				html += `<tr><th>${ __(
+					'Version',
+					'gll-info'
+				) }</th><td>${ escapeHtml( GenSystem.Version ) }</td></tr>`;
 			}
 			if ( GenSystem.SystemType !== undefined ) {
-				const types = [ 'Line Array', 'Cluster', 'Loudspeaker' ];
-				html += `<tr><th>Type</th><td>${
-					types[ GenSystem.SystemType ] || 'Unknown'
+				// Indexed by the GLL system-type enum, so the order is fixed by
+				// the file format and only the wording is translated.
+				const types = [
+					__( 'Line Array', 'gll-info' ),
+					__( 'Cluster', 'gll-info' ),
+					__( 'Loudspeaker', 'gll-info' ),
+				];
+				html += `<tr><th>${ __( 'Type', 'gll-info' ) }</th><td>${
+					types[ GenSystem.SystemType ] || __( 'Unknown', 'gll-info' )
 				}</td></tr>`;
 			}
 			if ( GenSystem.Manufacturer ) {
-				html += `<tr><th>Manufacturer</th><td>${ escapeHtml(
+				html += `<tr><th>${ __(
+					'Manufacturer',
+					'gll-info'
+				) }</th><td>${ escapeHtml(
 					GenSystem.Manufacturer
 				) }</td></tr>`;
 			}
@@ -149,9 +188,10 @@ import { normalizeGllData } from '../shared/gll-normalize';
 		}
 
 		if ( Metadata && Metadata.Description ) {
-			html += `<div class="gll-section"><h4>Description</h4><p>${ escapeHtml(
-				Metadata.Description
-			) }</p></div>`;
+			html += `<div class="gll-section"><h4>${ __(
+				'Description',
+				'gll-info'
+			) }</h4><p>${ escapeHtml( Metadata.Description ) }</p></div>`;
 		}
 
 		return html;
@@ -205,10 +245,37 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			return '-';
 		}
 
+		/**
+		 * Append the unit, or a dash when the file carries no value.
+		 *
+		 * @param {string|null} formatted Rounded value, or null when absent.
+		 * @return {string} Localized length.
+		 */
+		const withUnit = ( formatted ) =>
+			formatted === null
+				? '-'
+				: sprintf(
+						// translators: %s: a length, already rounded.
+						__( '%s mm', 'gll-info' ),
+						formatted
+				  );
+
 		return [
-			`X: ${ formattedX === null ? '-' : `${ formattedX } mm` }`,
-			`Y: ${ formattedY === null ? '-' : `${ formattedY } mm` }`,
-			`Z: ${ formattedZ === null ? '-' : `${ formattedZ } mm` }`,
+			sprintf(
+				// translators: %s: the X coordinate with its unit, e.g. "120 mm".
+				__( 'X: %s', 'gll-info' ),
+				withUnit( formattedX )
+			),
+			sprintf(
+				// translators: %s: the Y coordinate with its unit, e.g. "120 mm".
+				__( 'Y: %s', 'gll-info' ),
+				withUnit( formattedY )
+			),
+			sprintf(
+				// translators: %s: the Z coordinate with its unit, e.g. "120 mm".
+				__( 'Z: %s', 'gll-info' ),
+				withUnit( formattedZ )
+			),
 		].join( ', ' );
 	}
 
@@ -264,7 +331,10 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			}
 
 			const boxLabel =
-				boxType?.Label || boxType?.Name || boxType?.Key || 'Unknown';
+				boxType?.Label ||
+				boxType?.Name ||
+				boxType?.Key ||
+				__( 'Unknown', 'gll-info' );
 			const boxKey = boxType?.Key || boxType?.Id || boxType?.Name || '-';
 
 			placements.forEach( ( placement ) => {
@@ -323,12 +393,18 @@ import { normalizeGllData } from '../shared/gll-normalize';
 	function buildPlacementsHtml( placements ) {
 		const placementCount = placements.length;
 		let html = '<div class="gll-source-placements"><details>';
-		html += `<summary>Placements (${ placementCount })</summary>`;
+		html += `<summary>${ sprintf(
+			// translators: %d: number of placements of this source.
+			__( 'Placements (%d)', 'gll-info' ),
+			placementCount
+		) }</summary>`;
 		html += '<div class="gll-source-placements-list">';
 
 		if ( placementCount === 0 ) {
-			html +=
-				'<div class="gll-empty-state gll-source-placements-empty">No placements found</div>';
+			html += `<div class="gll-empty-state gll-source-placements-empty">${ __(
+				'No placements found',
+				'gll-info'
+			) }</div>`;
 		} else {
 			placements.forEach( ( placement ) => {
 				const rotation = placement.rotation || {};
@@ -344,27 +420,46 @@ import { normalizeGllData } from '../shared/gll-normalize';
 					rotation.Elevation;
 				const roll = rotation.Roll ?? rotation.R;
 
-				const boxLabel = escapeHtml( placement.boxLabel || 'Unknown' );
+				const boxLabel = escapeHtml(
+					placement.boxLabel || __( 'Unknown', 'gll-info' )
+				);
 				const boxKey = placement.boxKey
 					? ` (${ escapeHtml( placement.boxKey ) })`
 					: '';
 				const sourceLabel = escapeHtml(
-					placement.sourceLabel || placement.sourceKey || 'Unknown'
+					placement.sourceLabel ||
+						placement.sourceKey ||
+						__( 'Unknown', 'gll-info' )
 				);
 				const sourceKey = escapeHtml( placement.sourceKey || '-' );
 				const position = escapeHtml(
 					formatPosition( placement.position )
 				);
+				const rotationText = sprintf(
+					/* translators: 1: heading angle. 2: vertical angle. 3: roll angle. All already carry the degree sign. */
+					__( 'H: %1$s, V: %2$s, R: %3$s', 'gll-info' ),
+					formatAngleDegrees( heading ),
+					formatAngleDegrees( vertical ),
+					formatAngleDegrees( roll )
+				);
 
 				html += '<div class="gll-source-placement">';
-				html += `<div class="gll-source-placement-detail"><strong>Box:</strong> ${ boxLabel }${ boxKey }</div>`;
-				html += `<div class="gll-source-placement-detail"><strong>Source:</strong> ${ sourceLabel } (${ sourceKey })</div>`;
-				html += `<div class="gll-source-placement-detail"><strong>Position:</strong> ${ position }</div>`;
-				html += `<div class="gll-source-placement-detail"><strong>Rotation:</strong> H: ${ formatAngleDegrees(
-					heading
-				) }, V: ${ formatAngleDegrees(
-					vertical
-				) }, R: ${ formatAngleDegrees( roll ) }</div>`;
+				html += `<div class="gll-source-placement-detail"><strong>${ __(
+					'Box:',
+					'gll-info'
+				) }</strong> ${ boxLabel }${ boxKey }</div>`;
+				html += `<div class="gll-source-placement-detail"><strong>${ __(
+					'Source:',
+					'gll-info'
+				) }</strong> ${ sourceLabel } (${ sourceKey })</div>`;
+				html += `<div class="gll-source-placement-detail"><strong>${ __(
+					'Position:',
+					'gll-info'
+				) }</strong> ${ position }</div>`;
+				html += `<div class="gll-source-placement-detail"><strong>${ __(
+					'Rotation:',
+					'gll-info'
+				) }</strong> ${ rotationText }</div>`;
 				html += '</div>';
 			} );
 		}
@@ -384,7 +479,11 @@ import { normalizeGllData } from '../shared/gll-normalize';
 
 		const sources = data.Database.SourceDefinitions;
 		const placementsMap = buildSourcePlacementsMap( data );
-		let html = `<div class="gll-sources"><h4>Acoustic Sources (${ sources.length })</h4>`;
+		let html = `<div class="gll-sources"><h4>${ sprintf(
+			// translators: %d: number of acoustic sources in the file.
+			__( 'Acoustic Sources (%d)', 'gll-info' ),
+			sources.length
+		) }</h4>`;
 		html += '<ul class="gll-sources-list">';
 
 		for ( const source of sources ) {
@@ -396,9 +495,12 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			html += `<strong>${ escapeHtml( label ) }</strong>`;
 
 			if ( bandFrom && bandTo ) {
-				html += `<span class="gll-source-bandwidth">${ Math.round(
-					bandFrom
-				) } - ${ Math.round( bandTo ) } Hz</span>`;
+				html += `<span class="gll-source-bandwidth">${ sprintf(
+					/* translators: 1: lower band limit in Hz. 2: upper band limit in Hz. */
+					__( '%1$d - %2$d Hz', 'gll-info' ),
+					Math.round( bandFrom ),
+					Math.round( bandTo )
+				) }</span>`;
 			}
 
 			const placements = placementsMap.get( source.Key ) || [];
@@ -412,16 +514,6 @@ import { normalizeGllData } from '../shared/gll-normalize';
 	}
 
 	/**
-	 * Escape HTML special characters.
-	 * @param text
-	 */
-	function escapeHtml( text ) {
-		const div = document.createElement( 'div' );
-		div.textContent = text;
-		return div.innerHTML;
-	}
-
-	/**
 	 * Initialize a GLL block.
 	 * @param block
 	 */
@@ -430,6 +522,13 @@ import { normalizeGllData } from '../shared/gll-normalize';
 		if ( ! fileUrl ) {
 			return;
 		}
+
+		// Set up before the parse, not after it: the helper turns this block's
+		// `.gll-loading-text` paragraph into the live region, and the header
+		// rewrite below is what announces the loading-to-loaded transition. A
+		// region that is created and filled in the same tick is treated as
+		// having had that text all along, and is never read out.
+		const announce = initBlockLiveRegions( block );
 
 		const showOverview = block.dataset.showOverview === 'true';
 		const showSources = block.dataset.showSources === 'true';
@@ -443,6 +542,10 @@ import { normalizeGllData } from '../shared/gll-normalize';
 			// Update header with actual label.
 			if ( loadingText && data.GenSystem?.Label ) {
 				loadingText.textContent = data.GenSystem.Label;
+			} else {
+				// Files without a system label would otherwise leave the region
+				// reading "Loading GLL data…" forever.
+				announce( __( 'GLL data loaded.', 'gll-info' ) );
 			}
 
 			// Build content.
@@ -467,14 +570,21 @@ import { normalizeGllData } from '../shared/gll-normalize';
 				loadingEl.style.display = 'none';
 			}
 		} catch ( error ) {
-			// Show error.
+			// The panel replaces the spinner the reader is waiting on and
+			// arrives long after the page settled, so it is rendered as a
+			// `role="alert"` region rather than being left for someone to
+			// stumble over. The shared panel also carries the `.gll-error`
+			// styling every other block uses.
 			if ( loadingEl ) {
-				loadingEl.innerHTML = `
-					<div class="gll-info-error">
-						<p>Error loading GLL file:</p>
-						<code>${ escapeHtml( error.message ) }</code>
-					</div>
-				`;
+				renderErrorPanel(
+					loadingEl,
+					sprintf(
+						// translators: %s: the underlying failure description.
+						__( 'Could not load the GLL file. %s', 'gll-info' ),
+						error.message
+					)
+				);
+				loadingEl.style.display = '';
 			}
 		}
 	}

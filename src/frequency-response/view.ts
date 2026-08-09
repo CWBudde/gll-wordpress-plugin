@@ -7,24 +7,29 @@
  */
 
 import Chart from 'chart.js/auto';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
-import { escapeHtml } from '../shared/escape-html';
 import {
 	buildFrequencyPoints,
 	buildLogFrequencyScale,
-	buildSourceResponseSeries,
 	formatFrequency,
 } from '../shared/charting-utils';
 import { applyChartThemeFrom } from '../shared/chart-theme';
 import {
 	describeCanvas,
 	initBlockLiveRegions,
-	pickThirdOctaveIndices,
 	prefersReducedMotion,
 	renderErrorPanel,
 } from '../shared/a11y';
+import {
+	buildCanvasLabel,
+	buildDataTable,
+	buildMetadataHtml,
+	extractResponseData,
+	readBlockOptions,
+} from './response-render';
 
 /**
  * Initialize all frequency response blocks on the page.
@@ -42,7 +47,10 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 	} catch ( error ) {
 		console.error( 'Failed to initialize WASM:', error );
 		blocks.forEach( ( block ) => {
-			showError( block, 'Failed to initialize WASM parser' );
+			showError(
+				block,
+				__( 'Failed to initialize WASM parser', 'gll-info' )
+			);
 		} );
 		return;
 	}
@@ -66,25 +74,25 @@ async function initializeBlock( block ) {
 	initBlockLiveRegions( block );
 
 	const fileUrl = block.dataset.fileUrl;
-	const fileName = block.dataset.fileName || 'GLL File';
-	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
-	const responseIndex = parseInt( block.dataset.responseIndex, 10 ) || 0;
-	const phaseMode = block.dataset.phaseMode || 'unwrapped';
-	const normalized = block.dataset.normalized === 'true';
-	const showPhase = block.dataset.showPhase !== 'false';
-	const showMagnitude = block.dataset.showMagnitude !== 'false';
-	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
 
 	if ( ! fileUrl ) {
-		showError( block, 'No file URL specified' );
+		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
+
+	const options = readBlockOptions( block.dataset );
 
 	try {
 		// Fetch and parse the GLL file
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error( `Failed to fetch file: ${ response.statusText }` );
+			throw new Error(
+				sprintf(
+					/* translators: %s: HTTP status text, e.g. "Not Found". */
+					__( 'Failed to fetch file: %s', 'gll-info' ),
+					response.statusText
+				)
+			);
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -100,232 +108,11 @@ async function initializeBlock( block ) {
 		}
 
 		// Render the chart
-		renderChart( block, data, {
-			fileName,
-			sourceIndex,
-			responseIndex,
-			phaseMode,
-			normalized,
-			showPhase,
-			showMagnitude,
-			chartHeight,
-		} );
+		renderChart( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, error.message );
 	}
-}
-
-/**
- * Extract frequency response data from GLL source.
- *
- * Delegates to the shared series builder, which combines the directivity
- * response with the source's on-axis spectrum and applies the delay-corrected
- * phase representation.
- *
- * @param {Object}  source        Source definition from GLL.
- * @param {number}  responseIndex Response index to use.
- * @param {string}  phaseMode     'unwrapped' | 'wrapped' | 'group-delay'.
- * @param {boolean} normalized    If true, plot directivity only (no on-axis).
- * @return {Object|null} Object with frequencies, magnitudes, phases arrays.
- */
-function extractResponseData( source, responseIndex, phaseMode, normalized ) {
-	const series = buildSourceResponseSeries(
-		source,
-		responseIndex,
-		phaseMode,
-		normalized
-	);
-
-	if ( ! series ) {
-		return null;
-	}
-
-	return {
-		frequencies: series.frequencies,
-		magnitudes: series.level,
-		phases: series.phase || [],
-		phaseLabel: series.phaseLabel,
-		phaseAxisTitle: series.phaseAxisTitle,
-	};
-}
-
-/**
- * Build metadata HTML for display above chart.
- *
- * @param {Object} params               Parameters object.
- * @param {Object} params.source        Source definition.
- * @param {Object} params.frequencyData Frequency data with min/max.
- * @param {Object} params.options       Chart options.
- * @param {Object} params.phaseSeries   Phase series data.
- * @return {string} HTML string for metadata display.
- */
-function buildMetadataHtml( { source, frequencyData, options, phaseSeries } ) {
-	const minFreq = formatFrequency( frequencyData.minFrequency );
-	const maxFreq = formatFrequency( frequencyData.maxFrequency );
-
-	const badges = [];
-
-	// Frequency range badge
-	badges.push(
-		`<span class="gll-meta-badge"><strong>Range:</strong> ${ minFreq } - ${ maxFreq }</span>`
-	);
-
-	// Phase mode badge
-	if ( phaseSeries ) {
-		const phaseModeLabels = {
-			'group-delay': 'Group Delay',
-			wrapped: 'Wrapped Phase',
-			unwrapped: 'Unwrapped Phase',
-		};
-		const phaseLabel =
-			phaseModeLabels[ options.phaseMode ] || phaseModeLabels.unwrapped;
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Phase:</strong> ${ phaseLabel }</span>`
-		);
-	}
-
-	// Normalization badge
-	if ( options.normalized ) {
-		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>Normalized</strong></span>`
-		);
-	}
-
-	// Source info badge
-	if ( source.Label ) {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>Source:</strong> ${ escapeHtml(
-				source.Label
-			) }</span>`
-		);
-	}
-
-	return `<div class="gll-frequency-response-metadata">${ badges.join(
-		''
-	) }</div>`;
-}
-
-/**
- * Summarize the plotted curve for the canvas's text alternative.
- *
- * A `<canvas>` exposes nothing at all, so this is the whole of what a screen
- * reader gets from the picture. It therefore states the figures a sighted
- * reader takes off the axes — the frequency span and the level span — rather
- * than the word "chart". The values are the ones already computed for the
- * visible badge row, so the two can never disagree.
- *
- * @param {Object} params               Parameters object.
- * @param {Object} params.source        Source definition.
- * @param {Object} params.frequencyData Frequency data with min/max.
- * @param {Array}  params.magnitudes    Plotted level values in dB.
- * @param {Object} params.options       Chart options.
- * @param {Object} params.phaseSeries   Phase series data, or null.
- * @return {string} Label text.
- */
-function buildCanvasLabel( {
-	source,
-	frequencyData,
-	magnitudes,
-	options,
-	phaseSeries,
-} ) {
-	const finite = magnitudes.filter( ( value ) => Number.isFinite( value ) );
-	const parts = [];
-
-	parts.push(
-		`Frequency response of ${ source.Label || options.fileName }` +
-			( options.normalized ? ', normalized' : '' )
-	);
-	parts.push(
-		`${ formatFrequency(
-			frequencyData.minFrequency
-		) } to ${ formatFrequency( frequencyData.maxFrequency ) }`
-	);
-
-	if ( options.showMagnitude && finite.length > 0 ) {
-		parts.push(
-			`level ${ Math.min( ...finite ).toFixed( 1 ) } to ${ Math.max(
-				...finite
-			).toFixed( 1 ) } dB`
-		);
-	}
-
-	if ( phaseSeries ) {
-		parts.push( `${ phaseSeries.label } on the right axis` );
-	}
-
-	return `${ parts.join( ', ' ) }. The plotted values follow in a table.`;
-}
-
-/**
- * Build an off-screen table of the plotted magnitude values.
- *
- * The `aria-label` gives the shape of the curve; this gives the numbers, which
- * for a response plot *are* the content — a reader deciding whether a cabinet
- * suits a room needs the value at 2 kHz, not "it slopes down".
- *
- * Only the magnitude is tabulated and only at third-octave centres. A GLL
- * response commonly carries 241 points, and reading 241 rows aloud is not
- * access, it is obstruction; the phase curve is left out for the same reason,
- * since a second column doubles the reading time to describe a quantity that
- * is rarely the reason anyone opened the block.
- *
- * @param {Array<number>} frequencies Measured frequencies.
- * @param {Array<number>} magnitudes  Level values in dB.
- * @return {HTMLElement|null} Table element, or null when there is nothing to show.
- */
-function buildDataTable( frequencies, magnitudes ) {
-	const indices = pickThirdOctaveIndices( frequencies );
-	if ( indices.length === 0 ) {
-		return null;
-	}
-
-	const table = document.createElement( 'table' );
-	table.className = 'gll-visually-hidden';
-
-	const caption = document.createElement( 'caption' );
-	caption.textContent =
-		'Frequency response level at one-third-octave band centres';
-	table.appendChild( caption );
-
-	const head = document.createElement( 'thead' );
-	const headRow = document.createElement( 'tr' );
-	[ 'Frequency', 'Level (dB)' ].forEach( ( text ) => {
-		const cell = document.createElement( 'th' );
-		cell.scope = 'col';
-		cell.textContent = text;
-		headRow.appendChild( cell );
-	} );
-	head.appendChild( headRow );
-	table.appendChild( head );
-
-	const body = document.createElement( 'tbody' );
-	indices.forEach( ( index ) => {
-		const value = magnitudes[ index ];
-		if ( ! Number.isFinite( value ) ) {
-			return;
-		}
-
-		const row = document.createElement( 'tr' );
-		const frequencyCell = document.createElement( 'th' );
-		frequencyCell.scope = 'row';
-		frequencyCell.textContent = formatFrequency( frequencies[ index ] );
-		row.appendChild( frequencyCell );
-
-		const levelCell = document.createElement( 'td' );
-		levelCell.textContent = value.toFixed( 1 );
-		row.appendChild( levelCell );
-
-		body.appendChild( row );
-	} );
-
-	if ( body.children.length === 0 ) {
-		return null;
-	}
-
-	table.appendChild( body );
-	return table;
 }
 
 /**
@@ -346,7 +133,7 @@ function renderChart( block, data, options ) {
 	// Get source data
 	const source = data?.Database?.SourceDefinitions?.[ options.sourceIndex ];
 	if ( ! source ) {
-		showError( block, 'Source not found' );
+		showError( block, __( 'Source not found', 'gll-info' ) );
 		return;
 	}
 
@@ -361,7 +148,10 @@ function renderChart( block, data, options ) {
 	if ( ! responseData ) {
 		showError(
 			block,
-			'No frequency response data available for this source'
+			__(
+				'No frequency response data available for this source',
+				'gll-info'
+			)
 		);
 		return;
 	}
@@ -371,7 +161,7 @@ function renderChart( block, data, options ) {
 	// Build frequency data points for magnitude
 	const frequencyData = buildFrequencyPoints( frequencies, magnitudes );
 	if ( ! frequencyData ) {
-		showError( block, 'Invalid frequency response data' );
+		showError( block, __( 'Invalid frequency response data', 'gll-info' ) );
 		return;
 	}
 
@@ -430,7 +220,7 @@ function renderChart( block, data, options ) {
 
 	if ( options.showMagnitude ) {
 		datasets.push( {
-			label: 'Level (dB)',
+			label: __( 'Level (dB)', 'gll-info' ),
 			data: frequencyData.points,
 			borderColor: '#2563eb',
 			backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -464,7 +254,7 @@ function renderChart( block, data, options ) {
 		x: buildLogFrequencyScale(
 			frequencyData.minFrequency,
 			frequencyData.maxFrequency,
-			'Frequency'
+			__( 'Frequency', 'gll-info' )
 		),
 	};
 
@@ -475,7 +265,7 @@ function renderChart( block, data, options ) {
 			position: 'left',
 			title: {
 				display: true,
-				text: 'Level (dB)',
+				text: __( 'Level (dB)', 'gll-info' ),
 			},
 		};
 	}
@@ -519,9 +309,14 @@ function renderChart( block, data, options ) {
 				},
 				title: {
 					display: true,
-					text:
-						options.fileName +
-						( source.Label ? ` - ${ source.Label }` : '' ),
+					text: source.Label
+						? sprintf(
+								/* translators: 1: GLL file name, 2: source label. */
+								__( '%1$s - %2$s', 'gll-info' ),
+								options.fileName,
+								source.Label
+						  )
+						: options.fileName,
 				},
 				tooltip: {
 					callbacks: {
@@ -540,7 +335,10 @@ function renderChart( block, data, options ) {
 	// which series is which.
 	applyChartThemeFrom( chartConfig, chartWrapper );
 
-	new Chart( ctx, chartConfig );
+	// Cast as in polar-plot/view.ts: the config is assembled dynamically as a
+	// plain record, and Chart.js' generic config type cannot be satisfied
+	// without pinning the chart type and dataset shapes at construction.
+	new Chart( ctx, chartConfig as any );
 }
 
 /**

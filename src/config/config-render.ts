@@ -21,6 +21,8 @@
  * @package
  */
 
+import { __ } from '@wordpress/i18n';
+
 import { collectConfig } from './config-model';
 import type {
 	CollectOptions,
@@ -72,7 +74,10 @@ export function renderConfig(
 		// emptied block would read as broken rather than as empty.
 		const empty = document.createElement( 'div' );
 		empty.className = 'gll-config-empty';
-		empty.textContent = 'This GLL file contains no configuration data.';
+		empty.textContent = __(
+			'This GLL file contains no configuration data.',
+			'gll-info'
+		);
 		container.appendChild( empty );
 		container.style.display = 'block';
 		return;

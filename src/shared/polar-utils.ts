@@ -49,7 +49,7 @@ export function formatPolarLabel( angleDeg ) {
  * @param {number} countOverride Optional count override.
  * @return {Array<number>|null} Frequency array or null.
  */
-export function buildLogFrequencies( definition, countOverride ) {
+export function buildLogFrequencies( definition, countOverride? ) {
 	if ( ! definition ) {
 		return null;
 	}

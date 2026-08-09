@@ -98,7 +98,15 @@ function addFaces( group: THREE.Group, geometryData: GeometryBuildResult ) {
 		'color',
 		new THREE.Float32BufferAttribute( geometryData.colors, 3 )
 	);
-	geometry.setIndex( geometryData.indices );
+	// Wrapped explicitly rather than handed over raw: `setIndex` only converts
+	// a plain Array into a BufferAttribute and assigns anything else straight
+	// through, so passing the Uint32Array would leave `geometry.index` as a
+	// bare typed array that the renderer cannot read. No case geometry in the
+	// reference corpus carries a face list, so this path has never run against
+	// real data and the mistake stayed invisible until tsc flagged the type.
+	geometry.setIndex(
+		new THREE.BufferAttribute( geometryData.indices as Uint32Array, 1 )
+	);
 	geometry.computeVertexNormals();
 
 	const material = new THREE.MeshStandardMaterial( {

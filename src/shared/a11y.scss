@@ -1,0 +1,142 @@
+/**
+ * Shared accessibility mixins.
+ *
+ * A mixin library, not a stylesheet: this file emits nothing on its own, so
+ * `@use`-ing it from a block costs nothing until the block includes something.
+ * That matters because every block compiles its own bundle, and anything this
+ * file emitted unconditionally would be duplicated seven times over.
+ *
+ * @package GllInfo
+ */
+
+/**
+ * The focus ring, in one place.
+ *
+ * `:focus-visible` rather than `:focus`, so a mouse click on a <summary> or a
+ * download link does not leave a ring behind while keyboard traversal still
+ * gets one. The offset is negative by default: most of the elements this is
+ * applied to sit flush inside a bordered card, and an outward ring would be
+ * clipped by the `overflow: hidden` those cards use.
+ *
+ * The ring is written as `:focus` first and withdrawn again under
+ * `:focus:not(:focus-visible)`. A browser that does not know `:focus-visible`
+ * cannot parse that second selector and drops the rule whole, so it keeps the
+ * plain `:focus` ring — an occasional ring after a mouse click, which is the
+ * harmless direction to fail in. Writing only `:focus-visible` would leave
+ * those browsers with no indicator at all.
+ *
+ * Two tones, not one. These elements sit on three different backgrounds (the
+ * muted card fill, the plain surface, the accent-coloured download button),
+ * under themes that run from white to near black, and no single colour survives
+ * all of that. `--gll-focus` and `--gll-focus-contrast` are the theme's text
+ * and surface colours, which a theme must already keep legible against each
+ * other; whichever tone a background swallows, the other stays visible. Both
+ * bands are drawn inside the element — the outline offset inwards, the contrast
+ * band as an inset shadow just within it — so neither can be clipped.
+ *
+ * @param {Length} $offset Outline offset.
+ */
+@mixin focus-ring($offset: -2px) {
+
+	// Both tokens carry a literal fallback. They are declared on `.gll-block`,
+	// and while everything this lands on sits inside one today, a focus
+	// indicator is the last thing that should quietly disappear if that ever
+	// stops being true.
+	&:focus {
+		outline: 2px solid var(--gll-focus, currentcolor);
+		outline-offset: $offset;
+		box-shadow: inset 0 0 0 2px var(--gll-focus-contrast, #fff);
+	}
+
+	&:focus:not(:focus-visible) {
+		outline: none;
+		box-shadow: none;
+	}
+}
+
+/**
+ * Remove an element from the page but not from the accessibility tree.
+ *
+ * The clip-path/1px-box recipe rather than `display: none` or
+ * `visibility: hidden`, both of which also remove the element from the
+ * accessibility tree, which is the exact opposite of what is wanted.
+ *
+ * Deliberately without the `:focus` unhiding clause the skip-link version of
+ * this recipe carries: everything wearing this class here is a live region or
+ * a data table, and none of them is focusable.
+ */
+@mixin visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/**
+ * The error panel, in one place.
+ *
+ * The colours stay hardcoded rather than tokenized on purpose: this panel is
+ * what a reader sees when something went wrong, and "something went wrong"
+ * includes the theming itself. A red-on-near-white panel is legible on any
+ * background it might land on. #d63638 on #fff8f8 is 4.9:1, which clears AA.
+ */
+@mixin error-panel {
+	padding: 20px;
+	background: #fff8f8;
+	border: 1px solid #d63638;
+	border-radius: 4px;
+	color: #d63638;
+
+	strong {
+		display: block;
+		margin-bottom: 8px;
+	}
+}
+
+/**
+ * Stop the loading spinner from spinning when motion is unwelcome.
+ *
+ * The ring is kept rather than hidden: it is the only thing marking the
+ * loading state visually, and a reduced-motion preference asks for less
+ * movement, not less information. Hiding it would leave a blank beside the
+ * "Loading …" text and nothing to say the block was still working.
+ *
+ * Stopping the animation alone is not enough, though. A spinner is a grey ring
+ * with one accent-coloured quarter, and frozen mid-turn that reads as a
+ * rendering fault rather than as a state. So the whole ring takes the accent
+ * colour and turns dotted: the same shape in the same place, but unmistakably
+ * drawn on purpose.
+ *
+ * `!important` is load-bearing here, not defensive. Sass emits a mixin where it
+ * is included, and every block includes this near the top of its stylesheet and
+ * then defines its spinner further down under a deeper selector — for example
+ * `.gll-polar-plot-block .gll-polar-plot-loading .gll-spinner`, three classes
+ * against this rule's two. A media query adds no specificity, so the later rule
+ * won outright and the override was inert in five of the seven blocks: the
+ * spinner kept turning, and the `border` shorthand in that rule also undid both
+ * the dotted style and the accent colour.
+ *
+ * Raising specificity here instead would mean guessing how deeply each block
+ * nests its spinner, which is exactly the kind of coupling that breaks the next
+ * time a block reorganizes its markup. An accessibility override that must win
+ * regardless of include order and nesting depth is what `!important` is for.
+ *
+ * @param {String} $selector Spinner element selector.
+ * @param {Color}  $color    Colour for the resting ring.
+ */
+@mixin reduced-motion-spinner($selector: ".gll-spinner", $color: var(--gll-accent)) {
+
+	@media (prefers-reduced-motion: reduce) {
+
+		#{$selector} {
+			animation: none !important;
+			border-style: dotted !important;
+			border-color: $color !important;
+		}
+	}
+}

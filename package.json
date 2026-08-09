@@ -1,23 +1,54 @@
 {
 	"name": "gll-info",
 	"version": "0.1.0",
-	"description": "Example block scaffolded with Create Block tool.",
-	"author": "The WordPress Contributors",
+	"description": "Display GLL loudspeaker data in Gutenberg blocks: overview, frequency response, polar plots, 3D balloon, geometry, resources and configuration.",
+	"author": "MeKo-Tech",
 	"license": "GPL-2.0-or-later",
+	"private": true,
+	"homepage": "https://github.com/CWBudde/gll-wordpress-plugin",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CWBudde/gll-wordpress-plugin.git"
+	},
+	"bugs": {
+		"url": "https://github.com/CWBudde/gll-wordpress-plugin/issues"
+	},
 	"main": "build/index.js",
+	"//files": "wp-scripts plugin-zip only reads this field; it does NOT read .distignore or .gitattributes. Without it the packer falls back to a hardcoded glob that omits assets/**, which would ship a plugin with no gll.wasm and therefore no parser at all. npm-packlist additionally always includes package.json, LICENSE* and CHANGELOG*.",
+	"files": [
+		"gll-info.php",
+		"includes",
+		"build",
+		"assets",
+		"languages",
+		"readme.txt"
+	],
 	"scripts": {
 		"build": "wp-scripts build --blocks-manifest",
-		"format": "wp-scripts format",
+		"format": "wp-scripts format && prettier --write \"scripts/**/*.mjs\"",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
+		"plugin-zip:verify": "npm run plugin-zip && ./scripts/verify-plugin-zip.sh",
+		"check-version": "node scripts/check-version.mjs",
+		"env:start": "wp-env start",
+		"env:stop": "wp-env stop",
+		"env:clean": "wp-env clean all",
+		"test:php": "./scripts/test-php.sh",
+		"test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+		"test:e2e:ui": "playwright test --config=tests/e2e/playwright.config.ts --ui",
+		"perf": "node --experimental-strip-types --expose-gc --no-warnings scripts/perf-corpus.mjs",
+		"i18n:pot": "./scripts/make-pot.sh",
+		"i18n:json": "./scripts/make-json.sh",
 		"start": "wp-scripts start --blocks-manifest",
 		"test": "wp-scripts test-unit-js",
 		"test:watch": "wp-scripts test-unit-js --watch",
 		"test:unit": "wp-scripts test-unit-js --selectProjects unit",
-		"test:integration": "wp-scripts test-unit-js --selectProjects integration",
-		"test:coverage": "wp-scripts test-unit-js --coverage"
+		"test:integration": "wp-scripts test-unit-js --selectProjects integration --maxWorkers=1",
+		"test:integration:full": "GLL_CORPUS_FULL=1 wp-scripts test-unit-js --selectProjects integration --maxWorkers=1",
+		"test:coverage": "wp-scripts test-unit-js --selectProjects unit --coverage",
+		"typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json"
 	},
 	"dependencies": {
 		"@wordpress/block-editor": "latest",
@@ -30,6 +61,8 @@
 		"three": "^0.159.0"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.12.1",
+		"@playwright/test": "^1.58.0",
 		"@testing-library/jest-dom": "^6.4.0",
 		"@testing-library/react": "^14.2.0",
 		"@testing-library/user-event": "^14.5.0",
@@ -41,6 +74,8 @@
 		"@types/wordpress__components": "^23.0.12",
 		"@types/wordpress__element": "^2.4.1",
 		"@types/wordpress__i18n": "^3.4.0",
+		"@wordpress/e2e-test-utils-playwright": "^1.38.0",
+		"@wordpress/env": "^10.39.0",
 		"@wordpress/scripts": "^31.3.0",
 		"typescript": "^5.9.3"
 	}

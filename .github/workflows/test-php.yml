@@ -1,0 +1,67 @@
+name: PHP integration tests
+
+on:
+    workflow_call:
+
+permissions:
+    contents: read
+
+jobs:
+    php:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                # Both registration paths in gll_info_block_init, for real.
+                # `function_exists( 'wp_register_block_types_from_metadata_collection' )`
+                # cannot be un-defined, so the WP 6.7 fallback is only reachable
+                # by running against a core that genuinely lacks it — verified:
+                # the function is absent on 6.7.2 and present on current core.
+                #
+                # 6.7.2 is also the plugin's declared minimum, so this leg is
+                # what makes "Requires at least: 6.7" a tested claim rather than
+                # an aspiration.
+                #
+                # `core` is empty for the latest leg, and the start step below
+                # then skips exporting WP_ENV_CORE entirely. Do NOT collapse
+                # that into `${{ cond && '' || value }}`: an empty string is
+                # falsy to Actions, so the expression returns its right-hand
+                # side and hands wp-env the literal text it was meant to avoid.
+                include:
+                    - label: latest
+                      core: ''
+                    - label: '6.7.2'
+                      core: 'WordPress/WordPress#6.7.2'
+        name: WordPress ${{ matrix.label }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # Exported in the shell rather than through `env:` so the latest leg
+            # can leave WP_ENV_CORE genuinely unset. wp-env rejects an
+            # unrecognized value, and an empty one is not reliably treated as
+            # absent.
+            - name: Start wp-env
+              run: |
+                  if [ -n '${{ matrix.core }}' ]; then
+                    export WP_ENV_CORE='${{ matrix.core }}'
+                  fi
+                  npx wp-env start --update
+
+            # Composer and PHPUnit both live inside the container, so the
+            # runner needs neither.
+            - name: Run the integration tests
+              run: npm run test:php
+
+            - name: Dump the debug log on failure
+              if: failure()
+              run: npx wp-env run tests-cli cat /var/www/html/wp-content/debug.log || true

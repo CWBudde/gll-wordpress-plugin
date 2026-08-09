@@ -7,6 +7,7 @@
  * @package GllInfo
  */
 
+@use "../shared/a11y";
 @use "../shared/tokens";
 
 .wp-block-gll-info-gll-info {
@@ -480,6 +481,12 @@
 				align-items: center;
 				gap: 8px;
 
+				// `list-style: none` took the native marker away, and with it
+				// the only thing that changed when the summary took focus.
+				// This is the block's one keyboard-operable control on the
+				// frontend and it had no visible focus state at all.
+				@include a11y.focus-ring;
+
 				&::before {
 					content: "▶";
 					display: inline-block;
@@ -587,10 +594,7 @@
 				background: var(--gll-surface-muted);
 			}
 
-			&:focus {
-				outline: 2px solid var(--gll-accent);
-				outline-offset: -2px;
-			}
+			@include a11y.focus-ring;
 		}
 
 		.gll-source-toggle {
@@ -636,25 +640,14 @@
 		color: var(--gll-text-muted);
 	}
 
-	// Error state
-	.gll-info-error {
-		background: #fef2f2;
-		border: 1px solid #fee2e2;
-		border-radius: 6px;
-		padding: 16px;
-		color: #dc2626;
+	// Error state. `.gll-info-error` used to live here, styling a panel this
+	// view built itself; the view now calls the shared `renderErrorPanel`,
+	// which emits `.gll-error` like the other six blocks, so the old rule
+	// matched nothing and the panel rendered bare. The editor keeps its own
+	// `.gll-info-error` — edit.tsx still builds that one by hand.
+	.gll-error {
 
-		p {
-			margin: 0 0 8px;
-			font-weight: 500;
-		}
-
-		code {
-			display: block;
-			font-size: 13px;
-			background: transparent;
-			color: #991b1b;
-		}
+		@include a11y.error-panel;
 	}
 
 	// Responsive

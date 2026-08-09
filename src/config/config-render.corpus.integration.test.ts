@@ -19,30 +19,16 @@
  * @jest-environment jsdom
  */
 
-import { existsSync, promises as fs } from 'node:fs';
-import path from 'node:path';
-
 import { normalizeGllData } from '../shared/gll-normalize';
+import {
+	describeCorpus,
+	describeFullCorpus,
+	listCorpusFiles,
+	parseCorpusFile,
+	teardownWasm,
+} from '../../tests/helpers/wasm-harness';
 import { renderConfig } from './config-render';
 import type { RenderOptions } from './config-render';
-
-const PROJECT_ROOT = path.resolve( __dirname, '..', '..' );
-const WASM_PATH = path.join( PROJECT_ROOT, 'assets', 'wasm', 'gll.wasm' );
-const WASM_EXEC_PATH = path.join(
-	PROJECT_ROOT,
-	'assets',
-	'wasm',
-	'wasm_exec.js'
-);
-
-const CORPUS_PATH =
-	process.env.GLL_CORPUS || '/mnt/projekte/Code/gll-tools/testdata/gll';
-
-const hasCorpus = existsSync( CORPUS_PATH );
-const maybeDescribe = hasCorpus ? describe : describe.skip;
-
-// 29 files, roughly 180 MB of binary, each parsed through WASM.
-jest.setTimeout( 300000 );
 
 /** Everything on, so no section can hide behind a toggle. */
 const OPTIONS: RenderOptions = {
@@ -112,10 +98,7 @@ function makeBlock(): HTMLElement {
  * @return {Promise<Object>} Normalized GLL data.
  */
 async function loadCorpusFile( file: string ): Promise< any > {
-	const bytes = await fs.readFile( path.join( CORPUS_PATH, file ) );
-	const result = JSON.parse(
-		( globalThis as any ).parseGLL( new Uint8Array( bytes ) )
-	);
+	const result = await parseCorpusFile( file );
 	expect( result.success ).toBe( true );
 	return normalizeGllData( result.data );
 }
@@ -132,46 +115,21 @@ function render( data: any ): HTMLElement {
 	return block;
 }
 
-/**
- * List the corpus, ignoring the golden-output directory beside it.
- *
- * @return {Promise<string[]>} Sorted GLL file names.
- */
-async function listCorpus(): Promise< string[] > {
-	const entries = await fs.readdir( CORPUS_PATH );
-	return entries.filter( ( name ) => name.endsWith( '.gll' ) ).sort();
-}
+const corpusFiles = listCorpusFiles();
 
-maybeDescribe( 'rendering the whole GLL corpus as configuration', () => {
-	beforeAll( async () => {
-		// jsdom ships neither, and the Go runtime refuses to load without
-		// them. Node's own implementations are the ones the node-based
-		// integration tests already run against.
-		if ( ! ( globalThis as any ).TextEncoder ) {
-			const { TextEncoder, TextDecoder } = require( 'node:util' );
-			( globalThis as any ).TextEncoder = TextEncoder;
-			( globalThis as any ).TextDecoder = TextDecoder;
-		}
+describeCorpus( 'rendering the whole GLL corpus as configuration', () => {
+	afterAll( () => teardownWasm() );
 
-		require( WASM_EXEC_PATH );
-
-		const wasmBytes = await fs.readFile( WASM_PATH );
-		const go = new ( globalThis as any ).Go();
-		const { instance } = await WebAssembly.instantiate(
-			wasmBytes,
-			go.importObject
-		);
-		void go.run( instance );
+	it( 'has files to sweep', () => {
+		expect( corpusFiles.length ).toBeGreaterThan( 0 );
 	} );
 
-	// One pass over the corpus, asserting the per-file invariants as it goes and
-	// keeping only a small report per file. Re-parsing 180 MB once per assertion
-	// would turn a two-minute run into a twenty-minute one.
-	it( 'renders every file without throwing and without junk in the output', async () => {
-		const files = await listCorpus();
-		expect( files.length ).toBeGreaterThan( 0 );
-
-		for ( const file of files ) {
+	// One case per file, so a failure names the file and each parse gets its own
+	// timeout rather than sharing one budget across the whole sweep. Each case
+	// keeps only a small report, which the later assertions read.
+	it.each( corpusFiles )(
+		'%s renders without throwing and without junk in the output',
+		async ( file ) => {
 			const data = await loadCorpusFile( file );
 			const block = render( data );
 
@@ -275,28 +233,9 @@ maybeDescribe( 'rendering the whole GLL corpus as configuration', () => {
 				),
 				filterGroupCount: groups.length,
 			} );
-		}
-	} );
-
-	it( 'covers the expected number of files per section', () => {
-		expect( reports.length ).toBeGreaterThan( 0 );
-
-		const counts: Record< string, number > = {
-			'box-types': 0,
-			frames: 0,
-			'filter-groups': 0,
-			limits: 0,
-			warnings: 0,
-		};
-
-		reports.forEach( ( report ) => {
-			report.cards.forEach( ( key ) => {
-				counts[ key ] = ( counts[ key ] || 0 ) + 1;
-			} );
-		} );
-
-		expect( counts ).toEqual( EXPECTED_CARD_FILES );
-	} );
+		},
+		60000
+	);
 
 	it( 'renders filter definitions for the most filter-heavy file', async () => {
 		const heaviest = reports.reduce( ( best, report ) =>
@@ -319,5 +258,39 @@ maybeDescribe( 'rendering the whole GLL corpus as configuration', () => {
 			).some( ( detail ) => ( detail.textContent || '' ).trim() !== '' )
 		);
 		expect( detailed.length ).toBeGreaterThan( 0 );
-	} );
+	}, 60000 );
+} );
+
+/**
+ * Section coverage as corpus-wide totals.
+ *
+ * This is the assertion the file's docblock describes: a normalized field that
+ * quietly stops arriving shows up here as a card count dropping, and only in
+ * aggregate. It is therefore meaningless against the size-bounded default sweep
+ * and runs only under `GLL_CORPUS_FULL=1`.
+ */
+describeFullCorpus( 'section coverage across the complete corpus', () => {
+	afterAll( () => teardownWasm() );
+
+	it( 'covers the expected number of files per section', async () => {
+		const counts: Record< string, number > = {
+			'box-types': 0,
+			frames: 0,
+			'filter-groups': 0,
+			limits: 0,
+			warnings: 0,
+		};
+
+		for ( const file of listCorpusFiles() ) {
+			const block = render( await loadCorpusFile( file ) );
+			Array.from(
+				block.querySelectorAll< HTMLElement >( '.gll-config-card' )
+			).forEach( ( card ) => {
+				const key = card.getAttribute( 'data-card' ) || '';
+				counts[ key ] = ( counts[ key ] || 0 ) + 1;
+			} );
+		}
+
+		expect( counts ).toEqual( EXPECTED_CARD_FILES );
+	}, 600000 );
 } );

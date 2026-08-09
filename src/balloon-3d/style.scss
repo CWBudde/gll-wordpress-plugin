@@ -10,10 +10,13 @@
  * @package GllInfo
  */
 
+@use "../shared/a11y";
 @use "../shared/tokens";
 
 .gll-balloon-3d-block {
 	margin: 20px 0;
+
+	@include a11y.reduced-motion-spinner;
 
 	.gll-balloon-3d-header {
 		display: flex;
@@ -169,16 +172,8 @@
 
 	// Error colors stay fixed: they must survive a broken theme.
 	.gll-error {
-		padding: 20px;
-		background: #fff8f8;
-		border: 1px solid #d63638;
-		border-radius: 4px;
-		color: #d63638;
 
-		strong {
-			display: block;
-			margin-bottom: 8px;
-		}
+		@include a11y.error-panel;
 	}
 }
 

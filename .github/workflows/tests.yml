@@ -1,12 +1,23 @@
 name: Tests
 
 on:
+    # Branch pushes are covered by the pull_request trigger. Without this
+    # restriction every PR runs the whole suite twice — which was cheap when CI
+    # was three lint jobs and is not now that it boots WordPress twice and a
+    # browser once.
     push:
+        branches: [main]
     pull_request:
     workflow_dispatch:
 
 permissions:
     contents: read
+
+# A second push to the same branch supersedes the first; there is no value in
+# finishing a run for a commit nobody will look at.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
     format:
@@ -15,5 +26,23 @@ jobs:
     lint:
         uses: ./.github/workflows/test-lint.yml
 
+    typecheck:
+        uses: ./.github/workflows/test-typecheck.yml
+
+    unit:
+        uses: ./.github/workflows/test-unit.yml
+
+    integration:
+        uses: ./.github/workflows/test-integration.yml
+
+    php:
+        uses: ./.github/workflows/test-php.yml
+
+    e2e:
+        uses: ./.github/workflows/test-e2e.yml
+
     build:
         uses: ./.github/workflows/test-can-build.yml
+
+    version:
+        uses: ./.github/workflows/test-version.yml

@@ -28,7 +28,7 @@ import {
 	useRef,
 } from '@wordpress/element';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import {
 	useGLLLoader,
@@ -433,7 +433,10 @@ export default function Edit( { attributes, setAttributes } ) {
 				controls.enableZoom = true;
 				controls.enablePan = true;
 				controls.enableRotate = true;
-				controls.enableKeys = true;
+				// No `controls.enableKeys`: the flag was removed from
+				// OrbitControls in three r132 and the pinned r0.159 ignores it
+				// entirely, so setting it did nothing. Keyboard operation comes
+				// from `attachKeyboardOrbit` in the shared a11y module instead.
 				controls.minDistance = 0.25;
 				controls.maxDistance = 25;
 				controls.rotateSpeed = 0.6;

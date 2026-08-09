@@ -827,57 +827,296 @@ absent, CI included.
 ## Phase 11: Integration & Polish
 
 ### Task 11.1: Block Patterns
-- [ ] Create "Full GLL Viewer" pattern (all blocks)
-- [ ] Create "Quick Overview" pattern
-- [ ] Create "Acoustic Analysis" pattern
+- [x] Create "Full GLL Viewer" pattern (all blocks)
+- [x] Create "Quick Overview" pattern
+- [x] Create "Acoustic Analysis" pattern
 
 ### Task 11.2: Block Variations
-- [ ] Register block variations for common configurations
+- [x] Register block variations for common configurations
 
 ### Task 11.3: Internationalization
-- [ ] Add translation support
-- [ ] Extract all strings to translation functions
+- [x] Add translation support
+- [x] Extract all strings to translation functions
+- [ ] Generate `languages/gll-info.pot` (needs WP-CLI; see below)
 
 ### Task 11.4: Accessibility
-- [ ] Add ARIA labels to interactive elements
-- [ ] Ensure keyboard navigation works
+- [x] Add ARIA labels to interactive elements
+- [x] Ensure keyboard navigation works
 - [ ] Test with screen readers
 
 ### Task 11.5: Documentation
-- [ ] Add inline block help
-- [ ] Create user documentation
-- [ ] Add example patterns
+- [x] Add inline block help
+- [x] Create user documentation
+- [x] Add example patterns
+
+Patterns register from `includes/class-gll-patterns.php`. Six of the seven
+blocks serialize as self-closing comments with no file attributes set, so a
+pattern stays file-agnostic; geometry is the exception, because its `save()`
+returns markup rather than null and a bare comment would fail block validation
+on insert. That markup therefore lives verbatim in the PHP, which is a
+duplication waiting to rot — `src/geometry/pattern-content.test.tsx`
+re-serializes the real block and asserts the PHP still contains exactly that
+string, so a renamed class or a reordered attribute fails a test instead of
+silently breaking every shipped pattern.
+
+The 13 variations are declared inline in `block.json` rather than registered
+from JavaScript. Core translates them out of the block metadata catalogue, which
+keeps them off the editor bundle entirely.
+
+Internationalization was never a string problem. Roughly 300 strings were
+already wrapped before this phase and not one of them could be translated,
+because none of the loading infrastructure existed: no `load_plugin_textdomain`,
+no `wp_set_script_translations`, no `Domain Path`, no `languages/`. The wrapping
+was the visible half of the job and the smaller one.
+
+Two i18n traps are worth recording because both produce code that lints clean,
+passes tests, and silently ships English forever. The first: a translated string
+captured in a module-level constant is evaluated at import time, before
+WordPress has registered the catalogue. The normalizer's four enum label tables
+were exactly that shape, and are now call-time lookup functions
+(`getLimitTypeLabel()` and siblings) with the reasoning recorded above them.
+`IIR_SHAPE_LABELS` and `SIZE_UNITS` stay constants *because* they are not
+translated, and now say so. The second: `load_plugin_textdomain` on
+`plugins_loaded` is the conventional hook and is wrong on WordPress 6.7+, which
+fires `_doing_it_wrong` for any domain loaded before `init`. This plugin's
+declared minimum is 6.7, so it sits on `init` priority 0 — ahead of the post-type
+and pattern registrations, both of which translate at registration time.
+
+Translated text also has to survive the DOM. Several badge rows were built by
+string concatenation into `innerHTML`, which is defensible while every
+interpolated value is a number and becomes an injection the moment a translator
+supplies one containing `&` or `<`. Those now build nodes, or route through
+`escapeHtml`. English output is byte-identical.
+
+Accessibility is applied at runtime, never in `save()`. A block's `save()` output
+is serialized into post content, so adding an attribute there invalidates every
+post already containing the block unless a matching `deprecated` entry is added
+for all seven — and a demo page carrying the current markup is already
+published. That is also the more honest design: the things that need announcing
+are DOM mutations that only happen at runtime, and a live region baked into
+`save()` would sit inert until `view.ts` touched it.
+
+The single non-obvious a11y rule, which cost real time: a live region must exist
+in the document *before* its text changes, or assistive technology treats the
+text as initial content and stays silent. Creating the region and filling it in
+the same tick is the classic way to ship a live region that never announces
+anything. In `geometry/view.ts` that collides with
+`@wordpress/no-unused-vars-before-return`, whose suggested fix — move the
+binding down to its first use — would quietly destroy the feature. It carries a
+targeted suppression and an explanation instead.
+
+`--gll-accent` was `#667eea`, which gives white-on-accent **3.66:1** against the
+4.5:1 AA threshold, and 2.97:1 as text on the 12%-tinted badge fill. It is now
+`#4c51bf`: 6.49:1 and 5.01:1. The badge fill, not the white button, was the
+binding constraint — the obvious landmark `#5a67d8` clears white at 4.81:1 but
+only reaches 3.80:1 there. The focus indicator deliberately does *not* use the
+accent: it draws from the text and surface tokens, which any working theme has
+already made legible against each other, so a site owner overriding the accent
+badly costs contrast on a badge rather than the ability to see where the
+keyboard is.
+
+Found and fixed while wiring the stylesheets, all three invisible until someone
+looked: `.gll-visually-hidden` was referenced by the shared live-region helper
+and defined nowhere, so the geometry block's off-screen region and the
+frequency-response value table rendered as visible page content. `.gll-error`
+was missing from two blocks that had just been moved onto the shared error
+panel, leaving both unstyled. And balloon-3d's error panel carried an inline
+`#fff8f8` background that rendered white-on-white under a dark theme.
+
+Not done, and deliberately: `languages/gll-info.pot` does not exist. There is no
+local WP-CLI, so generating it needs the server's installation, and it has to
+happen after the wrapping rather than alongside it. Until it does, `languages/`
+is empty and every string falls back to English — which is the correct
+pre-translation state, not a defect. Screen-reader testing is also outstanding
+for the same reason Phases 8, 9 and 10 record: no local WordPress environment,
+and staging is outward-facing. ARIA structure is verified in jsdom; how NVDA and
+VoiceOver actually narrate it is not.
+
+Two pre-existing defects surfaced here and were left alone as out of scope.
+`gll_info_enqueue_frontend_assets()` gates on `has_block()`, which only inspects
+main post content — a GLL block in a template part, widget or reusable block
+gets neither the WASM settings nor the translations. And `showResponses` on the
+main block is a no-op: it serializes to `data-show-responses` and nothing reads
+it.
 
 ---
 
 ## Phase 12: Testing & Release
 
+**The environment caveat recorded in Phases 8, 9, 10 and 11 is retired.** Those
+phases each deferred browser verification, screen-reader testing and the `.pot`
+catalogue for the same reason: "no local WordPress environment and staging is
+outward-facing". `wp-env` supplies one. It is configured in `.wp-env.json` and
+brought into a usable state by `scripts/wp-env-after-start.sh`.
+
 ### Task 12.1: Unit Tests
-- [ ] Test WASM loader
-- [ ] Test data parsing utilities
-- [ ] Test React components
+- [x] Test WASM loader — already covered; unchanged
+- [x] Test data parsing utilities
+- [x] Test React components
+
+655 tests across both Jest projects, up from 316. Six previously untested pure
+modules now covered: `charting-utils`, `polar-utils`, `balloon-utils`, `a11y`,
+`escape-html` and the polar compass plugin — roughly 2100 lines of maths and
+runtime accessibility on every block's critical path.
+
+Type checking is on for the first time (`npm run typecheck`). `wp-scripts`
+compiles through babel, which strips types without checking them, so a genuine
+type error shipped silently before this. Turning it on surfaced 96 errors, three
+of which were real defects rather than noise — see the commit for
+`scene-builder`'s `setIndex`, geometry's dead `enableKeys`, and two assertions
+that were comparing `NaN` to `NaN`.
 
 ### Task 12.2: Integration Tests
-- [ ] Test block registration
-- [ ] Test media library integration
-- [ ] Test frontend rendering
+- [x] Test block registration
+- [x] Test media library integration
+- [x] Test frontend rendering
+
+31 PHPUnit tests against the real WordPress core test suite inside wp-env, plus
+the E2E round trip for frontend rendering. Both block registration paths are
+covered by a CI matrix over WordPress 6.7.2 and current core, because
+`function_exists` cannot be un-defined and the 6.7 fallback is otherwise
+unreachable. That also makes "Requires at least: 6.7" a tested claim.
+
+The `has_block()` defect recorded in Phase 11 has a *passing* characterization
+test describing what actually happens, plus the reason it has never bitten in
+the field. It will fail the day the gate is fixed, which is the wanted signal; a
+red test in a release branch only teaches people to ignore CI.
 
 ### Task 12.3: Browser Testing
-- [ ] Test WASM in Chrome, Firefox, Safari, Edge
-- [ ] Test WebGL in different browsers (for 3D blocks)
-- [ ] Test fallback for older browsers
+- [x] ~~Test WASM in Chrome, Firefox, Safari, Edge~~ Amended: Chromium verified;
+  Firefox and WebKit configured; **Safari and mobile remain unverified**
+- [x] Test WebGL in different browsers (for 3D blocks)
+- [x] Test fallback for older browsers
+
+23 Playwright specs. The full round trip works: a real `.gll` uploads through the
+REST media pipeline, all seven blocks insert, all three patterns load, and a
+published page parses and renders with a live WebGL context.
+
+**This found a shipped bug.** The geometry markup duplicated into
+`class-gll-patterns.php` was missing the `wp-block-gll-info-geometry` class that
+`supports.className` makes `save()` emit, so that block loaded as *invalid* in
+every pattern containing it. WordPress recovers an invalid block rather than
+refusing it, so nothing looked wrong. `pattern-content.test.tsx` exists to
+prevent exactly this and passed throughout, because `serialize()` under jsdom
+omits the same class — it was comparing the PHP against equally incomplete
+output. The E2E spec is now the authority and asserts `isValid` per block.
+
+The fallback specs are the only honest reading of "test fallback for older
+browsers": an old browser cannot be obtained and a faked user-agent tests
+nothing, so `addInitScript` removes the features the code actually branches on
+before any page script runs.
+
+Cross-browser honesty: Chromium is a good proxy for Chrome and defensible for
+Edge. **Playwright's WebKit is not Safari** — different graphics stack, and
+Safari applies its own WebAssembly memory limits, which is precisely where this
+plugin is most exposed given Task 12.4's findings. Safari on real hardware and
+any mobile browser remain unverified, and `readme.txt` says so rather than
+listing them.
 
 ### Task 12.4: Performance Testing
-- [ ] Test with large GLL files (100MB+)
-- [ ] Measure memory usage
-- [ ] Test Three.js scene performance with complex geometries
-- [ ] Optimize if needed
+- [x] ~~Test with large GLL files (100MB+)~~ Amended: parse the largest file
+  available (15.4 MB) and document the ceiling — see below
+- [x] Measure memory usage
+- [x] Test Three.js scene performance with complex geometries
+- [x] Optimize if needed — measured first, and the answer is "not here"
+
+`scripts/perf-corpus.mjs` (`npm run perf`) sweeps the 29-file reference corpus
+and writes `docs/performance.md`.
+
+**The 100 MB criterion could not be met and was amended rather than faked.** No
+such file exists; the largest GLL in the corpus is 15.4 MB and that appears to
+be near the format's real-world ceiling. Padding one to 100 MB would produce
+something the parser rejects, so the measurement would describe the error path.
+
+**What the measurement found is more useful than the original target.** The
+limit is memory, not speed. A 15.4 MB GLL expands to 228.7 MB of JSON and leaves
+the Go WASM instance holding 1.3 GB of linear memory, which Go never returns to
+the host. Files of 10 MB and up therefore need 800 MB–1.3 GB and 6–11 s to
+parse; they are unpleasant on desktop and likely to fail on mobile, where
+per-tab WASM memory is capped well below a gigabyte. Files up to ~2 MB — 21 of
+the 29 — parse in under a second and are comfortable everywhere.
+
+Everything downstream of the parser is free by comparison: normalization runs in
+single-digit milliseconds even for the largest file, balloon mesh construction
+under 15 ms, case geometry about 1 ms. Optimizing any of those would be
+optimizing noise, which is why "optimize if needed" is answered by not doing it.
+
+Not gated in CI, deliberately: the corpus is machine-local third-party data, and
+runner variance on CPU-bound WASM would swamp any threshold tight enough to
+catch a regression.
 
 ### Task 12.5: Release Preparation
-- [ ] Update readme.txt
-- [ ] Create changelog
-- [ ] Build production assets
-- [ ] Create plugin ZIP
+- [x] Update readme.txt
+- [x] Create changelog — `readme.txt` is the single source of truth
+- [x] Build production assets
+- [x] Create plugin ZIP — and verify it, which is the part that mattered
+
+**The shipped ZIP was unusable and nobody could have noticed.** `wp-scripts
+plugin-zip` reads only the `files` field in `package.json`. It does **not** read
+`.distignore` or `.gitattributes`, and with no `files` field it falls back to a
+hardcoded glob that omits `assets/**` — so the archive contained no `gll.wasm`,
+and every block parses client-side through that module. The plugin installed
+cleanly and could not read a single file.
+
+The obvious fix is the wrong one: adding a `.distignore` would look right, pass
+review, and ship the same broken ZIP. Only the `files` array changes the packer's
+behaviour.
+
+`scripts/verify-plugin-zip.sh` asserts against the archive rather than reading
+the packer's log — the WASM module present *and over 4 MB*, since
+present-but-truncated is a real failure mode a listing cannot see, plus the icon,
+the includes, all seven block manifests, and the absence of `node_modules`,
+`src`, `tests` and the lockfile.
+
+`scripts/check-version.mjs` guards the five places the version is written by
+hand, and runs on every push. A single missed location is otherwise silent.
+
+`.github/workflows/release.yml` is written and verified but **not triggered** —
+no tag is created here, as agreed. It rebuilds and diffs `build/`, regenerates
+and diffs the catalogue, packages, and runs the ZIP verification before
+publishing. The `build/` diff is deliberately *not* run on ordinary pushes:
+webpack output is not reproducible across Node minor versions, and a check that
+reddens on version skew teaches people to ignore a red X.
+
+Also fixed here: the create-block placeholder `description` and `author`, which
+contradicted the PHP header, and the missing `LICENSE` file for a licence
+declared in three places and present in none.
+
+### Outstanding from Phase 11
+
+- [x] Generate `languages/gll-info.pot` — done; 476 strings, 1043 `build/`
+  references. The trap worth recording: `make-pot` must scan `build/`, not just
+  `src/`, because core resolves a script translation by hashing the script path
+  relative to the plugin and `make-json` derives that hash from the POT's
+  references. A POT referencing `src/` produces JSON named after paths that do
+  not exist in the shipped plugin, core never finds them, and every string stays
+  English with nothing failing. Verified end to end with a throwaway `de_DE`
+  catalogue rather than reasoned about.
+- [ ] **Test with screen readers — still open, and deliberately so.** axe-core
+  runs against four blocks and reports no serious or critical violations, which
+  is real but strictly smaller than what this task asks. axe cannot judge
+  whether the canvas descriptions are *useful*, whether live-region
+  announcements arrive in a sensible order, or whether the 3D blocks are
+  navigable at all. That needs NVDA, JAWS or VoiceOver and a human. Closing this
+  on an axe pass would be the one genuinely dishonest move available here.
+
+### Known issues, tracked rather than fixed
+
+- `gll_info_enqueue_frontend_assets()` gates on `has_block()`, which inspects
+  only the main post content, so a GLL block in a template part, widget or
+  reusable block gets no `gllInfoSettings`. It works anyway on a stock install
+  because `wasm-loader` falls back to a hardcoded
+  `/wp-content/plugins/gll-info/...` path; it breaks on a renamed plugin
+  directory, a subdirectory install, non-root multisite, or a `WP_PLUGIN_URL`
+  override. The fix is a per-block `viewScript` dependency across seven
+  `block.json` files plus a rebuild — a 0.2.0 change, characterized by a passing
+  test today.
+- `showResponses` on the main block is still a no-op: it serializes to
+  `data-show-responses` and nothing reads it.
+- `polar-utils.ts` contains `onAxisLevel.length === onAxisLevel.length` in the
+  `canCombineOnAxis` guard. It is redundant rather than wrong — the preceding
+  frequency-length comparison already enforces the intended rule — and a test
+  pins the behaviour so repairing the line cannot change anything unnoticed.
 
 ---
 
@@ -968,13 +1207,13 @@ gll-info/
 | 3. Overview Block | 5 | Low | DONE (integrated) |
 | 4. Frequency Response | 5 | High | DONE |
 | 5. Polar Plot | 6 | Medium-High | DONE |
-| 6. 3D Balloon | 9 | Very High | TODO |
+| 6. 3D Balloon | 9 | Very High | DONE |
 | 7. Sources List | 9 | Medium-High | PARTIAL (5/9 tasks complete, 1 partial) |
 | 8. Geometry Viewer | 11 | Very High | DONE |
 | 9. Resources | 4 | Medium | DONE |
 | 10. Configuration | 4 | Medium | DONE |
-| 11. Integration | 5 | Medium | TODO |
-| 12. Testing | 5 | Medium | TODO |
+| 11. Integration | 5 | Medium | DONE (screen-reader testing open) |
+| 12. Testing | 5 | Medium | DONE (screen-reader testing open) |
 
 **Total: 70 tasks across 12 phases**
 **Completed: ~54 tasks (Phases 1-5, 8-10, Phase 7: Tasks 7.1, 7.2, 7.4, 7.5, 7.7, 7.9)**

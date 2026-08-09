@@ -14,52 +14,128 @@
  * @package
  */
 
+import { __, _x, sprintf } from '@wordpress/i18n';
+
 /**
- * Limit type labels, keyed by the raw `type` integer of a `limits[]` entry.
+ * The enum label tables below are FUNCTIONS, not the constant objects they used
+ * to be, and that shape is load-bearing rather than a matter of taste.
+ *
+ * A module-level `const TABLE = { 0: __( 'Max Count', 'gll-info' ) }` is
+ * evaluated when the module is imported, which in WordPress happens before the
+ * translation data for the domain has been registered. `__()` would then return
+ * the English source string, that string would be frozen into the table for the
+ * lifetime of the page, and no translation would ever apply — silently, since
+ * the English fallback looks like a correct result. Calling `__()` inside a
+ * function defers the lookup to render time, by which point the domain is
+ * loaded.
+ *
+ * Returning the fallback from the same function (rather than leaving
+ * `|| 'Limit Type 7'` at the call site) keeps the two halves of one label
+ * decision in one place, and gives the translators the `%d` string too.
+ *
+ * `IIR_SHAPE_LABELS` stays a plain constant on purpose: those values are proper
+ * nouns (Butterworth, Linkwitz-Riley, …) and are not translated, so there is
+ * nothing to defer.
+ */
+
+/**
+ * Label for a rigging limit type, keyed by the raw `type` integer of a
+ * `limits[]` entry.
  *
  * Go's `LimitType.String()` never crosses the JSON boundary — the parser
  * marshals the bare int32 — so the label table has to live here.
  *
- * This table is deliberately SEPARATE from `WARNING_TYPE_LABELS` below and the
+ * This table is deliberately SEPARATE from `getWarningTypeLabel` below and the
  * two must not be merged: the numbering genuinely differs. Limit 1 is
  * 'Max Count Type' while warning 1 is 'Min Count Warning'. Value 3 is unused in
  * the limit numbering.
+ *
+ * @param {number} type Raw limit type integer.
+ * @return {string} Translated label.
  */
-export const LIMIT_TYPE_LABELS = {
-	0: 'Max Count',
-	1: 'Max Count Type',
-	2: 'Max Weight',
-	4: 'Max Tilt Angle',
-	5: 'Min Tilt Angle',
-	6: 'Min Count',
-};
+export function getLimitTypeLabel( type ) {
+	switch ( type ) {
+		case 0:
+			return __( 'Max Count', 'gll-info' );
+		case 1:
+			return __( 'Max Count Type', 'gll-info' );
+		case 2:
+			return __( 'Max Weight', 'gll-info' );
+		case 4:
+			return __( 'Max Tilt Angle', 'gll-info' );
+		case 5:
+			return __( 'Min Tilt Angle', 'gll-info' );
+		case 6:
+			return __( 'Min Count', 'gll-info' );
+		default:
+			return sprintf(
+				/* translators: %d: raw numeric limit type from the GLL file. */
+				__( 'Limit Type %d', 'gll-info' ),
+				type
+			);
+	}
+}
 
 /**
- * Warning type labels, keyed by the raw `type` integer of a `warnings[]` entry.
+ * Label for a rigging warning type, keyed by the raw `type` integer of a
+ * `warnings[]` entry.
  *
- * Separate from `LIMIT_TYPE_LABELS` above on purpose — see the note there. As
+ * Separate from `getLimitTypeLabel` above on purpose — see the note there. As
  * with limits, Go's `String()` does not cross the JSON boundary, so the bare
  * integer arrives and is mapped here.
+ *
+ * @param {number} type Raw warning type integer.
+ * @return {string} Translated label.
  */
-export const WARNING_TYPE_LABELS = {
-	0: 'Max Count Warning',
-	1: 'Min Count Warning',
-	2: 'Max Weight Warning',
-	3: 'Max Tilt Warning',
-	4: 'Min Tilt Warning',
-};
+export function getWarningTypeLabel( type ) {
+	switch ( type ) {
+		case 0:
+			return __( 'Max Count Warning', 'gll-info' );
+		case 1:
+			return __( 'Min Count Warning', 'gll-info' );
+		case 2:
+			return __( 'Max Weight Warning', 'gll-info' );
+		case 3:
+			return __( 'Max Tilt Warning', 'gll-info' );
+		case 4:
+			return __( 'Min Tilt Warning', 'gll-info' );
+		default:
+			return sprintf(
+				/* translators: %d: raw numeric warning type from the GLL file. */
+				__( 'Warning Type %d', 'gll-info' ),
+				type
+			);
+	}
+}
 
 /**
- * Filter kind labels, keyed by the raw `filter_type` of a generic filter.
+ * Label for a filter kind, keyed by the raw `filter_type` of a generic filter.
+ *
+ * Unknown values stay undefined rather than falling back to a placeholder: the
+ * kind is the leading token of a filter detail line, and the callers drop an
+ * empty one instead of printing 'Filter Type 7'.
+ *
+ * @param {number} kind Raw filter type integer.
+ * @return {string|undefined} Translated label, or undefined when unknown.
  */
-export const FILTER_KIND_LABELS = {
-	0: 'LogSpectrum',
-	1: 'IIR',
-	2: 'FIR',
-};
+export function getFilterKindLabel( kind ) {
+	switch ( kind ) {
+		case 0:
+			return __( 'LogSpectrum', 'gll-info' );
+		case 1:
+			return __( 'IIR', 'gll-info' );
+		case 2:
+			return __( 'FIR', 'gll-info' );
+		default:
+			return undefined;
+	}
+}
 
 /**
  * IIR filter shape labels, keyed by the raw `filter_shape` of `iir_params`.
+ *
+ * NOT translated, and therefore still a constant: every value is the surname of
+ * the engineer the response is named after.
  */
 export const IIR_SHAPE_LABELS = {
 	0: 'Butterworth',
@@ -69,14 +145,29 @@ export const IIR_SHAPE_LABELS = {
 };
 
 /**
- * IIR crossover alignment labels, keyed by the raw `alignment` of `iir_params`.
+ * Label for an IIR crossover alignment, keyed by the raw `alignment` of
+ * `iir_params`.
+ *
+ * '-3 dB' and '-6 dB' are left as bare values: they are a number and a unit
+ * symbol, identical in every locale.
+ *
+ * @param {number} alignment Raw alignment integer.
+ * @return {string|undefined} Label, or undefined when unknown.
  */
-export const FILTER_ALIGN_LABELS = {
-	0: 'None',
-	1: '-3 dB',
-	2: '-6 dB',
-	3: 'Phase-Matched',
-};
+export function getFilterAlignmentLabel( alignment ) {
+	switch ( alignment ) {
+		case 0:
+			return _x( 'None', 'crossover alignment', 'gll-info' );
+		case 1:
+			return '-3 dB';
+		case 2:
+			return '-6 dB';
+		case 3:
+			return __( 'Phase-Matched', 'gll-info' );
+		default:
+			return undefined;
+	}
+}
 
 /**
  * Detect data that is already normalized, so the function is idempotent.
@@ -568,7 +659,7 @@ function normalizeLimit( limit ) {
 		Frame: limit.frame,
 		BoxType: limit.box_type,
 		Type: type,
-		TypeLabel: LIMIT_TYPE_LABELS[ type ] || `Limit Type ${ type }`,
+		TypeLabel: getLimitTypeLabel( type ),
 		Value: limit.limit_value,
 	};
 }
@@ -584,7 +675,7 @@ function normalizeWarning( warning ) {
 	return {
 		Frame: warning.frame,
 		Type: type,
-		TypeLabel: WARNING_TYPE_LABELS[ type ] || `Warning Type ${ type }`,
+		TypeLabel: getWarningTypeLabel( type ),
 		Text: warning.text,
 		Value: warning.limit_value,
 	};
@@ -608,7 +699,7 @@ function normalizeIirParams( iir ) {
 		Order: iir.order,
 		FreqCritHz: iir.freq_crit_hz,
 		Alignment: iir.alignment,
-		AlignmentLabel: FILTER_ALIGN_LABELS[ iir.alignment ],
+		AlignmentLabel: getFilterAlignmentLabel( iir.alignment ),
 		QFactor: iir.q_factor,
 	};
 }
@@ -676,7 +767,7 @@ function normalizeFilterLogSpectrum( spectrum ) {
 function normalizeGenericFilter( filter ) {
 	return {
 		Kind: filter.filter_type,
-		KindLabel: FILTER_KIND_LABELS[ filter.filter_type ],
+		KindLabel: getFilterKindLabel( filter.filter_type ),
 		Label: filter.label,
 		Key: filter.key,
 		Bypass: filter.bypass,

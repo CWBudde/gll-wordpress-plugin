@@ -7,6 +7,7 @@
  * @package GllInfo
  */
 
+@use "../shared/a11y";
 @use "../shared/tokens";
 
 .gll-info-block {
@@ -414,6 +415,10 @@
 				color: var(--gll-text);
 				font-weight: 600;
 				list-style: none;
+
+				// Same missing focus state as on the frontend; the editor
+				// hides the native marker too.
+				@include a11y.focus-ring;
 			}
 
 			summary::-webkit-details-marker {
@@ -472,10 +477,7 @@
 			background: var(--gll-surface-muted);
 		}
 
-		&:focus {
-			outline: 2px solid var(--gll-accent);
-			outline-offset: -2px;
-		}
+		@include a11y.focus-ring;
 	}
 
 	.gll-source-toggle {

@@ -1,0 +1,2891 @@
+# Copyright (C) 2026 MeKo-Tech
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: GLL Info 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/gll-info\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-09T10:08:12+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: gll-info\n"
+
+#. Plugin Name of the plugin
+#: gll-info.php
+msgid "GLL Info"
+msgstr ""
+
+#. Description of the plugin
+#: gll-info.php
+msgid "Display GLL (Generic Loudspeaker Library) file data with interactive visualizations including frequency response charts, polar plots, and 3D balloon directivity."
+msgstr ""
+
+#. Author of the plugin
+#: gll-info.php
+msgid "MeKo-Tech"
+msgstr ""
+
+#. Author URI of the plugin
+#: gll-info.php
+msgid "https://github.com/MeKo-Tech"
+msgstr ""
+
+#: gll-info.php:51
+msgctxt "Post type general name"
+msgid "GLL Files"
+msgstr ""
+
+#: gll-info.php:52
+msgctxt "Post type singular name"
+msgid "GLL File"
+msgstr ""
+
+#: gll-info.php:53
+msgctxt "Admin Menu text"
+msgid "GLL Files"
+msgstr ""
+
+#: gll-info.php:54
+msgctxt "Add New on Toolbar"
+msgid "GLL File"
+msgstr ""
+
+#: gll-info.php:55
+msgid "Add New"
+msgstr ""
+
+#: gll-info.php:56
+msgid "Add New GLL File"
+msgstr ""
+
+#: gll-info.php:57
+msgid "New GLL File"
+msgstr ""
+
+#: gll-info.php:58
+msgid "Edit GLL File"
+msgstr ""
+
+#: gll-info.php:59
+msgid "View GLL File"
+msgstr ""
+
+#: gll-info.php:60
+msgid "All GLL Files"
+msgstr ""
+
+#: gll-info.php:61
+msgid "Search GLL Files"
+msgstr ""
+
+#: gll-info.php:62
+msgid "No GLL files found."
+msgstr ""
+
+#: gll-info.php:63
+msgid "No GLL files found in Trash."
+msgstr ""
+
+#: gll-info.php:64
+msgid "GLL File Archives"
+msgstr ""
+
+#: gll-info.php:65
+msgid "Filter GLL files list"
+msgstr ""
+
+#: gll-info.php:66
+msgid "GLL files list navigation"
+msgstr ""
+
+#: gll-info.php:67
+msgid "GLL files list"
+msgstr ""
+
+#: includes/class-gll-media.php:75
+msgid "GLL Files"
+msgstr ""
+
+#: includes/class-gll-media.php:76
+msgid "Manage GLL Files"
+msgstr ""
+
+#. translators: %s: number of GLL files
+#: includes/class-gll-media.php:78
+#, php-format
+msgid "GLL File <span class=\"count\">(%s)</span>"
+msgid_plural "GLL Files <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-gll-patterns.php:99
+msgid "Loudspeaker Data"
+msgstr ""
+
+#: includes/class-gll-patterns.php:101
+msgid "Select the same GLL file in each block below to build a complete data sheet for this loudspeaker."
+msgstr ""
+
+#: includes/class-gll-patterns.php:104
+#: includes/class-gll-patterns.php:161
+msgid "Frequency Response"
+msgstr ""
+
+#: includes/class-gll-patterns.php:106
+msgid "On-axis magnitude and phase for the selected acoustic source."
+msgstr ""
+
+#: includes/class-gll-patterns.php:109
+msgid "Directivity"
+msgstr ""
+
+#: includes/class-gll-patterns.php:111
+msgid "Horizontal and vertical coverage at a single frequency, and the full radiation balloon in three dimensions."
+msgstr ""
+
+#: includes/class-gll-patterns.php:115
+msgid "Cabinet Geometry"
+msgstr ""
+
+#: includes/class-gll-patterns.php:117
+msgid "The enclosure as modelled in the GLL file. Drag to orbit the view."
+msgstr ""
+
+#: includes/class-gll-patterns.php:120
+msgid "Configuration"
+msgstr ""
+
+#: includes/class-gll-patterns.php:122
+msgid "Box types, frames, filter groups and the operating limits declared by the manufacturer."
+msgstr ""
+
+#: includes/class-gll-patterns.php:125
+msgid "Documents and Downloads"
+msgstr ""
+
+#: includes/class-gll-patterns.php:139
+msgid "Loudspeaker at a Glance"
+msgstr ""
+
+#: includes/class-gll-patterns.php:142
+msgid "Data sheets and other documents shipped inside the GLL file:"
+msgstr ""
+
+#: includes/class-gll-patterns.php:157
+msgid "Acoustic Analysis"
+msgstr ""
+
+#: includes/class-gll-patterns.php:159
+msgid "Frequency response, polar coverage and the three-dimensional radiation balloon for one acoustic source."
+msgstr ""
+
+#: includes/class-gll-patterns.php:163
+msgid "Polar Coverage"
+msgstr ""
+
+#: includes/class-gll-patterns.php:165
+msgid "Radiation Balloon"
+msgstr ""
+
+#: includes/class-gll-patterns.php:186
+msgid "GLL Loudspeaker Data"
+msgstr ""
+
+#: includes/class-gll-patterns.php:187
+msgid "Layouts that combine the GLL Info blocks into complete loudspeaker pages."
+msgstr ""
+
+#: includes/class-gll-patterns.php:194
+msgid "Full GLL Viewer"
+msgstr ""
+
+#: includes/class-gll-patterns.php:195
+msgid "A complete loudspeaker page: overview, frequency response, polar plot, 3D balloon, cabinet geometry, configuration and embedded documents."
+msgstr ""
+
+#: includes/class-gll-patterns.php:198
+#: includes/class-gll-patterns.php:214
+#: includes/class-gll-patterns.php:230
+msgid "gll"
+msgstr ""
+
+#: includes/class-gll-patterns.php:199
+msgid "loudspeaker"
+msgstr ""
+
+#: includes/class-gll-patterns.php:200
+msgid "data sheet"
+msgstr ""
+
+#: includes/class-gll-patterns.php:201
+msgid "acoustic"
+msgstr ""
+
+#: includes/class-gll-patterns.php:210
+msgid "Quick GLL Overview"
+msgstr ""
+
+#: includes/class-gll-patterns.php:211
+msgid "Compact summary of a GLL file plus the documents embedded in it."
+msgstr ""
+
+#: includes/class-gll-patterns.php:215
+msgid "overview"
+msgstr ""
+
+#: includes/class-gll-patterns.php:216
+msgid "summary"
+msgstr ""
+
+#: includes/class-gll-patterns.php:217
+msgid "downloads"
+msgstr ""
+
+#: includes/class-gll-patterns.php:226
+msgid "GLL Acoustic Analysis"
+msgstr ""
+
+#: includes/class-gll-patterns.php:227
+msgid "Frequency response, polar plot and 3D balloon for a single acoustic source."
+msgstr ""
+
+#: includes/class-gll-patterns.php:231
+msgid "frequency response"
+msgstr ""
+
+#: includes/class-gll-patterns.php:232
+msgid "polar"
+msgstr ""
+
+#: includes/class-gll-patterns.php:233
+msgid "directivity"
+msgstr ""
+
+#: includes/class-gll-patterns.php:234
+msgid "balloon"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Max Count"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Max Count Type"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Max Weight"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Max Tilt Angle"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Min Tilt Angle"
+msgstr ""
+
+#: build/balloon-3d/index.js:1
+#: build/balloon-3d/view.js:1
+#: build/config/index.js:1
+#: build/config/view.js:1
+#: build/frequency-response/index.js:1
+#: build/frequency-response/view.js:1
+#: build/geometry/index.js:1
+#: build/geometry/view.js:1
+#: build/gll-info/index.js:1
+#: build/gll-info/view.js:1
+#: build/polar-plot/index.js:1
+#: build/polar-plot/view.js:1
+#: build/resources/index.js:1
+#: build/resources/view.js:1
+msgid "Min Count"
+msgstr ""
+
+#. translators: %d: raw numeric limit type from the GLL file.
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+#, js-format
+msgid "Limit Type %d"
+msgstr ""
+
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+msgid "Max Count Warning"
+msgstr ""
+
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+msgid "Min Count Warning"
+msgstr ""
+
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+msgid "Max Weight Warning"
+msgstr ""
+
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+msgid "Max Tilt Warning"
+msgstr ""
+
+#: build/balloon-3d/index.js:2
+#: build/balloon-3d/view.js:2
+#: build/config/index.js:2
+#: build/config/view.js:2
+#: build/frequency-response/index.js:2
+#: build/frequency-response/view.js:2
+#: build/geometry/index.js:2
+#: build/geometry/view.js:2
+#: build/gll-info/index.js:2
+#: build/gll-info/view.js:2
+#: build/polar-plot/index.js:2
+#: build/polar-plot/view.js:2
+#: build/resources/index.js:2
+#: build/resources/view.js:2
+msgid "Min Tilt Warning"
+msgstr ""
+
+#. translators: %d: raw numeric warning type from the GLL file.
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+#, js-format
+msgid "Warning Type %d"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "LogSpectrum"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "IIR"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "FIR"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgctxt "crossover alignment"
+msgid "None"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "Phase-Matched"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "WebAssembly is not supported in this browser"
+msgstr ""
+
+#: build/balloon-3d/index.js:3
+#: build/balloon-3d/view.js:3
+#: build/config/index.js:3
+#: build/config/view.js:3
+#: build/frequency-response/index.js:3
+#: build/frequency-response/view.js:3
+#: build/geometry/index.js:3
+#: build/geometry/view.js:3
+#: build/gll-info/index.js:3
+#: build/gll-info/view.js:19
+#: build/polar-plot/index.js:3
+#: build/polar-plot/view.js:3
+#: build/resources/index.js:3
+#: build/resources/view.js:3
+msgid "Failed to load wasm_exec.js"
+msgstr ""
+
+#. translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found".
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/config/index.js:4
+#: build/config/view.js:4
+#: build/frequency-response/index.js:4
+#: build/frequency-response/view.js:4
+#: build/geometry/index.js:4
+#: build/geometry/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+#: build/resources/index.js:4
+#: build/resources/view.js:4
+#, js-format
+msgid "Failed to fetch WASM: %1$d %2$s"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/config/index.js:4
+#: build/config/view.js:4
+#: build/frequency-response/index.js:4
+#: build/frequency-response/view.js:4
+#: build/geometry/index.js:4
+#: build/geometry/view.js:4
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:22
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+#: build/resources/index.js:4
+#: build/resources/view.js:4
+msgid "WASM module did not export parseGLL function"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/config/index.js:4
+#: build/config/view.js:4
+#: build/frequency-response/index.js:4
+#: build/frequency-response/view.js:4
+#: build/geometry/index.js:4
+#: build/geometry/view.js:4
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+#: build/resources/index.js:4
+#: build/resources/view.js:4
+msgid "Failed to parse GLL file"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Appearance"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Frame"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Colors always follow the site theme. This controls the frame around the block."
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Card"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Plain"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "None"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "None"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "Vertical"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "Horizontal"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "Quarter"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "Axial"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/balloon-3d/view.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/polar-plot/view.js:4
+msgctxt "symmetry"
+msgid "Unknown"
+msgstr ""
+
+#. translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found".
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:49
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:14
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:7
+#, js-format
+msgid "Failed to fetch GLL file: %1$d %2$s"
+msgstr ""
+
+#. translators: %d: source number.
+#: build/balloon-3d/index.js:6
+#: build/frequency-response/index.js:6
+#: build/polar-plot/index.js:6
+#, js-format
+msgid "Source %d"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "File Settings"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Selected File:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Replace File"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Remove File"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/polar-plot/index.js:13
+msgid "Source & Frequency"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/frequency-response/index.js:8
+#: build/polar-plot/index.js:13
+msgid "Acoustic Source"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/frequency-response/index.js:6
+#: build/frequency-response/view.js:11
+#: build/gll-info/index.js:7
+#: build/polar-plot/index.js:13
+msgid "Frequency"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Frequency Index"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/gll-info/index.js:14
+#: build/polar-plot/index.js:13
+msgid "Display Options"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "dB Range"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Dynamic range for level display (dB)"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Scale"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Size multiplier for the balloon"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+msgid "Wireframe"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Show mesh as wireframe"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+#: build/geometry/index.js:6
+msgid "Auto-Rotate"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Automatically rotate the balloon"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Show Reference Sphere"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Show wireframe unit sphere for reference"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Show Axes"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Show X/Y/Z axes helper"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/geometry/index.js:6
+msgid "Canvas Height (px)"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Quality Preset"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Low (faster)"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Medium (default)"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "High (best lighting)"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Low subsamples the angular grid and disables antialiasing. High adds a fill light."
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:19
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Source:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Loading GLL data…"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:14
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Error loading GLL file:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:4
+#: build/geometry/index.js:6
+#: build/geometry/view.js:4
+msgid "WebGL is not supported in your browser. Please use a modern browser to view 3D content."
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Frequency:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+msgid "Display Range:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+msgid "Grid:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+#: build/gll-info/index.js:11
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Resolution:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/balloon-3d/view.js:7
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Symmetry:"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/polar-plot/index.js:13
+msgid "No directivity data available for this source."
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "GLL 3D Balloon"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+msgid "Select a GLL file to display 3D directivity balloon."
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:49
+#: build/frequency-response/index.js:8
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:14
+#: build/polar-plot/index.js:13
+#: build/resources/index.js:7
+msgid "Select GLL File"
+msgstr ""
+
+#: build/balloon-3d/view.js:4
+#: build/config/view.js:48
+#: build/frequency-response/view.js:4
+#: build/geometry/view.js:4
+#: build/gll-info/view.js:29
+#: build/polar-plot/view.js:4
+#: build/resources/view.js:6
+msgid "Error:"
+msgstr ""
+
+#: build/balloon-3d/view.js:4
+#: build/config/view.js:48
+#: build/frequency-response/view.js:4
+#: build/geometry/view.js:4
+#: build/polar-plot/view.js:4
+#: build/resources/view.js:6
+msgid "Failed to initialize WASM parser"
+msgstr ""
+
+#: build/balloon-3d/view.js:4
+#: build/config/view.js:49
+#: build/frequency-response/view.js:12
+#: build/geometry/view.js:4
+#: build/polar-plot/view.js:16
+#: build/resources/view.js:9
+msgid "No file URL specified"
+msgstr ""
+
+#: build/balloon-3d/view.js:4
+#: build/frequency-response/view.js:4
+#: build/polar-plot/view.js:4
+msgid "GLL File"
+msgstr ""
+
+#. translators: %s: HTTP status text returned by the server.
+#. translators: %s: HTTP status text, e.g. "Not Found".
+#: build/balloon-3d/view.js:7
+#: build/config/view.js:49
+#: build/frequency-response/view.js:5
+#: build/geometry/view.js:5
+#: build/polar-plot/view.js:5
+#: build/resources/view.js:7
+#, js-format
+msgid "Failed to fetch file: %s"
+msgstr ""
+
+#: build/balloon-3d/view.js:7
+#: build/frequency-response/view.js:5
+#: build/polar-plot/view.js:5
+msgid "Source not found"
+msgstr ""
+
+#: build/balloon-3d/view.js:7
+#: build/polar-plot/view.js:5
+msgid "No frequency data available"
+msgstr ""
+
+#: build/balloon-3d/view.js:7
+#: build/polar-plot/view.js:5
+msgid "No directivity data available for this source"
+msgstr ""
+
+#: build/balloon-3d/view.js:7
+msgid "Quality:"
+msgstr ""
+
+#. translators: %s: sound pressure level, already rounded.
+#. translators: %s: signed gain, already formatted to one decimal.
+#: build/balloon-3d/view.js:10
+#: build/config/index.js:15
+#: build/config/view.js:15
+#, js-format
+msgid "%s dB"
+msgstr ""
+
+#. translators: 1: frequency, e.g. "1 kHz". 2: lowest displayed level in dB. 3: highest displayed level in dB. 4: number of meridians. 5: number of parallels. 6: symmetry name.
+#: build/balloon-3d/view.js:11
+#, js-format
+msgid "3D directivity balloon at %1$s, levels from %2$s to %3$s dB on a %4$d by %5$d measurement grid, %6$s symmetry."
+msgstr ""
+
+#: build/balloon-3d/view.js:11
+msgid "Use the arrow keys to rotate and the plus and minus keys to zoom."
+msgstr ""
+
+#. translators: %s: mass, already formatted to two decimals.
+#: build/config/index.js:5
+#: build/config/view.js:5
+#, js-format
+msgid "%s kg"
+msgstr ""
+
+#. translators: %s: angle, already formatted to one decimal.
+#: build/config/index.js:6
+#: build/config/view.js:6
+#, js-format
+msgid "%s°"
+msgstr ""
+
+#. translators: %s: delay in milliseconds, already formatted.
+#: build/config/index.js:7
+#: build/config/view.js:7
+#, js-format
+msgid "%s ms"
+msgstr ""
+
+#. translators: %s: delay in microseconds, already formatted.
+#: build/config/index.js:8
+#: build/config/view.js:8
+#, js-format
+msgid "%s µs"
+msgstr ""
+
+#. translators: %d: number of mesh vertices.
+#: build/config/index.js:9
+#: build/config/view.js:9
+#, js-format
+msgid "%d vertices"
+msgstr ""
+
+#. translators: %d: number of mesh edges.
+#: build/config/index.js:10
+#: build/config/view.js:10
+#, js-format
+msgid "%d edges"
+msgstr ""
+
+#. translators: %d: number of mesh faces.
+#: build/config/index.js:11
+#: build/config/view.js:11
+#, js-format
+msgid "%d faces"
+msgstr ""
+
+#: build/config/index.js:11
+#: build/config/view.js:11
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Symmetric"
+msgstr ""
+
+#. translators: %s: symmetry axis position on X, in metres.
+#: build/config/index.js:12
+#: build/config/view.js:12
+#, js-format
+msgid "Symmetric @ X=%s"
+msgstr ""
+
+#: build/config/index.js:12
+#: build/config/view.js:12
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Asymmetric"
+msgstr ""
+
+#. translators: %s: record key from the GLL file.
+#: build/config/index.js:13
+#: build/config/index.js:29
+#: build/config/index.js:37
+#: build/config/view.js:13
+#: build/config/view.js:29
+#: build/config/view.js:37
+#, js-format
+msgid "Key: %s"
+msgstr ""
+
+#. translators: %d: position of the filter in its group.
+#: build/config/index.js:14
+#: build/config/view.js:14
+#, js-format
+msgid "Filter %d"
+msgstr ""
+
+#: build/config/index.js:14
+#: build/config/view.js:14
+msgid "Bypassed"
+msgstr ""
+
+#: build/config/index.js:14
+#: build/config/view.js:14
+msgid "Inverted"
+msgstr ""
+
+#: build/config/index.js:14
+#: build/config/view.js:14
+msgid "Muted"
+msgstr ""
+
+#: build/config/index.js:14
+#: build/config/view.js:14
+msgid "0 dB"
+msgstr ""
+
+#. translators: %s: formatted gain, including its unit.
+#: build/config/index.js:16
+#: build/config/view.js:16
+#, js-format
+msgid "Gain: %s"
+msgstr ""
+
+#. translators: %s: formatted delay, including its unit.
+#: build/config/index.js:17
+#: build/config/index.js:27
+#: build/config/view.js:17
+#: build/config/view.js:27
+#, js-format
+msgid "Delay: %s"
+msgstr ""
+
+#. translators: %s: IIR filter order.
+#: build/config/index.js:18
+#: build/config/view.js:18
+#, js-format
+msgid "Order: %s"
+msgstr ""
+
+#. translators: %s: formatted critical frequency, including its unit.
+#: build/config/index.js:19
+#: build/config/view.js:19
+#, js-format
+msgid "Freq: %s"
+msgstr ""
+
+#. translators: %s: filter quality factor.
+#: build/config/index.js:20
+#: build/config/view.js:20
+#, js-format
+msgid "Q: %s"
+msgstr ""
+
+#. translators: %s: crossover alignment name.
+#: build/config/index.js:21
+#: build/config/view.js:21
+#, js-format
+msgid "Align: %s"
+msgstr ""
+
+#. translators: %s: sample rate in kilohertz, already formatted.
+#: build/config/index.js:22
+#: build/config/view.js:22
+#, js-format
+msgid "%s kHz"
+msgstr ""
+
+#: build/config/index.js:22
+#: build/config/view.js:22
+msgid "Time Domain"
+msgstr ""
+
+#: build/config/index.js:22
+#: build/config/view.js:22
+msgid "Freq Domain"
+msgstr ""
+
+#: build/config/index.js:22
+#: build/config/view.js:22
+msgid "Complex"
+msgstr ""
+
+#. translators: %s: formatted sample rate, including its unit.
+#: build/config/index.js:23
+#: build/config/view.js:23
+#, js-format
+msgid "SR: %s"
+msgstr ""
+
+#. translators: %d: number of FIR filter coefficients.
+#: build/config/index.js:24
+#: build/config/view.js:24
+#, js-format
+msgid "%d coefficients"
+msgstr ""
+
+#. translators: %s: number of spectrum bands.
+#: build/config/index.js:25
+#: build/config/view.js:25
+#, js-format
+msgid "%s bands"
+msgstr ""
+
+#. translators: %s: number of bands per octave.
+#: build/config/index.js:26
+#: build/config/view.js:26
+#, js-format
+msgid "%s/oct"
+msgstr ""
+
+#: build/config/index.js:27
+#: build/config/view.js:27
+msgid "Box Types"
+msgstr ""
+
+#. translators: %d: position of the box type in the file.
+#: build/config/index.js:28
+#: build/config/view.js:28
+#, js-format
+msgid "Box Type %d"
+msgstr ""
+
+#. translators: %s: formatted mass, including its unit.
+#: build/config/index.js:30
+#: build/config/index.js:38
+#: build/config/view.js:30
+#: build/config/view.js:38
+#, js-format
+msgid "Weight: %s"
+msgstr ""
+
+#. translators: %s: formatted angle, including its unit.
+#: build/config/index.js:31
+#: build/config/view.js:31
+#, js-format
+msgid "Vertical Opening Angle: %s"
+msgstr ""
+
+#. translators: %s: formatted angle, including its unit.
+#: build/config/index.js:32
+#: build/config/view.js:32
+#, js-format
+msgid "Horizontal Opening Angle: %s"
+msgstr ""
+
+#. translators: 1: source placement label, 2: key of the source definition it references.
+#: build/config/index.js:33
+#: build/config/view.js:33
+#, js-format
+msgctxt "source placement"
+msgid "%1$s (%2$s)"
+msgstr ""
+
+#. translators: %s: comma-separated list of acoustic source names.
+#: build/config/index.js:34
+#: build/config/view.js:34
+#, js-format
+msgid "Sources: %s"
+msgstr ""
+
+#. translators: %s: comma-separated list of source placements.
+#: build/config/index.js:35
+#: build/config/view.js:35
+#, js-format
+msgid "Source Placements: %s"
+msgstr ""
+
+#: build/config/index.js:35
+#: build/config/view.js:35
+msgid "Frames"
+msgstr ""
+
+#. translators: %d: position of the frame in the file.
+#: build/config/index.js:36
+#: build/config/view.js:36
+#, js-format
+msgid "Frame %d"
+msgstr ""
+
+#. translators: 1: pin point label, 2: coordinate triple.
+#: build/config/index.js:39
+#: build/config/view.js:39
+#, js-format
+msgctxt "pin point"
+msgid "%1$s (%2$s)"
+msgstr ""
+
+#. translators: %s: comma-separated list of rigging pin points.
+#: build/config/index.js:40
+#: build/config/view.js:40
+#, js-format
+msgid "Pin Points: %s"
+msgstr ""
+
+#: build/config/index.js:40
+#: build/config/view.js:40
+msgid "Flown"
+msgstr ""
+
+#: build/config/index.js:40
+#: build/config/view.js:40
+msgid "Ground-stacked"
+msgstr ""
+
+#: build/config/index.js:40
+#: build/config/view.js:40
+msgid "Filter Groups"
+msgstr ""
+
+#. translators: %d: position of the filter group in the file.
+#: build/config/index.js:41
+#: build/config/view.js:41
+#, js-format
+msgid "Filter Group %d"
+msgstr ""
+
+#: build/config/index.js:41
+#: build/config/view.js:41
+msgid "Overridable"
+msgstr ""
+
+#. translators: %d: number of filters in the group.
+#: build/config/index.js:42
+#: build/config/view.js:42
+#, js-format
+msgid "%d filters"
+msgstr ""
+
+#: build/config/index.js:42
+#: build/config/view.js:42
+msgid "Limits"
+msgstr ""
+
+#. translators: %d: position of the rigging limit in the file.
+#: build/config/index.js:43
+#: build/config/view.js:43
+#, js-format
+msgid "Limit %d"
+msgstr ""
+
+#. translators: %s: formatted limit value, including its unit.
+#. translators: %s: formatted warning threshold, including its unit.
+#: build/config/index.js:44
+#: build/config/index.js:48
+#: build/config/view.js:44
+#: build/config/view.js:48
+#, js-format
+msgid "Value: %s"
+msgstr ""
+
+#. translators: %s: key of the box type the limit applies to.
+#: build/config/index.js:45
+#: build/config/view.js:45
+#, js-format
+msgid "Box: %s"
+msgstr ""
+
+#. translators: %s: key of the frame the limit applies to.
+#: build/config/index.js:46
+#: build/config/view.js:46
+#, js-format
+msgid "Frame: %s"
+msgstr ""
+
+#: build/config/index.js:46
+#: build/config/view.js:46
+msgid "Warnings"
+msgstr ""
+
+#. translators: %d: position of the rigging warning in the file.
+#: build/config/index.js:47
+#: build/config/view.js:47
+#, js-format
+msgid "Warning %d"
+msgstr ""
+
+#: build/config/index.js:48
+msgid "No box types defined."
+msgstr ""
+
+#: build/config/index.js:48
+msgid "No frames defined."
+msgstr ""
+
+#: build/config/index.js:48
+msgid "No filter groups defined."
+msgstr ""
+
+#: build/config/index.js:48
+msgid "No rigging limits defined."
+msgstr ""
+
+#: build/config/index.js:48
+msgid "No rigging warnings defined."
+msgstr ""
+
+#: build/config/index.js:49
+#: build/resources/index.js:7
+msgid "Display Settings"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Box Types"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "This file contains no box types."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Frames"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "This file contains no frames."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Filter Groups"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "This file contains no filter groups."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Rigging Limits"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "This file contains no rigging limits."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Rigging Warnings"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "This file contains no rigging warnings."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Geometry Summary"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Add vertex and face counts to box types and frames."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Filter Details"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "List the individual filters inside each filter group."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Show Pin Points"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "List the rigging pin points of each frame. Off by default — a frame can carry dozens."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Start Collapsed"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Every card summary carries its entry count, so a collapsed card still tells the reader what is inside."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Remember Open Cards"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Store which cards a site visitor opened and restore them on the next visit. Affects the front end only — the editor preview always follows the setting above."
+msgstr ""
+
+#: build/config/index.js:49
+#: build/resources/index.js:7
+msgid "Hide When Empty"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Hide the block on the front end when the file has no configuration to show."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Nothing defined."
+msgstr ""
+
+#: build/config/index.js:49
+#: build/resources/index.js:7
+msgid "Empty — this block will be hidden on the front end."
+msgstr ""
+
+#: build/config/index.js:49
+msgid "GLL Configuration"
+msgstr ""
+
+#: build/config/index.js:49
+msgid "Select a GLL file to show its box types, frames, filter groups, limits and warnings."
+msgstr ""
+
+#: build/config/view.js:48
+msgid "This GLL file contains no configuration data."
+msgstr ""
+
+#: build/frequency-response/index.js:4
+#: build/frequency-response/view.js:4
+#: build/gll-info/index.js:4
+msgid "Phase (rad)"
+msgstr ""
+
+#: build/frequency-response/index.js:4
+#: build/frequency-response/view.js:4
+#: build/gll-info/index.js:4
+msgid "Group Delay (ms)"
+msgstr ""
+
+#: build/frequency-response/index.js:6
+#: build/gll-info/index.js:8
+msgid "Unwrapped"
+msgstr ""
+
+#: build/frequency-response/index.js:6
+#: build/gll-info/index.js:8
+msgid "Wrapped"
+msgstr ""
+
+#: build/frequency-response/index.js:6
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+msgid "Group Delay"
+msgstr ""
+
+#. translators: %s: phase series label, already translated, e.g. "Phase (rad)".
+#: build/frequency-response/index.js:7
+#: build/gll-info/index.js:8
+#, js-format
+msgid "%s (on-axis + directivity)"
+msgstr ""
+
+#: build/frequency-response/index.js:7
+#: build/gll-info/index.js:8
+msgid "Level (dB, on-axis + directivity)"
+msgstr ""
+
+#: build/frequency-response/index.js:7
+#: build/frequency-response/view.js:11
+#: build/gll-info/index.js:8
+msgid "Level (dB)"
+msgstr ""
+
+#. translators: 1: lowest frequency in the response, 2: highest frequency.
+#. translators: 1: GLL file name, 2: source label.
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:12
+#, js-format
+msgid "%1$s - %2$s"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Source Settings"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Response Index"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Chart Settings"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Show Magnitude"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Show Phase"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Phase Mode"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Normalize (On-Axis)"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/polar-plot/index.js:13
+msgid "Chart Height (px)"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+msgid "Range:"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+#: build/gll-info/index.js:8
+msgid "Phase:"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+msgid "Wrapped Phase"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+msgid "Unwrapped Phase"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+#: build/frequency-response/view.js:5
+#: build/gll-info/index.js:8
+#: build/gll-info/index.js:9
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Normalized"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "No frequency response data available for this source."
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "GLL Frequency Response"
+msgstr ""
+
+#: build/frequency-response/index.js:8
+msgid "Select a GLL file to display frequency response chart."
+msgstr ""
+
+#: build/frequency-response/view.js:5
+msgid "No frequency response data available for this source"
+msgstr ""
+
+#: build/frequency-response/view.js:5
+msgid "Invalid frequency response data"
+msgstr ""
+
+#. translators: %s: source label, or the file name when the source is unnamed.
+#: build/frequency-response/view.js:6
+#, js-format
+msgid "Frequency response of %s, normalized"
+msgstr ""
+
+#. translators: %s: source label, or the file name when the source is unnamed.
+#: build/frequency-response/view.js:7
+#, js-format
+msgid "Frequency response of %s"
+msgstr ""
+
+#. translators: 1: lowest plotted frequency, 2: highest plotted frequency.
+#: build/frequency-response/view.js:8
+#, js-format
+msgid "%1$s to %2$s"
+msgstr ""
+
+#. translators: 1: lowest plotted level in dB, 2: highest plotted level in dB.
+#: build/frequency-response/view.js:9
+#, js-format
+msgid "level %1$s to %2$s dB"
+msgstr ""
+
+#. translators: %s: phase series label, already translated, e.g. "Phase (rad)".
+#: build/frequency-response/view.js:10
+#, js-format
+msgid "%s on the right axis"
+msgstr ""
+
+#. translators: %s: comma-separated summary of the plotted chart.
+#: build/frequency-response/view.js:11
+#, js-format
+msgid "%s. The plotted values follow in a table."
+msgstr ""
+
+#: build/frequency-response/view.js:11
+msgid "Frequency response level at one-third-octave band centres"
+msgstr ""
+
+#: build/geometry/index.js:4
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Reference Point"
+msgstr ""
+
+#: build/geometry/index.js:4
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Center of Mass"
+msgstr ""
+
+#: build/geometry/index.js:4
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Next Pivot"
+msgstr ""
+
+#. translators: %d: geometry number.
+#: build/geometry/index.js:6
+#, js-format
+msgid "Geometry %d"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Geometry Options"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Geometry"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Select which case geometry to display."
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Show Faces"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Show Edges"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:14
+msgid "Show Sources"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Center on Reference"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Markers"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Vertices:"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Edges:"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Faces:"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Largest Dimension:"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Bounds (W × H × D):"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Reference Point (mm):"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Center of Mass (mm):"
+msgstr ""
+
+#: build/geometry/index.js:6
+#: build/geometry/view.js:5
+msgid "Sources:"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "GLL Geometry Viewer"
+msgstr ""
+
+#: build/geometry/index.js:6
+msgid "Select a GLL file to display case geometry."
+msgstr ""
+
+#: build/geometry/view.js:5
+msgid "No geometry data available in this file."
+msgstr ""
+
+#. translators: 1: number of vertices, 2: number of edges, 3: number of faces.
+#: build/geometry/view.js:6
+#, js-format
+msgid "Interactive 3D view of the loudspeaker case: %1$d vertices, %2$d edges, %3$d faces. Use the arrow keys to rotate and the plus and minus keys to zoom."
+msgstr ""
+
+#. translators: 1: number of vertices, 2: number of faces.
+#: build/geometry/view.js:7
+#, js-format
+msgid "Geometry loaded: %1$d vertices, %2$d faces."
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "System Information"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Label"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Version"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Type"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Line Array"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Cluster"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Loudspeaker"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/index.js:5
+#: build/gll-info/index.js:11
+#: build/gll-info/view.js:6
+#: build/gll-info/view.js:25
+msgid "Unknown"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Manufacturer"
+msgstr ""
+
+#: build/gll-info/index.js:4
+#: build/gll-info/view.js:25
+msgid "Description"
+msgstr ""
+
+#. translators: 1: GLL format version, 2: checksum validity, "Yes" or "No".
+#: build/gll-info/index.js:5
+#, js-format
+msgid "Format Version: %1$s | Valid: %2$s"
+msgstr ""
+
+#: build/gll-info/index.js:5
+msgid "Yes"
+msgstr ""
+
+#: build/gll-info/index.js:5
+msgid "No"
+msgstr ""
+
+#: build/gll-info/index.js:5
+msgid "Pressure"
+msgstr ""
+
+#: build/gll-info/index.js:5
+msgid "Velocity"
+msgstr ""
+
+#: build/gll-info/index.js:5
+msgid "Intensity"
+msgstr ""
+
+#. translators: 1: response number, 2: azimuth angle, 3: elevation angle.
+#: build/gll-info/index.js:6
+#, js-format
+msgid "Response %1$d • Az %2$s / El %3$s"
+msgstr ""
+
+#. translators: %d: response number.
+#: build/gll-info/index.js:7
+#, js-format
+msgid "Response %d"
+msgstr ""
+
+#: build/gll-info/index.js:8
+#: build/gll-info/index.js:11
+msgid "No frequency response data available"
+msgstr ""
+
+#: build/gll-info/index.js:8
+msgid "Response:"
+msgstr ""
+
+#: build/gll-info/index.js:8
+msgid "Group delay"
+msgstr ""
+
+#: build/gll-info/index.js:8
+msgid "Azimuth:"
+msgstr ""
+
+#: build/gll-info/index.js:8
+msgid "Elevation:"
+msgstr ""
+
+#. translators: 1: current response number, 2: total number of responses.
+#: build/gll-info/index.js:9
+#, js-format
+msgid "Response %1$d of %2$d"
+msgstr ""
+
+#: build/gll-info/index.js:9
+msgid "Azimuth"
+msgstr ""
+
+#: build/gll-info/index.js:9
+msgid "Off-axis"
+msgstr ""
+
+#: build/gll-info/index.js:9
+msgid "Unable to render response chart for this selection."
+msgstr ""
+
+#. translators: %d: number of placements.
+#. translators: %d: number of placements of this source.
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:6
+#, js-format
+msgid "Placements (%d)"
+msgstr ""
+
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:6
+msgid "No placements found"
+msgstr ""
+
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:19
+msgid "Box:"
+msgstr ""
+
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:19
+msgid "Position:"
+msgstr ""
+
+#: build/gll-info/index.js:10
+#: build/gll-info/view.js:19
+msgid "Rotation:"
+msgstr ""
+
+#. translators: 1: heading angle, 2: vertical angle, 3: roll angle.
+#. translators: 1: heading angle. 2: vertical angle. 3: roll angle. All already carry the degree sign.
+#: build/gll-info/index.js:11
+#: build/gll-info/view.js:19
+#, js-format
+msgid "H: %1$s, V: %2$s, R: %3$s"
+msgstr ""
+
+#: build/gll-info/index.js:11
+msgid "Bandwidth:"
+msgstr ""
+
+#: build/gll-info/index.js:11
+msgid "Data Type:"
+msgstr ""
+
+#: build/gll-info/index.js:11
+msgid "Responses:"
+msgstr ""
+
+#: build/gll-info/index.js:11
+msgid "No source definitions found"
+msgstr ""
+
+#. translators: %d: number of acoustic sources.
+#. translators: %d: number of acoustic sources in the file.
+#: build/gll-info/index.js:12
+#: build/gll-info/view.js:28
+#, js-format
+msgid "Acoustic Sources (%d)"
+msgstr ""
+
+#: build/gll-info/index.js:12
+msgid "Loading more sources…"
+msgstr ""
+
+#. translators: 1: number of sources rendered so far, 2: total number of sources.
+#: build/gll-info/index.js:13
+#, js-format
+msgid "(%1$d / %2$d)"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "File"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Replace"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Remove"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Show Overview"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Sources Display Mode"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Compact"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Detailed"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Expandable"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Choose how source information is displayed"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Show Response Charts"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Display frequency response controls and chart for each source."
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Show Responses"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Coming soon: frequency response charts"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Parsing GLL file…"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "GLL File Viewer"
+msgstr ""
+
+#: build/gll-info/index.js:14
+msgid "Select a GLL file from your media library to display loudspeaker data."
+msgstr ""
+
+#. translators: %s: a length, already rounded.
+#: build/gll-info/view.js:9
+#, js-format
+msgid "%s mm"
+msgstr ""
+
+#. translators: %s: the X coordinate with its unit, e.g. "120 mm".
+#: build/gll-info/view.js:12
+#, js-format
+msgid "X: %s"
+msgstr ""
+
+#. translators: %s: the Y coordinate with its unit, e.g. "120 mm".
+#: build/gll-info/view.js:15
+#, js-format
+msgid "Y: %s"
+msgstr ""
+
+#. translators: %s: the Z coordinate with its unit, e.g. "120 mm".
+#: build/gll-info/view.js:18
+#, js-format
+msgid "Z: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: build/gll-info/view.js:22
+#, js-format
+msgid "Failed to fetch WASM: %d"
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: build/gll-info/view.js:25
+#, js-format
+msgid "Failed to fetch GLL file: %d"
+msgstr ""
+
+#: build/gll-info/view.js:25
+msgid "GLL data loaded."
+msgstr ""
+
+#. translators: 1: lower band limit in Hz. 2: upper band limit in Hz.
+#: build/gll-info/view.js:29
+#, js-format
+msgid "%1$d - %2$d Hz"
+msgstr ""
+
+#. translators: %s: the underlying failure description.
+#: build/gll-info/view.js:32
+#, js-format
+msgid "Could not load the GLL file. %s"
+msgstr ""
+
+#. translators: %s: frequency label, for example "1 kHz".
+#: build/polar-plot/index.js:7
+#: build/polar-plot/view.js:6
+#, js-format
+msgid "Horizontal @ %s (normalized)"
+msgstr ""
+
+#. translators: %s: frequency label, for example "1 kHz".
+#: build/polar-plot/index.js:8
+#: build/polar-plot/view.js:7
+#, js-format
+msgid "Horizontal @ %s"
+msgstr ""
+
+#. translators: %s: frequency label, for example "1 kHz".
+#: build/polar-plot/index.js:9
+#: build/polar-plot/view.js:8
+#, js-format
+msgid "Vertical @ %s (normalized)"
+msgstr ""
+
+#. translators: %s: frequency label, for example "1 kHz".
+#: build/polar-plot/index.js:10
+#: build/polar-plot/view.js:9
+#, js-format
+msgid "Vertical @ %s"
+msgstr ""
+
+#. translators: %s: angle label of the hovered point, for example "45°".
+#: build/polar-plot/index.js:11
+#: build/polar-plot/view.js:14
+#, js-format
+msgid "Angle %s"
+msgstr ""
+
+#: build/polar-plot/index.js:11
+#: build/polar-plot/view.js:14
+msgctxt "chart series"
+msgid "Level"
+msgstr ""
+
+#. translators: %s: chart series name.
+#: build/polar-plot/index.js:12
+#: build/polar-plot/view.js:15
+#, js-format
+msgid "%s: -"
+msgstr ""
+
+#. translators: 1: chart series name, 2: level in dB.
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:16
+#, js-format
+msgid "%1$s: %2$s dB"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Frequency Slider"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Show Horizontal Slice"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Front-Right-Back-Left plane (blue)"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Show Vertical Slice"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Front-Top-Back-Bottom plane (red)"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Normalize"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Normalize each slice to its maximum level"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Uses on-axis"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+#: build/polar-plot/view.js:9
+msgid "Front-half only"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "GLL Polar Plot"
+msgstr ""
+
+#: build/polar-plot/index.js:13
+msgid "Select a GLL file to display polar directivity plot."
+msgstr ""
+
+#. translators: %s: frequency label, for example "1 kHz".
+#: build/polar-plot/view.js:10
+#, js-format
+msgid "Polar directivity plot at %s"
+msgstr ""
+
+#. translators: %s: measurement plane, "horizontal" or "vertical".
+#: build/polar-plot/view.js:11
+#, js-format
+msgid "%s coverage not determinable from the measured data"
+msgstr ""
+
+#. translators: 1: measurement plane, "horizontal" or "vertical". 2: beamwidth in degrees.
+#: build/polar-plot/view.js:12
+#, js-format
+msgid "%1$s −6 dB beamwidth %2$s°"
+msgstr ""
+
+#: build/polar-plot/view.js:12
+msgctxt "measurement plane"
+msgid "horizontal"
+msgstr ""
+
+#: build/polar-plot/view.js:12
+msgctxt "measurement plane"
+msgid "vertical"
+msgstr ""
+
+#. translators: %s: symmetry name, already translated, e.g. "Axial".
+#: build/polar-plot/view.js:13
+#, js-format
+msgid "%s symmetry"
+msgstr ""
+
+#: build/polar-plot/view.js:13
+msgid "levels normalized to the on-axis maximum"
+msgstr ""
+
+#. translators: 1: formatted number of bytes, 2: unit symbol such as KB or MB.
+#: build/resources/index.js:5
+#: build/resources/view.js:5
+#, js-format
+msgid "%1$s %2$s"
+msgstr ""
+
+#. translators: %s: name of the embedded file to download.
+#: build/resources/index.js:6
+#: build/resources/view.js:6
+#, js-format
+msgid "Download %s"
+msgstr ""
+
+#: build/resources/index.js:6
+#: build/resources/view.js:6
+msgid "Download"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Show Documentation"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "This file contains no documentation."
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Show Data Files"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "This file contains no data files."
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Show Image Previews"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Preview Height (px)"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Hide the block on the front end when the file has no resources."
+msgstr ""
+
+#: build/resources/index.js:7
+#: build/resources/view.js:9
+msgid "Documentation"
+msgstr ""
+
+#: build/resources/index.js:7
+#: build/resources/view.js:9
+msgid "Technical drawings, spec sheets, and manuals embedded in the GLL file."
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "No documentation files in this GLL."
+msgstr ""
+
+#: build/resources/index.js:7
+#: build/resources/view.js:9
+msgid "Data Files"
+msgstr ""
+
+#: build/resources/index.js:7
+#: build/resources/view.js:9
+msgid "Embedded images, geometry, and configuration files."
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "No data files in this GLL."
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "GLL Resources"
+msgstr ""
+
+#: build/resources/index.js:7
+msgid "Select a GLL file to list its embedded documents and data files."
+msgstr ""
+
+#: build/resources/view.js:7
+msgid "This GLL file contains no embedded resources."
+msgstr ""
+
+#. translators: label of a count badge; the count follows.
+#: build/resources/view.js:8
+msgid "Documents:"
+msgstr ""
+
+#. translators: label of a count badge; the count follows.
+#: build/resources/view.js:9
+msgid "Data Files:"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block title"
+msgid "GLL 3D Balloon"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block description"
+msgid "Display 3D directivity balloon visualization from GLL file acoustic data using Three.js."
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: build/config/block.json
+#: build/frequency-response/block.json
+#: build/geometry/block.json
+#: build/gll-info/block.json
+#: build/polar-plot/block.json
+#: build/resources/block.json
+#: src/balloon-3d/block.json
+#: src/config/block.json
+#: src/frequency-response/block.json
+#: src/geometry/block.json
+#: src/gll-info/block.json
+#: src/polar-plot/block.json
+#: src/resources/block.json
+msgctxt "block keyword"
+msgid "gll"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: build/geometry/block.json
+#: src/balloon-3d/block.json
+#: src/geometry/block.json
+msgctxt "block keyword"
+msgid "3d"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block keyword"
+msgid "balloon"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: build/polar-plot/block.json
+#: src/balloon-3d/block.json
+#: src/polar-plot/block.json
+msgctxt "block keyword"
+msgid "directivity"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: build/geometry/block.json
+#: src/balloon-3d/block.json
+#: src/geometry/block.json
+msgctxt "block keyword"
+msgid "three"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block keyword"
+msgid "visualization"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block variation title"
+msgid "GLL Wireframe Balloon"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block variation description"
+msgid "3D directivity balloon drawn as a wireframe mesh instead of a solid surface."
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block variation title"
+msgid "GLL Balloon (Minimal)"
+msgstr ""
+
+#: build/balloon-3d/block.json
+#: src/balloon-3d/block.json
+msgctxt "block variation description"
+msgid "3D directivity balloon without the reference sphere and axes helper, for a clean presentation view."
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block title"
+msgid "GLL Configuration"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block description"
+msgid "Show the configuration of a GLL file: box types, frames, filter groups, limits and warnings."
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block keyword"
+msgid "config"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block keyword"
+msgid "box types"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block keyword"
+msgid "frames"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block keyword"
+msgid "filters"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block keyword"
+msgid "limits"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block variation title"
+msgid "GLL Rigging Configuration"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block variation description"
+msgid "Box types, frames, limits and warnings — the mechanical configuration, without the DSP filter groups."
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block variation title"
+msgid "GLL Filter Configuration"
+msgstr ""
+
+#: build/config/block.json
+#: src/config/block.json
+msgctxt "block variation description"
+msgid "Only the DSP filter groups and their filter details."
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block title"
+msgid "GLL Frequency Response"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block description"
+msgid "Display frequency response chart from GLL file acoustic data with interactive controls."
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block keyword"
+msgid "frequency"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block keyword"
+msgid "response"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block keyword"
+msgid "chart"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: build/gll-info/block.json
+#: build/polar-plot/block.json
+#: src/frequency-response/block.json
+#: src/gll-info/block.json
+#: src/polar-plot/block.json
+msgctxt "block keyword"
+msgid "acoustic"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block variation title"
+msgid "GLL Magnitude Response"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block variation description"
+msgid "Frequency response chart showing magnitude only, without the phase trace."
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block variation title"
+msgid "GLL Normalized Response"
+msgstr ""
+
+#: build/frequency-response/block.json
+#: src/frequency-response/block.json
+msgctxt "block variation description"
+msgid "Frequency response normalized to its on-axis maximum, for comparing shapes rather than absolute levels."
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block title"
+msgid "GLL Geometry Viewer"
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block description"
+msgid "Display GLL case geometry in a Three.js viewer."
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block keyword"
+msgid "geometry"
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block keyword"
+msgid "viewer"
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block variation title"
+msgid "GLL Wireframe Geometry"
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block variation description"
+msgid "Cabinet geometry drawn as edges only, without shaded faces."
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block variation title"
+msgid "GLL Rotating Geometry"
+msgstr ""
+
+#: build/geometry/block.json
+#: src/geometry/block.json
+msgctxt "block variation description"
+msgid "Cabinet geometry that rotates on its own, for use as a display element."
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block title"
+msgid "GLL File Viewer"
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block description"
+msgid "Display GLL (Generic Loudspeaker Library) file data with interactive visualizations."
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block keyword"
+msgid "loudspeaker"
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block keyword"
+msgid "audio"
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block keyword"
+msgid "frequency response"
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block variation title"
+msgid "GLL Overview"
+msgstr ""
+
+#: build/gll-info/block.json
+#: src/gll-info/block.json
+msgctxt "block variation description"
+msgid "Manufacturer, model and format metadata only, without the acoustic source listing."
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block title"
+msgid "GLL Polar Plot"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block description"
+msgid "Display polar directivity plot from GLL file acoustic data with horizontal and vertical slices."
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block keyword"
+msgid "polar"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block keyword"
+msgid "plot"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation title"
+msgid "GLL Horizontal Polar Plot"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation description"
+msgid "Polar directivity plot showing the horizontal slice only."
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation title"
+msgid "GLL Vertical Polar Plot"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation description"
+msgid "Polar directivity plot showing the vertical slice only."
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation title"
+msgid "GLL Normalized Polar Plot"
+msgstr ""
+
+#: build/polar-plot/block.json
+#: src/polar-plot/block.json
+msgctxt "block variation description"
+msgid "Polar plot normalized to the on-axis level, so the coverage pattern is read directly in dB relative to the axis."
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block title"
+msgid "GLL Resources"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block description"
+msgid "List the documentation and data files embedded in a GLL file, with previews and downloads."
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block keyword"
+msgid "resources"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block keyword"
+msgid "documents"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block keyword"
+msgid "downloads"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block keyword"
+msgid "datasheet"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block variation title"
+msgid "GLL Documentation"
+msgstr ""
+
+#: build/resources/block.json
+#: src/resources/block.json
+msgctxt "block variation description"
+msgid "Only the documentation embedded in the GLL file, without the raw data files."
+msgstr ""

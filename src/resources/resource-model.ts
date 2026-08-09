@@ -6,14 +6,18 @@
  * consumers are this block's two entry points, and `src/shared/` is for things
  * more than one block reaches for.
  *
- * The module is deliberately pure — no DOM, no React, no WordPress imports — so
- * every derivation (classification, size text, download names) is decided once
- * and tested once, leaving `edit.tsx` and `view.ts` as dumb templates over
- * identical data. That is what keeps the editor preview and the front end from
- * drifting apart, since they cannot share markup.
+ * The module is deliberately pure — no DOM, no React, and of the WordPress
+ * packages only `@wordpress/i18n`, since the user-visible strings it composes
+ * (the size text, the accessible download label) are built here rather than in
+ * the two renderers — so every derivation (classification, size text, download
+ * names) is decided once and tested once, leaving `edit.tsx` and `view.ts` as
+ * dumb templates over identical data. That is what keeps the editor preview and
+ * the front end from drifting apart, since they cannot share markup.
  *
  * @package
  */
+
+import { __, sprintf } from '@wordpress/i18n';
 
 export type ResourceKind = 'pdf' | 'image' | 'archive' | 'file';
 
@@ -64,6 +68,13 @@ const IMAGE_DATA_URI = /^data:image\//i;
 const PDF_EXTENSION = /\.pdf$/i;
 const ARCHIVE_EXTENSION = /\.(zip|gz|tar|7z|rar)$/i;
 
+/**
+ * Byte-size unit symbols.
+ *
+ * Left untranslated on purpose, and therefore safe as a module-level constant:
+ * these are bare unit symbols, not prose. Only the number/unit join below goes
+ * through `__()`, and it does so at call time.
+ */
 const SIZE_UNITS = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
 
 /**
@@ -79,6 +90,8 @@ const SIZE_UNITS = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
  */
 export function formatFileSize( bytes?: number ): string {
 	if ( ! Number.isFinite( bytes as number ) || ( bytes as number ) < 0 ) {
+		// Untranslated: a bare em dash is the "no value" marker, and it is the
+		// same glyph in every locale.
 		return '—';
 	}
 
@@ -90,7 +103,12 @@ export function formatFileSize( bytes?: number ): string {
 		unit++;
 	}
 
-	return `${ value.toFixed( unit === 0 ? 0 : 1 ) } ${ SIZE_UNITS[ unit ] }`;
+	return sprintf(
+		/* translators: 1: formatted number of bytes, 2: unit symbol such as KB or MB. */
+		__( '%1$s %2$s', 'gll-info' ),
+		value.toFixed( unit === 0 ? 0 : 1 ),
+		SIZE_UNITS[ unit ]
+	);
 }
 
 /**
@@ -153,6 +171,8 @@ function safeDownloadName( name: string ): string {
 		.trim();
 
 	if ( ! stripped || stripped === '.' || stripped === '..' ) {
+		// Untranslated: this is a file name written to disk by the browser, not
+		// prose, and it is also what `link.download` receives.
 		return 'download';
 	}
 
@@ -190,7 +210,11 @@ export function buildResourceItems(
 			isImage,
 			previewUri: isImage && previews ? entry.DataUri : undefined,
 			downloadUri: entry.DataUri,
-			downloadLabel: `Download ${ name }`,
+			downloadLabel: sprintf(
+				/* translators: %s: name of the embedded file to download. */
+				__( 'Download %s', 'gll-info' ),
+				name
+			),
 		};
 	} );
 }

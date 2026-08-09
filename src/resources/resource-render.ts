@@ -11,11 +11,13 @@
  * reference corpus, and concatenating attacker-influenced values of that size
  * into markup is a shape worth avoiding entirely rather than escaping
  * carefully. Assigning them as properties means the escaping question never
- * arises — the one exception is the badge row, which interpolates counts and
- * nothing file-derived.
+ * arises. The badge row used to be the one exception; it is not any more, since
+ * its labels now come from a translation catalogue.
  *
  * @package
  */
+
+import { __ } from '@wordpress/i18n';
 
 import { collectResources } from './resource-model';
 import type { ResourceViewItem } from './resource-model';
@@ -62,7 +64,10 @@ export function renderResources( block, data, options ) {
 		// emptied block would read as broken rather than as empty.
 		const empty = document.createElement( 'div' );
 		empty.className = 'gll-resources-empty';
-		empty.textContent = 'This GLL file contains no embedded resources.';
+		empty.textContent = __(
+			'This GLL file contains no embedded resources.',
+			'gll-info'
+		);
 		container.appendChild( empty );
 		container.style.display = 'block';
 		return;
@@ -77,8 +82,11 @@ export function renderResources( block, data, options ) {
 	if ( documentation.length > 0 ) {
 		container.appendChild(
 			buildSection(
-				'Documentation',
-				'Technical drawings, spec sheets, and manuals embedded in the GLL file.',
+				__( 'Documentation', 'gll-info' ),
+				__(
+					'Technical drawings, spec sheets, and manuals embedded in the GLL file.',
+					'gll-info'
+				),
 				documentation,
 				options.previewMaxHeight
 			)
@@ -88,8 +96,11 @@ export function renderResources( block, data, options ) {
 	if ( dataFiles.length > 0 ) {
 		container.appendChild(
 			buildSection(
-				'Data Files',
-				'Embedded images, geometry, and configuration files.',
+				__( 'Data Files', 'gll-info' ),
+				__(
+					'Embedded images, geometry, and configuration files.',
+					'gll-info'
+				),
 				dataFiles,
 				options.previewMaxHeight
 			)
@@ -110,25 +121,57 @@ function buildMetadataElement(
 	documentation: ResourceViewItem[],
 	dataFiles: ResourceViewItem[]
 ): HTMLElement {
-	const badges: string[] = [];
+	const badges: HTMLElement[] = [];
 
 	if ( documentation.length > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Documents:</strong> ${ documentation.length }</span>`
+			buildBadge(
+				/* translators: label of a count badge; the count follows. */
+				__( 'Documents:', 'gll-info' ),
+				documentation.length
+			)
 		);
 	}
 
 	if ( dataFiles.length > 0 ) {
 		badges.push(
-			`<span class="gll-meta-badge"><strong>Data Files:</strong> ${ dataFiles.length }</span>`
+			buildBadge(
+				/* translators: label of a count badge; the count follows. */
+				__( 'Data Files:', 'gll-info' ),
+				dataFiles.length
+			)
 		);
 	}
 
 	const row = document.createElement( 'div' );
 	row.className = 'gll-resources-metadata';
-	// Counts only — no file-derived strings reach this markup.
-	row.innerHTML = badges.join( '' );
+	badges.forEach( ( badge ) => row.appendChild( badge ) );
 	return row;
+}
+
+/**
+ * Build one count badge.
+ *
+ * This used to be an HTML string joined into `innerHTML`, which was defensible
+ * while the only interpolated value was a count. It is not defensible now that
+ * the label comes out of a translation catalogue — a translator's `<` would
+ * either break the row or inject markup — so the badge is built as nodes like
+ * everything else in this module.
+ *
+ * @param {string} label Translated badge label, including its colon.
+ * @param {number} count Number of items.
+ * @return {HTMLElement} Badge element.
+ */
+function buildBadge( label: string, count: number ): HTMLElement {
+	const badge = document.createElement( 'span' );
+	badge.className = 'gll-meta-badge';
+
+	const strong = document.createElement( 'strong' );
+	strong.textContent = label;
+	badge.appendChild( strong );
+	badge.appendChild( document.createTextNode( ` ${ count }` ) );
+
+	return badge;
 }
 
 /**
@@ -258,7 +301,7 @@ function buildRow(
 		link.download = item.name;
 		// Several rows reading only "Download" is useless to a screen reader.
 		link.setAttribute( 'aria-label', item.downloadLabel );
-		link.textContent = 'Download';
+		link.textContent = __( 'Download', 'gll-info' );
 		actions.appendChild( link );
 	}
 
