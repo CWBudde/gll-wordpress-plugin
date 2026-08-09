@@ -360,7 +360,6 @@ export function computePolarSlices( source, freqIndex ) {
 		Array.isArray( onAxisFreqs ) &&
 		sampleResponse &&
 		sampleFreqs.length === onAxisFreqs.length &&
-		onAxisLevel.length === onAxisLevel.length &&
 		frequenciesMatch( sampleFreqs, onAxisFreqs );
 
 	angles.forEach( ( angle ) => {
