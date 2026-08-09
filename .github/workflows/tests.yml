@@ -33,6 +33,9 @@ jobs:
     php:
         uses: ./.github/workflows/test-php.yml
 
+    e2e:
+        uses: ./.github/workflows/test-e2e.yml
+
     build:
         uses: ./.github/workflows/test-can-build.yml
 

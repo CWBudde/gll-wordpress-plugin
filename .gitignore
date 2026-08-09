@@ -42,3 +42,6 @@ vendor/
 
 # PHPUnit result cache.
 .phpunit.result.cache
+
+# Playwright output written when a config-relative path is not used.
+artifacts/

@@ -36,6 +36,8 @@
 		"env:stop": "wp-env stop",
 		"env:clean": "wp-env clean all",
 		"test:php": "./scripts/test-php.sh",
+		"test:e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+		"test:e2e:ui": "playwright test --config=tests/e2e/playwright.config.ts --ui",
 		"perf": "node --experimental-strip-types --expose-gc --no-warnings scripts/perf-corpus.mjs",
 		"i18n:pot": "./scripts/make-pot.sh",
 		"i18n:json": "./scripts/make-json.sh",
@@ -59,6 +61,8 @@
 		"three": "^0.159.0"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.12.1",
+		"@playwright/test": "^1.58.0",
 		"@testing-library/jest-dom": "^6.4.0",
 		"@testing-library/react": "^14.2.0",
 		"@testing-library/user-event": "^14.5.0",
@@ -70,6 +74,7 @@
 		"@types/wordpress__components": "^23.0.12",
 		"@types/wordpress__element": "^2.4.1",
 		"@types/wordpress__i18n": "^3.4.0",
+		"@wordpress/e2e-test-utils-playwright": "^1.38.0",
 		"@wordpress/env": "^10.39.0",
 		"@wordpress/scripts": "^31.3.0",
 		"typescript": "^5.9.3"

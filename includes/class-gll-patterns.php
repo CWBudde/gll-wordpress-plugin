@@ -54,7 +54,7 @@ define( 'GLL_INFO_PATTERN_CATEGORY', 'gll-info' );
  */
 function gll_info_geometry_pattern_block() {
 	return '<!-- wp:gll-info/geometry -->' . "\n"
-		. '<div class="gll-geometry-block gll-block gll-appearance--auto" data-file-url="" data-file-name="" data-geometry-index="0" data-show-faces="true" data-show-edges="true" data-show-markers-ref="true" data-show-markers-com="true" data-show-markers-pivot="false" data-show-sources="false" data-center-reference="false" data-auto-rotate="false" data-canvas-height="500"><div class="gll-geometry-header"><h3>GLL Geometry</h3></div><div class="gll-geometry-loading"><p>Loading geometry...</p></div><div class="gll-geometry-canvas"></div></div>' . "\n"
+		. '<div class="wp-block-gll-info-geometry gll-geometry-block gll-block gll-appearance--auto" data-file-url="" data-file-name="" data-geometry-index="0" data-show-faces="true" data-show-edges="true" data-show-markers-ref="true" data-show-markers-com="true" data-show-markers-pivot="false" data-show-sources="false" data-center-reference="false" data-auto-rotate="false" data-canvas-height="500"><div class="gll-geometry-header"><h3>GLL Geometry</h3></div><div class="gll-geometry-loading"><p>Loading geometry...</p></div><div class="gll-geometry-canvas"></div></div>' . "\n"
 		. '<!-- /wp:gll-info/geometry -->';
 }
 

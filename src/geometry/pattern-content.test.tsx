@@ -50,6 +50,23 @@ describe( 'geometry markup embedded in the block patterns', () => {
 		registerBlockType( metadata as never, { save } as never );
 	} );
 
+	/**
+	 * The generated class WordPress adds from `supports.className`.
+	 *
+	 * This has to be spliced in by hand because `serialize()` under jsdom does
+	 * NOT add it, while a real editor does. That gap is not academic: the
+	 * markup in class-gll-patterns.php was missing this class, so every shipped
+	 * pattern containing the geometry block loaded as an INVALID block in the
+	 * editor — and this test passed the whole time, because it was comparing
+	 * the PHP against the same incomplete output.
+	 *
+	 * The authority is now `tests/e2e/specs/blocks.spec.ts`, which loads each
+	 * pattern in a real editor and asserts every block reports `isValid`. This
+	 * test remains as the cheap guard that runs without wp-env, and it can only
+	 * be trusted as far as this constant is kept correct.
+	 */
+	const GENERATED_CLASS = 'wp-block-gll-info-geometry';
+
 	it( 'matches the serialized default geometry block', () => {
 		// Array form: `serialize` casts a lone block to an array internally and
 		// joins with a blank line, so a single-element array is byte-identical
@@ -60,7 +77,12 @@ describe( 'geometry markup embedded in the block patterns', () => {
 		expect( opener ).toBe( '<!-- wp:gll-info/geometry -->' );
 		expect( closer ).toBe( '<!-- /wp:gll-info/geometry -->' );
 
+		const expected = markup.replace(
+			'class="',
+			`class="${ GENERATED_CLASS } `
+		);
+
 		const php = readFileSync( PATTERNS_PHP, 'utf8' );
-		expect( php ).toContain( markup );
+		expect( php ).toContain( expected );
 	} );
 } );
