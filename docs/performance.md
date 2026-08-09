@@ -12,6 +12,33 @@ vendor data that is not vendored into this repository, and shared CI runners
 vary enough on CPU-bound WebAssembly that any threshold tight enough to catch a
 real regression would flake instead.
 
+## What the cache changed
+
+Everything below still describes what a *parse* costs, and that has not moved.
+What moved is how often a visitor pays it.
+
+Since Phase 13.4.1 the `gll-info` and `config` blocks are served a stored display
+subset — a few kilobytes, fetched over REST — and only fall back to parsing when
+that cache is cold. A page carrying only those two blocks downloads neither the
+4.2 MB parser nor the GLL file itself.
+
+| File | On disk | Parsed | Cached subset |
+|---|---:|---:|---:|
+| CoRay4-Twin-V1_5.gll | 15.4 MB | 228.7 MB | 10.4 KB |
+| N-RAY-V0_3 Beta.gll | 14.0 MB | — | 7.7 KB |
+| SCP-F-V1_0.gll | 2.0 MB | 18.5 MB | 9.1 KB |
+
+The other five blocks render measurement data and still parse in the browser
+every time, so the figures in the table further down remain exactly what a page
+carrying a frequency response, polar plot, balloon, geometry or resources block
+costs. **The 1.3 GB ceiling has not gone away; it has stopped applying to the two
+cheapest blocks.**
+
+Where a host allows a subprocess, that parse happens once at upload instead. The
+same 15.4 MB file takes 9.1 seconds and about 10 MB of PHP memory server-side —
+the memory figure being low because `assets/parser/gll-parse.mjs` prunes the
+response spectra before PHP ever decodes them.
+
 ## The finding that matters
 
 **The parser's memory cost, not its speed, is the limit.**

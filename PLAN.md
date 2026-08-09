@@ -4,19 +4,26 @@ A WordPress Gutenberg plugin that displays GLL (Generic Loudspeaker Library)
 file data, built on the `gll-tools` Go/WASM parser with the web demo at
 <https://meko-christian.github.io/gll-tools/> as the visual reference.
 
-**Status: Phases 1–12 complete, and the defect backlog is empty.** What is left
-is collected in [Phase 13 — Remaining work](#phase-13--remaining-work) at the
-end of this document: screen-reader testing, tagging the release, and the
-features deliberately never built.
+**Status: Phases 1–12 complete, plus 13.4.1, the server-side parse cache.** What
+is left is collected in [Phase 13 — Remaining work](#phase-13--remaining-work) at
+the end of this document: screen-reader testing, tagging the release, one defect
+found while building 13.4.1 (13.4.7), and the features deliberately never built.
 
 ---
 
 ## Architecture
 
-**Parsing is client-side WASM.** No Go on the server, no server-side attack
-surface, works on any host — at the cost of a ~4 MB WASM download and a hard
-dependency on a modern browser. The originally planned hybrid (cache parsed
-metadata in post meta for the frontend) was not built; the frontend parses too.
+**Parsing is client-side WASM, with an optional server-side path.** No Go on the
+server either way. In a browser the parser costs a ~4 MB WASM download and a hard
+dependency on a modern browser; where the host allows a subprocess, the same
+`gll.wasm` runs under Node at upload time instead (`GLL_Parser`, Phase 13.4.1).
+
+**The originally planned hybrid is now built.** A *display subset* of each parsed
+file is stored on the attachment as `_gll_metadata` and served over
+`gll-info/v1/cache/<id>`, so `gll-info` and `config` render without fetching the
+parser at all. Every other block still parses in the browser, and every block
+falls back to parsing when the cache is cold — which is a supported state, not a
+failure. See [Phase 13.4.1](#1341-server-side-parse-cache-done).
 
 **Files live in the media library** with `.gll` registered as
 `application/x-gll` (`includes/class-gll-media.php`). A `gll_file` custom post
@@ -686,35 +693,88 @@ describing a tautology that is no longer there.
 Ordered by value per unit of work. Each was deferred for a stated reason, and
 each reason is now a design constraint rather than a blocker.
 
-#### 13.4.1 Server-side parse cache [highest value — unblocks everything below]
+#### 13.4.1 Server-side parse cache [DONE]
 
-The single most valuable piece of work left. Today every visitor to every page
-downloads a 4.2 MB WASM binary and re-parses the whole GLL client-side; a 15.4 MB
-file costs them 1.3 GB of memory and 6–11 s, and probably fails outright on
-mobile. The original architecture called for caching and it was never built.
+Every visitor used to download a 4.2 MB WASM binary and re-parse the whole GLL;
+a 15.4 MB file cost them 1.3 GB of memory and 6–11 s, and probably failed
+outright on mobile. A page carrying only `gll-info` and `config` now downloads
+neither the parser nor the GLL.
 
-- [ ] Decide the storage tier — post meta (travels with the post, bloats
-      `wp_postmeta`), transients (evictable, correct semantics), or filesystem
-      under `wp-content/uploads/` (largest payloads, needs cleanup on attachment
-      delete). **Recommendation: transients keyed by attachment ID + file hash,
-      with a filesystem fallback for payloads over the object-cache limit**
-- [ ] Define a *display subset* rather than caching the full parse. The
-      normalizer already proves this works — dropping `raw.resources` and FIR
-      coefficients was exactly this move. 228.7 MB of JSON is not what any block
-      renders
-- [ ] Add a REST endpoint per block-shaped view (`restUrl` is already plumbed
-      through `gllInfoSettings` and unused)
-- [ ] Populate the cache on attachment upload, and on demand for existing files
-- [ ] Invalidate on re-upload and on attachment delete
-- [ ] Make the frontend prefer the cache and fall back to WASM, so the plugin
-      still works if the cache is cold or the endpoint is unavailable
-- [ ] Only then consider making WASM frontend-optional — that is the payoff:
-      pages that stop shipping 4.2 MB entirely
+- [x] **Storage tier: attachment post meta**, not the transients the earlier
+      recommendation favoured. `GLL_Media::get_gll_metadata()`/`save_gll_metadata()`
+      already existed with no production writer, and — the deciding argument —
+      WordPress cascades postmeta on attachment delete, so "invalidate on delete"
+      needs no hook and cannot be missed. Bloat is a non-issue at the sizes
+      measured below
+- [x] **Display subset** rather than the full parse (`src/shared/gll-subset.ts`).
+      Responses become a count, geometries become vertex/edge/face counts, and
+      the on-axis spectra and embedded files go entirely. 15.4 MB on disk →
+      10.4 KB stored
+- [x] One REST route rather than one per view: `GET|POST|DELETE
+      gll-info/v1/cache/<id>` (`GLL_REST`). The `restUrl` that had been plumbed
+      through `gllInfoSettings` since Phase 1 finally has something behind it,
+      and now reaches the frontend payload too
+- [x] Populated on upload where a backend exists, from the block editor
+      otherwise, and on demand from a "Refresh stored summary" inspector control
+- [x] Invalidated by re-upload — the envelope stores a hash of the file computed
+      server-side, so replaced bytes stop matching their own cache — and by
+      attachment delete, for free
+- [x] The frontend prefers the cache and falls back to WASM. A cold cache is
+      signalled as 404, which is also what a stale hash and an old subset version
+      produce, so all three take one path
+- [ ] WASM is still not frontend-optional. The five blocks that render
+      measurement data all still need it; see below
 
-This requires either a Go parser on the server (a hosting requirement the project
-explicitly rejected) or running the WASM parse once at upload time in an admin
-context. The latter keeps the no-Go-on-server property and is the reason this is
-worth doing rather than reopening the architecture decision.
+**The no-Go-on-server property is intact.** Rather than requiring a Go toolchain,
+`GLL_Parser_Node` runs the same `assets/wasm/gll.wasm` the browser runs, under
+Node, via `assets/parser/gll-parse.mjs`. `GLL_Parser_CLI` (opt-in, an
+administrator names the binary path) and `GLL_Parser_PHP_Wasm` sit behind it;
+detection is cached in an option and surfaced on a Settings → GLL Info screen.
+
+**`GLL_Parser_PHP_Wasm` is inert on every known host, deliberately.**
+`gll.wasm` is a `GOOS=js` build: it imports a `go` namespace of `syscall/js` host
+functions that only a JavaScript engine can satisfy, so no PHP WebAssembly
+runtime can instantiate it. That is a property of the binary, not a gap in
+Wasmer or Extism. The class ships reporting itself unavailable *with a reason*,
+so the settings screen can explain the absence, and becomes a small change the
+day gll-tools ships a `wasip1` build (see 13.6).
+
+**Two implementations of one shape.** The server backends hand PHP raw JSON with
+no JavaScript in the loop, so `GLL_Subset::from_raw()` mirrors
+`buildDisplaySubset()`. They are pinned to committed goldens —
+`tests/fixtures/{sample,synthetic}-{raw,subset}.json`, regenerated by
+`scripts/make-goldens.mjs` — that both suites assert against, which is what makes
+the duplication safe. The synthetic fixture exists because the committed 3 KB
+sample has no frames, limits, warnings, filter groups or geometries.
+
+**No translated text is cached.** A payload outlives the locale it was built in,
+so only the raw enums are stored and `hydrateSubsetLabels()` re-derives
+`TypeLabel`, `KindLabel` and the rest at render time. This is also why the PHP
+reducer needs no label tables.
+
+Measured with the node backend over the reference corpus:
+
+| File | On disk | Parsed | Runner prints | Cached | Wall clock | PHP peak |
+|---|---:|---:|---:|---:|---:|---:|
+| CoRay4-Twin-V1_5.gll | 15.4 MB | 228.7 MB | 0.58 MB | 10.4 KB | 9.1 s | 10 MB |
+| N-RAY-V0_3 Beta.gll | 14.0 MB | — | 0.38 MB | 7.7 KB | 7.9 s | 6 MB |
+| SCP-F-V1_0.gll | 2.0 MB | 18.5 MB | 0.48 MB | 9.1 KB | 1.1 s | 8 MB |
+
+The runner prunes before printing — responses blanked to empty objects so their
+count survives, `gen_system.raw_block` (20.5 MB on the largest file, read by
+nothing) deleted outright, FIR coefficients zeroed, `data:` URIs dropped —
+because handing `json_decode()` 228.7 MB would have limited server-side parsing
+to small files. The CLI and in-process backends do not prune, which is why they
+carry a 2 MB ceiling where the node backend carries 64 MB.
+
+One bug found and fixed while verifying this, worth remembering: the runner ended
+with `process.stdout.write(...)` followed by `process.exit(0)`. When stdout is a
+pipe — which is how PHP runs it — Node writes asynchronously and `exit()`
+discards what has not drained, so every output above ~64 KB reached PHP truncated
+as valid-looking JSON that stopped mid-object. Redirecting to a file hid it
+completely, because file writes are synchronous. The exit now waits on the write
+callback, and `tests/parser-runner.integration.test.ts` pins it against a real
+corpus file.
 
 #### 13.4.2 URL input for external GLL files
 
@@ -771,17 +831,46 @@ never rendered a single triangle in anger.
 
 ### 13.5 Open questions
 
-1. **Max upload size for `.gll` in the media library?** Informed rather than
-   speculative now: a 15.4 MB GLL expands to 228.7 MB of JSON and leaves the Go
-   WASM instance holding 1.3 GB of linear memory Go never returns. Files ≥10 MB
-   need 800 MB–1.3 GB and 6–11 s and will likely fail on mobile. Files up to
-   ~2 MB (21 of 29) are comfortable everywhere. Three real options: a hard cap, a
-   warning at upload time, or 13.4.1's server-side pre-parse. They are not
-   exclusive — the warning is cheap and worth doing regardless.
-2. **Caching tier for parsed JSON** — see 13.4.1, which is where this gets
-   answered.
-3. **Multi-file support:** compare several GLL files in one view? Wants 13.4.1
-   first; two full parses in one page is not viable client-side today.
+1. **Max upload size for `.gll` in the media library?** Narrower than it was.
+   13.4.1's pre-parse removes the problem entirely for `gll-info` and `config`
+   on a host with a parser backend, and removes the *repeat* cost everywhere by
+   caching. It does not help the five blocks that render measurement data: a
+   15.4 MB GLL still expands to 228.7 MB of JSON and still leaves the browser's
+   Go WASM instance holding 1.3 GB for a frequency-response or balloon block.
+   A warning at upload time remains cheap and worth doing.
+2. **Caching tier for parsed JSON** — answered in 13.4.1: attachment post meta,
+   for the invalidation-on-delete property rather than for the storage.
+3. **Multi-file support:** compare several GLL files in one view? Now viable for
+   the overview and configuration, where each file costs a few kilobytes and no
+   parse. Still not viable for the measurement blocks.
+4. **Should the cached blocks stop enqueuing `wasm_exec.js`?** Every
+   `block.json` lists the `gll-info-wasm-exec` handle in `viewScript`, so a warm
+   page still loads ~60 KB of Go runtime it never uses. The loader injects the
+   script on demand when `window.Go` is undefined, so dropping the handle is
+   safe — but it touches seven `block.json` files and `GLL_Enqueue_Test`, and it
+   is 60 KB against the 4.2 MB already saved.
+
+#### 13.4.7 A filter's kind is read from the wrong key [defect, found in 13.4.1]
+
+`normalizeGllData` maps `Kind: filter.filter_type` for the filters inside a
+filter bank, and derives `KindLabel` from the same value. Real corpus files spell
+that key **`kind`**, not `filter_type` — verified against
+`CoRay4-Twin-V1_5.gll`, whose bank filters carry
+`{kind, label, gain, delay, fir_data}`. So on every real file `Kind` and
+`KindLabel` are `undefined`, and the config block's filter detail lines are
+silently missing their leading token.
+
+Nothing in 13.4.1 caused this and nothing in 13.4.1 papers over it: the PHP
+reducer mirrors the JavaScript deliberately, bug included, because a twin that
+quietly disagreed would be worse. Fixing it means reading `kind` with
+`filter_type` as a fallback in `gll-normalize.ts`, mirroring that in
+`GLL_Subset::from_raw()`, and regenerating the goldens.
+
+- [ ] Confirm which spelling the parser emits for which sub-version, rather than
+      assuming one is legacy
+- [ ] Read both keys in the normalizer and the PHP reducer
+- [ ] Extend `synthetic-raw.json` to carry both spellings, since it currently
+      only exercises `filter_type` and therefore looks correct
 
 ### 13.6 Upstream work in `gll-tools` (beyond this repo)
 
