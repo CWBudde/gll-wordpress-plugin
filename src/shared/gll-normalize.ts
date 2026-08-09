@@ -341,7 +341,13 @@ function normalizeResponse( response, frequencies ) {
  */
 function normalizeSource( entry ) {
 	const definition = entry.definition || {};
-	const balloon = definition.balloon_data || {};
+	// Kept separately from the `|| {}` default below: `BalloonData` is emitted
+	// as null when the source carries no balloon block, so that consumers can
+	// distinguish "no balloon" from "a balloon whose fields are all undefined".
+	// An always-present object made every such source read as a balloon with
+	// zero responses at a 0° × 0° resolution.
+	const rawBalloon = definition.balloon_data;
+	const balloon = rawBalloon || {};
 	const angular = balloon.angular_resolution || {};
 
 	// Prefer the parser's flat response list; fall back to the balloon block.
@@ -370,15 +376,17 @@ function normalizeSource( entry ) {
 			RatedHorizontalAngle: definition.rated_horizontal_angle,
 			RatedVerticalAngle: definition.rated_vertical_angle,
 			OnAxisSpectrum: normalizeSpectrum( definition.on_axis_spectrum ),
-			BalloonData: {
-				ResponseCount: balloon.response_count,
-				AngularResolution: {
-					MeridianStep: angular.meridian_step,
-					ParallelStep: angular.parallel_step,
-					Symmetry: angular.symmetry,
-					FrontHalfOnly: angular.front_half_only,
-				},
-			},
+			BalloonData: rawBalloon
+				? {
+						ResponseCount: balloon.response_count,
+						AngularResolution: {
+							MeridianStep: angular.meridian_step,
+							ParallelStep: angular.parallel_step,
+							Symmetry: angular.symmetry,
+							FrontHalfOnly: angular.front_half_only,
+						},
+				  }
+				: null,
 		},
 		Responses: rawResponses.map( ( response ) =>
 			normalizeResponse( response, sharedFrequencies )

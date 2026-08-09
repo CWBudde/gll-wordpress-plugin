@@ -120,10 +120,9 @@ test.describe( 'published page', () => {
 		expect( wasm ).not.toContain( 404 );
 	} );
 
-	// `showResponses` is the only display toggle whose effect reaches the
-	// frontend, and `renderSources` lives inside `view.ts`'s module closure
-	// where jsdom cannot reach it. This is the only coverage the gate has on
-	// the published page; the editor half is unit-tested in `edit.test.tsx`.
+	// This is the only coverage the `showResponses` gate has on the published
+	// page: `renderSources` lives inside `view.ts`'s module closure, where
+	// jsdom cannot reach it. The editor half is unit-tested in `edit.test.tsx`.
 	//
 	// The figures come from the fixture: 19 measured responses at a 360° × 10°
 	// angular resolution.

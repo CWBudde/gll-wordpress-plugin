@@ -358,6 +358,69 @@ describe( 'normalizeGllData', () => {
 			expect( response.Frequencies[ 0 ] ).toBeCloseTo( 50, 6 );
 			expect( response.Frequencies[ 3 ] ).toBeCloseTo( 100, 6 );
 		} );
+
+		/**
+		 * `BalloonData` was previously built unconditionally, so a source with
+		 * no `balloon_data` still arrived carrying an object whose every field
+		 * was undefined. Anything gating on its presence therefore saw a
+		 * balloon everywhere, and rendered such sources as having zero
+		 * responses at a 0° × 0° resolution.
+		 *
+		 * The consumers in `polar-utils` are unaffected either way: they guard
+		 * on the angular steps, which were undefined before and unreachable
+		 * now. The gates in `gll-info` are what needed the distinction.
+		 */
+		it( 'emits no BalloonData for a source that carries no balloon', () => {
+			const raw = {
+				database: {
+					source_definitions: [
+						{
+							key: 'srcNoBalloon',
+							definition: { label: 'Direct' },
+							responses: [],
+						},
+					],
+				},
+			};
+
+			const definition =
+				normalizeGllData( raw ).Database.SourceDefinitions[ 0 ]
+					.Definition;
+
+			expect( definition.BalloonData ).toBeNull();
+		} );
+
+		it( 'keeps BalloonData for a source that carries one', () => {
+			const raw = {
+				database: {
+					source_definitions: [
+						{
+							key: 'srcBalloon',
+							definition: {
+								label: 'Full Range',
+								balloon_data: {
+									response_count: 19,
+									angular_resolution: {
+										meridian_step: 360,
+										parallel_step: 10,
+									},
+								},
+							},
+							responses: [],
+						},
+					],
+				},
+			};
+
+			const balloon =
+				normalizeGllData( raw ).Database.SourceDefinitions[ 0 ]
+					.Definition.BalloonData;
+
+			expect( balloon ).not.toBeNull();
+			expect( balloon.ResponseCount ).toBe( 19 );
+			expect( balloon.AngularResolution.MeridianStep ).toBe( 360 );
+			expect( balloon.AngularResolution.ParallelStep ).toBe( 10 );
+		} );
 	} );
 
 	describe( 'embedded files', () => {

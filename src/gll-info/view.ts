@@ -474,7 +474,13 @@ import { escapeHtml } from '../shared/escape-html';
 	 *
 	 * Gated on `BalloonData` rather than on the response count, matching the
 	 * editor's `SourceCard`: a source with a balloon definition but no measured
-	 * responses is a fact worth stating, not an absence worth hiding.
+	 * responses is a fact worth stating, not an absence worth hiding. The
+	 * normalizer emits null here for a source with no balloon block at all,
+	 * which is what makes that distinction available.
+	 *
+	 * Both strings are escaped after formatting, not before: the interpolated
+	 * values are numbers, so the only thing that can carry markup into
+	 * `innerHTML` is the translation itself.
 	 *
 	 * @param source Source definition from the parsed data.
 	 * @return HTML fragment, or the empty string when the source has no balloon.
@@ -486,20 +492,24 @@ import { escapeHtml } from '../shared/escape-html';
 		}
 
 		const responseCount = source.Responses?.length || 0;
-		let html = `<span class="gll-source-responses">${ sprintf(
-			/* translators: %d: number of measured responses for one acoustic source. */
-			_n( '%d response', '%d responses', responseCount, 'gll-info' ),
-			responseCount
+		let html = `<span class="gll-source-responses">${ escapeHtml(
+			sprintf(
+				/* translators: %d: number of measured responses for one acoustic source. */
+				_n( '%d response', '%d responses', responseCount, 'gll-info' ),
+				responseCount
+			)
 		) }</span>`;
 
 		const meridian = balloon.AngularResolution?.MeridianStep || 0;
 		const parallel = balloon.AngularResolution?.ParallelStep || 0;
 		if ( meridian || parallel ) {
-			html += `<span class="gll-source-resolution">${ sprintf(
-				/* translators: 1: meridian angular step in degrees. 2: parallel angular step in degrees. */
-				__( '%1$s° × %2$s°', 'gll-info' ),
-				meridian,
-				parallel
+			html += `<span class="gll-source-resolution">${ escapeHtml(
+				sprintf(
+					/* translators: 1: meridian angular step in degrees. 2: parallel angular step in degrees. */
+					__( '%1$s° × %2$s°', 'gll-info' ),
+					meridian,
+					parallel
+				)
 			) }</span>`;
 		}
 
