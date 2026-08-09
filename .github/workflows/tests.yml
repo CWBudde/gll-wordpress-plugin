@@ -1,7 +1,12 @@
 name: Tests
 
 on:
+    # Branch pushes are covered by the pull_request trigger. Without this
+    # restriction every PR runs the whole suite twice — which was cheap when CI
+    # was three lint jobs and is not now that it boots WordPress twice and a
+    # browser once.
     push:
+        branches: [main]
     pull_request:
     workflow_dispatch:
 

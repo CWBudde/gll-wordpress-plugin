@@ -21,10 +21,18 @@ jobs:
                 # 6.7.2 is also the plugin's declared minimum, so this leg is
                 # what makes "Requires at least: 6.7" a tested claim rather than
                 # an aspiration.
-                core:
-                    - 'null'
-                    - 'WordPress/WordPress#6.7.2'
-        name: WordPress ${{ matrix.core }}
+                #
+                # `core` is empty for the latest leg, and the start step below
+                # then skips exporting WP_ENV_CORE entirely. Do NOT collapse
+                # that into `${{ cond && '' || value }}`: an empty string is
+                # falsy to Actions, so the expression returns its right-hand
+                # side and hands wp-env the literal text it was meant to avoid.
+                include:
+                    - label: latest
+                      core: ''
+                    - label: '6.7.2'
+                      core: 'WordPress/WordPress#6.7.2'
+        name: WordPress ${{ matrix.label }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -38,10 +46,16 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
+            # Exported in the shell rather than through `env:` so the latest leg
+            # can leave WP_ENV_CORE genuinely unset. wp-env rejects an
+            # unrecognized value, and an empty one is not reliably treated as
+            # absent.
             - name: Start wp-env
-              env:
-                  WP_ENV_CORE: ${{ matrix.core == 'null' && '' || matrix.core }}
-              run: npx wp-env start --update
+              run: |
+                  if [ -n '${{ matrix.core }}' ]; then
+                    export WP_ENV_CORE='${{ matrix.core }}'
+                  fi
+                  npx wp-env start --update
 
             # Composer and PHPUnit both live inside the container, so the
             # runner needs neither.
