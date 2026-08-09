@@ -11,22 +11,22 @@ import { __, _x, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
-import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
-import {
-	buildPolarAngles,
-	computeLevelRange,
-	computePolarSlices,
-} from '../shared/polar-utils';
+import { computeLevelRange, computePolarSlices } from '../shared/polar-utils';
 import polarCompassPlugin from '../shared/polar-compass-plugin';
 import { applyChartThemeFrom } from '../shared/chart-theme';
 import {
-	beamwidthAtDrop,
 	describeCanvas,
 	initBlockLiveRegions,
 	prefersReducedMotion,
 	renderErrorPanel,
 } from '../shared/a11y';
+import {
+	buildCanvasLabel,
+	buildMetadataHtml,
+	buildPolarDatasets,
+	readBlockOptions,
+} from './polar-render';
 
 /**
  * Initialize all polar plot blocks on the page.
@@ -68,18 +68,13 @@ async function initializeBlock( block ) {
 	initBlockLiveRegions( block );
 
 	const fileUrl = block.dataset.fileUrl;
-	const fileName = block.dataset.fileName || __( 'GLL File', 'gll-info' );
-	const sourceIndex = parseInt( block.dataset.sourceIndex, 10 ) || 0;
-	const frequencyIndex = parseInt( block.dataset.frequencyIndex, 10 ) || 0;
-	const showHorizontal = block.dataset.showHorizontal !== 'false';
-	const showVertical = block.dataset.showVertical !== 'false';
-	const normalized = block.dataset.normalized === 'true';
-	const chartHeight = parseInt( block.dataset.chartHeight, 10 ) || 400;
 
 	if ( ! fileUrl ) {
 		showError( block, __( 'No file URL specified', 'gll-info' ) );
 		return;
 	}
+
+	const options = readBlockOptions( block.dataset );
 
 	try {
 		const response = await fetch( fileUrl );
@@ -102,117 +97,11 @@ async function initializeBlock( block ) {
 			loadingEl.style.display = 'none';
 		}
 
-		renderChart( block, data, {
-			fileName,
-			sourceIndex,
-			frequencyIndex,
-			showHorizontal,
-			showVertical,
-			normalized,
-			chartHeight,
-		} );
+		renderChart( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, error.message );
 	}
-}
-
-/**
- * Summarize the polar pattern for the canvas's text alternative.
- *
- * The badge row above the plot already prints the frequency, the symmetry and
- * the angular resolution, so those are not repeated at length here. What it
- * cannot print — and what a sighted reader takes from the plot's shape in a
- * glance — is how wide the pattern is, so the label leads with the −6 dB
- * beamwidth of each plane.
- *
- * No off-screen table accompanies this one, unlike the frequency response
- * block. The plotted grid is 36 angles per plane and the individual levels are
- * not what anyone reads a polar plot for; the coverage angle is, and it is
- * stated here directly. A 72-row table would bury that one useful number.
- *
- * @param {Object} params                  Parameters object.
- * @param {Object} params.slices           Computed polar slices.
- * @param {Array}  params.horizontalLevels Horizontal levels, post-normalization.
- * @param {Array}  params.verticalLevels   Vertical levels, post-normalization.
- * @param {string} params.freqLabel        Formatted frequency.
- * @param {Object} params.options          Chart options.
- * @return {string} Label text.
- */
-function buildCanvasLabel( {
-	slices,
-	horizontalLevels,
-	verticalLevels,
-	freqLabel,
-	options,
-} ) {
-	const angles = buildPolarAngles( slices.meta.stepDeg );
-	const parts = [
-		sprintf(
-			/* translators: %s: frequency label, for example "1 kHz". */
-			__( 'Polar directivity plot at %s', 'gll-info' ),
-			freqLabel
-		),
-	];
-
-	/**
-	 * Describe one plane's coverage.
-	 *
-	 * @param {string} name   Plane name, already translated.
-	 * @param {Array}  levels Levels for that plane.
-	 * @return {string} Sentence fragment.
-	 */
-	const describePlane = ( name, levels ) => {
-		const width = beamwidthAtDrop( angles, levels, 6 );
-		return width === null
-			? sprintf(
-					/* translators: %s: measurement plane, "horizontal" or "vertical". */
-					__(
-						'%s coverage not determinable from the measured data',
-						'gll-info'
-					),
-					name
-			  )
-			: sprintf(
-					/* translators: 1: measurement plane, "horizontal" or "vertical". 2: beamwidth in degrees. */
-					__( '%1$s −6 dB beamwidth %2$s°', 'gll-info' ),
-					name,
-					String( width )
-			  );
-	};
-
-	if ( options.showHorizontal ) {
-		parts.push(
-			describePlane(
-				_x( 'horizontal', 'measurement plane', 'gll-info' ),
-				horizontalLevels
-			)
-		);
-	}
-	if ( options.showVertical ) {
-		parts.push(
-			describePlane(
-				_x( 'vertical', 'measurement plane', 'gll-info' ),
-				verticalLevels
-			)
-		);
-	}
-
-	parts.push(
-		sprintf(
-			/* translators: %s: symmetry name, already translated, e.g. "Axial". */
-			__( '%s symmetry', 'gll-info' ),
-			slices.meta.symmetryName
-		)
-	);
-
-	if ( options.normalized ) {
-		parts.push(
-			__( 'levels normalized to the on-axis maximum', 'gll-info' )
-		);
-	}
-
-	return `${ parts.join( ', ' ) }.`;
 }
 
 /**
@@ -287,109 +176,20 @@ function renderChart( block, data, options ) {
 		levelRange.max !== null ? levelRange.max - 40 : undefined;
 
 	const freqLabel = formatFrequency( frequency );
-	const datasets = [];
 
-	// The normalized variant is a whole sentence rather than a translated
-	// suffix glued on, so translators can place the qualifier where their
-	// language needs it. Mirrors the editor preview in edit.tsx.
-	if ( options.showHorizontal ) {
-		datasets.push( {
-			label: options.normalized
-				? sprintf(
-						/* translators: %s: frequency label, for example "1 kHz". */
-						__( 'Horizontal @ %s (normalized)', 'gll-info' ),
-						freqLabel
-				  )
-				: sprintf(
-						/* translators: %s: frequency label, for example "1 kHz". */
-						__( 'Horizontal @ %s', 'gll-info' ),
-						freqLabel
-				  ),
-			data: horizontalLevels,
-			borderColor: '#2563eb',
-			backgroundColor: 'rgba(37, 99, 235, 0.12)',
-			pointRadius: 0,
-			borderWidth: 2,
-			fill: true,
-			tension: 0.2,
-		} );
-	}
+	const datasets = buildPolarDatasets( {
+		horizontalLevels,
+		verticalLevels,
+		freqLabel,
+		options,
+	} );
 
-	if ( options.showVertical ) {
-		datasets.push( {
-			label: options.normalized
-				? sprintf(
-						/* translators: %s: frequency label, for example "1 kHz". */
-						__( 'Vertical @ %s (normalized)', 'gll-info' ),
-						freqLabel
-				  )
-				: sprintf(
-						/* translators: %s: frequency label, for example "1 kHz". */
-						__( 'Vertical @ %s', 'gll-info' ),
-						freqLabel
-				  ),
-			data: verticalLevels,
-			borderColor: '#dc2626',
-			backgroundColor: 'rgba(220, 38, 38, 0.12)',
-			pointRadius: 0,
-			borderWidth: 2,
-			fill: true,
-			tension: 0.2,
-		} );
-	}
-
-	// Build metadata HTML
-	const badges = [];
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ escapeHtml(
-			__( 'Frequency:', 'gll-info' )
-		) }</strong> ${ freqLabel }</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ escapeHtml(
-			__( 'Symmetry:', 'gll-info' )
-		) }</strong> ${ escapeHtml( slices.meta.symmetryName ) }</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ escapeHtml(
-			__( 'Resolution:', 'gll-info' )
-		) }</strong> ${ slices.meta.meridianStep }\u00b0 \u00d7 ${
-			slices.meta.parallelStep
-		}\u00b0</span>`
-	);
-	if ( options.normalized ) {
-		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight"><strong>${ escapeHtml(
-				__( 'Normalized', 'gll-info' )
-			) }</strong></span>`
-		);
-	}
-	if ( slices.meta.usesOnAxis ) {
-		badges.push(
-			`<span class="gll-meta-badge">${ escapeHtml(
-				__( 'Uses on-axis', 'gll-info' )
-			) }</span>`
-		);
-	}
-	if ( slices.meta.frontHalfOnly ) {
-		badges.push(
-			`<span class="gll-meta-badge">${ escapeHtml(
-				__( 'Front-half only', 'gll-info' )
-			) }</span>`
-		);
-	}
-	const sourceLabel = source.Definition?.Label || source.Label || '';
-	if ( sourceLabel ) {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>${ escapeHtml(
-				__( 'Source:', 'gll-info' )
-			) }</strong> ${ escapeHtml( sourceLabel ) }</span>`
-		);
-	}
-
-	const metadataHtml = `<div class="gll-polar-plot-metadata">${ badges.join(
-		''
-	) }</div>`;
+	const metadataHtml = buildMetadataHtml( {
+		slices,
+		source,
+		freqLabel,
+		options,
+	} );
 
 	// Create canvas
 	const canvas = document.createElement( 'canvas' );

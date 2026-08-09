@@ -9,6 +9,10 @@
 import { __, sprintf } from '@wordpress/i18n';
 import { normalizeGllData } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
+// Replaces a local copy that assigned `textContent` directly. Behaviour differs
+// for one input: the local version rendered a missing field as the literal text
+// "undefined", where the shared one renders nothing.
+import { escapeHtml } from '../shared/escape-html';
 
 ( function () {
 	'use strict';
@@ -507,16 +511,6 @@ import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 
 		html += '</ul></div>';
 		return html;
-	}
-
-	/**
-	 * Escape HTML special characters.
-	 * @param text
-	 */
-	function escapeHtml( text ) {
-		const div = document.createElement( 'div' );
-		div.textContent = text;
-		return div.innerHTML;
 	}
 
 	/**

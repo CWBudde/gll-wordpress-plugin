@@ -84,4 +84,47 @@ module.exports = {
 		'!src/shared/geometry-viewer.tsx',
 	],
 	coverageReporters: [ 'text-summary', 'lcov' ],
+
+	// Measured, not chosen. A threshold picked from a book goes red on its first
+	// run and gets deleted within the week.
+	//
+	// The per-path floors are the ones that matter: they sit just under what
+	// each well-covered module reaches today, so deleting a test or growing an
+	// untested branch in exactly the code this phase covered fails loudly.
+	//
+	// `global` is NOT the whole-project number. Jest removes every file matched
+	// by a path-specific threshold from the global group, so this applies only
+	// to what is left over — the editor components and the geometry viewer.
+	// The summary printed above the failure still reports the whole project
+	// (currently ~67%), which makes the two look contradictory; they are
+	// measuring different sets. Set against the residual, and expect it to move
+	// whenever a path entry is added or removed.
+	coverageThreshold: {
+		global: {
+			statements: 55,
+			branches: 46,
+			functions: 49,
+			lines: 55,
+		},
+		'./src/shared/escape-html.ts': {
+			statements: 100,
+			branches: 100,
+			functions: 100,
+			lines: 100,
+		},
+		'./src/shared/a11y.ts': { statements: 95, branches: 92 },
+		'./src/shared/charting-utils.ts': { statements: 95, branches: 92 },
+		'./src/shared/balloon-utils.ts': { statements: 88, branches: 80 },
+		'./src/shared/polar-utils.ts': { statements: 80, branches: 76 },
+		'./src/shared/polar-compass-plugin.ts': {
+			statements: 100,
+			branches: 100,
+		},
+		'./src/frequency-response/response-render.ts': {
+			statements: 95,
+			branches: 92,
+		},
+		'./src/polar-plot/polar-render.ts': { statements: 95, branches: 92 },
+		'./src/balloon-3d/balloon-render.ts': { statements: 95, branches: 92 },
+	},
 };

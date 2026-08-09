@@ -11,7 +11,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { __, sprintf } from '@wordpress/i18n';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
-import { escapeHtml } from '../shared/escape-html';
 import { formatFrequency } from '../shared/charting-utils';
 import { isWebGLSupported } from '../shared/three-wrapper';
 import {
@@ -25,34 +24,17 @@ import {
 	attachKeyboardOrbit,
 	describeCanvas,
 	initBlockLiveRegions,
-	prefersReducedMotion,
 	renderErrorPanel,
 } from '../shared/a11y';
 import { applySceneTheme } from './theme-three';
-
-type QualityPreset = 'low' | 'medium' | 'high';
-
-interface QualitySettings {
-	subsampleStride: number;
-	maxPixelRatio: number;
-	antialias: boolean;
-	directionalLightIntensity: number;
-	fillLight: boolean;
-}
-
-interface BlockOptions {
-	fileName: string;
-	sourceIndex: number;
-	frequencyIndex: number;
-	dbRange: number;
-	scale: number;
-	wireframe: boolean;
-	autoRotate: boolean;
-	showReferenceSphere: boolean;
-	showAxesHelper: boolean;
-	canvasHeight: number;
-	qualityPreset: QualityPreset;
-}
+import {
+	buildCanvasLabel,
+	buildColorbarHtml,
+	buildMetadataHtml,
+	readBlockOptions,
+	resolveQuality,
+} from './balloon-render';
+import type { BlockOptions, QualitySettings } from './balloon-render';
 
 /**
  * Per-block teardown callbacks, keyed by the block element. Used so that
@@ -61,40 +43,6 @@ interface BlockOptions {
  */
 const blockCleanups = new WeakMap< HTMLElement, () => void >();
 const liveBlocks = new Set< HTMLElement >();
-
-/**
- * Resolve a quality preset string to its render parameters.
- * @param preset
- */
-function resolveQuality( preset: QualityPreset ): QualitySettings {
-	switch ( preset ) {
-		case 'low':
-			return {
-				subsampleStride: 2,
-				maxPixelRatio: 1,
-				antialias: false,
-				directionalLightIntensity: 0,
-				fillLight: false,
-			};
-		case 'high':
-			return {
-				subsampleStride: 1,
-				maxPixelRatio: 2,
-				antialias: true,
-				directionalLightIntensity: 0.85,
-				fillLight: true,
-			};
-		case 'medium':
-		default:
-			return {
-				subsampleStride: 1,
-				maxPixelRatio: 2,
-				antialias: true,
-				directionalLightIntensity: 0.85,
-				fillLight: false,
-			};
-	}
-}
 
 /**
  * Initialize all 3D balloon blocks on the page (lazily).
@@ -201,22 +149,7 @@ async function initializeBlock( block: HTMLElement ) {
 	// the new text as the region's initial content and says nothing at all.
 	initBlockLiveRegions( block );
 
-	const fileName = block.dataset.fileName || __( 'GLL File', 'gll-info' );
-	const sourceIndex = parseInt( block.dataset.sourceIndex || '0', 10 );
-	const frequencyIndex = parseInt( block.dataset.frequencyIndex || '0', 10 );
-	const dbRange = parseInt( block.dataset.dbRange || '40', 10 );
-	const scale = parseFloat( block.dataset.scale || '1.0' );
-	const wireframe = block.dataset.wireframe === 'true';
-	// Auto-rotation is unstoppable motion — the block offers no pause control —
-	// so a reduced-motion preference overrides the author's choice outright.
-	const autoRotate =
-		block.dataset.autoRotate === 'true' && ! prefersReducedMotion();
-	const showReferenceSphere = block.dataset.showReferenceSphere !== 'false';
-	const showAxesHelper = block.dataset.showAxesHelper !== 'false';
-	const canvasHeight = parseInt( block.dataset.canvasHeight || '500', 10 );
-	const presetRaw = block.dataset.qualityPreset;
-	const qualityPreset: QualityPreset =
-		presetRaw === 'low' || presetRaw === 'high' ? presetRaw : 'medium';
+	const options = readBlockOptions( block.dataset );
 
 	try {
 		const response = await fetch( fileUrl );
@@ -239,19 +172,7 @@ async function initializeBlock( block: HTMLElement ) {
 			( loadingEl as HTMLElement ).style.display = 'none';
 		}
 
-		render3DBalloon( block, data, {
-			fileName,
-			sourceIndex,
-			frequencyIndex,
-			dbRange,
-			scale,
-			wireframe,
-			autoRotate,
-			showReferenceSphere,
-			showAxesHelper,
-			canvasHeight,
-			qualityPreset,
-		} );
+		render3DBalloon( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
 		showError( block, ( error as Error ).message );
@@ -307,108 +228,19 @@ function render3DBalloon(
 	const globalMax = computeGlobalMaxLevel( source );
 	const displayMax = globalMax;
 	const displayMin = globalMax - options.dbRange;
-	const midLevel = ( displayMin + displayMax ) / 2;
 
 	const freqLabel = formatFrequency( frequency );
 
-	// Build metadata HTML
-	const badges = [];
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Frequency:',
-			'gll-info'
-		) }</strong> ${ freqLabel }</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Display Range:',
-			'gll-info'
-		) }</strong> ${ displayMin.toFixed( 1 ) } &ndash; ${ displayMax.toFixed(
-			1
-		) } dB</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Grid:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.fullMeridianCount } &times; ${
-			balloonGrid.fullParallelCount
-		}</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Resolution:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.meridianStep }° × ${
-			balloonGrid.parallelStep
-		}°</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Symmetry:',
-			'gll-info'
-		) }</strong> ${ balloonGrid.symmetryName }</span>`
-	);
-	badges.push(
-		`<span class="gll-meta-badge"><strong>${ __(
-			'Quality:',
-			'gll-info'
-		) }</strong> ${ escapeHtml( options.qualityPreset ) }</span>`
-	);
-	if ( options.wireframe ) {
-		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
-				'Wireframe',
-				'gll-info'
-			) }</span>`
-		);
-	}
-	if ( options.autoRotate ) {
-		badges.push(
-			`<span class="gll-meta-badge gll-meta-badge-highlight">${ __(
-				'Auto-Rotate',
-				'gll-info'
-			) }</span>`
-		);
-	}
-	const sourceLabel = source.Definition?.Label || source.Label || '';
-	if ( sourceLabel ) {
-		badges.push(
-			`<span class="gll-meta-badge"><strong>${ __(
-				'Source:',
-				'gll-info'
-			) }</strong> ${ escapeHtml( sourceLabel ) }</span>`
-		);
-	}
+	const metadataHtml = buildMetadataHtml( {
+		freqLabel,
+		displayMin,
+		displayMax,
+		balloonGrid,
+		source,
+		options,
+	} );
 
-	const metadataHtml = `<div class="gll-balloon-3d-metadata">${ badges.join(
-		''
-	) }</div>`;
-
-	/**
-	 * Format one colour-bar tick.
-	 *
-	 * @param {number} level Sound pressure level.
-	 * @return {string} Localized "NN dB".
-	 */
-	const decibelTick = ( level: number ) =>
-		sprintf(
-			// translators: %s: sound pressure level, already rounded.
-			__( '%s dB', 'gll-info' ),
-			level.toFixed( 0 )
-		);
-
-	// Build color bar legend HTML
-	const colorbarHtml = `
-		<div class="gll-balloon-3d-colorbar">
-			<div class="gll-colorbar-gradient"></div>
-			<div class="gll-colorbar-labels">
-				<span>${ decibelTick( displayMin ) }</span>
-				<span>${ decibelTick( midLevel ) }</span>
-				<span>${ decibelTick( displayMax ) }</span>
-			</div>
-		</div>
-	`;
+	const colorbarHtml = buildColorbarHtml( displayMin, displayMax );
 
 	// Create Three.js container
 	const threeContainer = document.createElement( 'div' );
@@ -424,22 +256,12 @@ function render3DBalloon(
 	// and the grid the balloon is built from — rather than the word "chart".
 	// The second sentence is the only place the keyboard bindings are stated;
 	// they are invisible chrome otherwise.
-	const canvasLabel = `${ sprintf(
-		/* translators: 1: frequency, e.g. "1 kHz". 2: lowest displayed level in dB. 3: highest displayed level in dB. 4: number of meridians. 5: number of parallels. 6: symmetry name. */
-		__(
-			'3D directivity balloon at %1$s, levels from %2$s to %3$s dB on a %4$d by %5$d measurement grid, %6$s symmetry.',
-			'gll-info'
-		),
+	const canvasLabel = buildCanvasLabel( {
 		freqLabel,
-		displayMin.toFixed( 1 ),
-		displayMax.toFixed( 1 ),
-		balloonGrid.fullMeridianCount,
-		balloonGrid.fullParallelCount,
-		balloonGrid.symmetryName
-	) } ${ __(
-		'Use the arrow keys to rotate and the plus and minus keys to zoom.',
-		'gll-info'
-	) }`;
+		displayMin,
+		displayMax,
+		balloonGrid,
+	} );
 
 	// Initialize Three.js scene
 	initThreeScene(
