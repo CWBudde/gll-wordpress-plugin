@@ -42,20 +42,30 @@ jobs:
             - name: Ensure the committed bundles match the source
               run: git diff --exit-code -- build/
 
-            # make-pot reads build/, so it has to run after the build. A
-            # throwaway WP-CLI container avoids booting a whole wp-env in CI.
+            # make-pot reads build/, so it has to run after the build — see
+            # scripts/make-pot.sh for why that is not optional. A throwaway
+            # WP-CLI container avoids booting a whole wp-env in CI.
+            #
+            # The php -d memory_limit is required, not defensive: WP-CLI parses
+            # JS with peast and the minified bundles exhaust the 128 MB default
+            # with a fatal error. WP_CLI_PHP_ARGS is ignored by the phar.
             - name: Generate the translation catalogue
               run: |
                   docker run --rm -u "$(id -u):$(id -g)" \
                     -v "$PWD":/var/www/html/wp-content/plugins/gll-info \
                     -w /var/www/html/wp-content/plugins/gll-info \
-                    wordpress:cli wp i18n make-pot . languages/gll-info.pot \
+                    wordpress:cli \
+                    php -d memory_limit=3G /usr/local/bin/wp \
+                      i18n make-pot . languages/gll-info.pot \
                       --slug=gll-info --domain=gll-info \
-                      --exclude=node_modules,tests,docs,.github,.trunk,scripts \
+                      --exclude=node_modules,tests,docs,.github,.trunk,scripts,coverage \
                       --allow-root
 
+            # -I skips the header regenerated on every run, so this compares the
+            # strings rather than the clock. Without it the check would fail on
+            # every release for a timestamp nobody cares about.
             - name: Ensure the committed catalogue is current
-              run: git diff --exit-code -- languages/
+              run: git diff --exit-code -I '^"POT-Creation-Date:' -- languages/
 
             - name: Package
               run: npm run plugin-zip
