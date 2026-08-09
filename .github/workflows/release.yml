@@ -1,0 +1,73 @@
+name: Release
+
+# Tag-triggered only. Nothing here runs on a push to a branch, and no tag is
+# created by this repository's automation — cutting a release stays a deliberate
+# human act.
+on:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # A tag that disagrees with the tree is a mis-cut release, and the
+            # symptom otherwise is only a stale asset URL nobody notices.
+            - name: Check the version agrees with the tag
+              run: node scripts/check-version.mjs --expect "${GITHUB_REF_NAME#v}"
+
+            # build/ is committed, so the tagged tree must already carry the
+            # bundles its source produces. Building and diffing is what enforces
+            # the manual rebuild-and-commit convention.
+            - name: Build
+              run: npm run build
+
+            - name: Ensure the committed bundles match the source
+              run: git diff --exit-code -- build/
+
+            # make-pot reads build/, so it has to run after the build. A
+            # throwaway WP-CLI container avoids booting a whole wp-env in CI.
+            - name: Generate the translation catalogue
+              run: |
+                  docker run --rm -u "$(id -u):$(id -g)" \
+                    -v "$PWD":/var/www/html/wp-content/plugins/gll-info \
+                    -w /var/www/html/wp-content/plugins/gll-info \
+                    wordpress:cli wp i18n make-pot . languages/gll-info.pot \
+                      --slug=gll-info --domain=gll-info \
+                      --exclude=node_modules,tests,docs,.github,.trunk,scripts \
+                      --allow-root
+
+            - name: Ensure the committed catalogue is current
+              run: git diff --exit-code -- languages/
+
+            - name: Package
+              run: npm run plugin-zip
+
+            # Asserted against the archive, not read out of the packer's log.
+            # The packer only honours package.json "files"; without it the
+            # fallback glob drops assets/** and ships a plugin with no parser.
+            - name: Verify the archive is installable
+              run: ./scripts/verify-plugin-zip.sh gll-info.zip
+
+            - name: Publish the release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: gll-info.zip
+                  generate_release_notes: true

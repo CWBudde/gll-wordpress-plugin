@@ -8,6 +8,12 @@ on:
 permissions:
     contents: read
 
+# A second push to the same branch supersedes the first; there is no value in
+# finishing a run for a commit nobody will look at.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 jobs:
     format:
         uses: ./.github/workflows/test-format.yml
@@ -15,5 +21,17 @@ jobs:
     lint:
         uses: ./.github/workflows/test-lint.yml
 
+    typecheck:
+        uses: ./.github/workflows/test-typecheck.yml
+
+    unit:
+        uses: ./.github/workflows/test-unit.yml
+
+    integration:
+        uses: ./.github/workflows/test-integration.yml
+
     build:
         uses: ./.github/workflows/test-can-build.yml
+
+    version:
+        uses: ./.github/workflows/test-version.yml

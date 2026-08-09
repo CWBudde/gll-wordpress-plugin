@@ -1,17 +1,37 @@
 {
 	"name": "gll-info",
 	"version": "0.1.0",
-	"description": "Example block scaffolded with Create Block tool.",
-	"author": "The WordPress Contributors",
+	"description": "Display GLL loudspeaker data in Gutenberg blocks: overview, frequency response, polar plots, 3D balloon, geometry, resources and configuration.",
+	"author": "MeKo-Tech",
 	"license": "GPL-2.0-or-later",
+	"private": true,
+	"homepage": "https://github.com/CWBudde/gll-wordpress-plugin",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CWBudde/gll-wordpress-plugin.git"
+	},
+	"bugs": {
+		"url": "https://github.com/CWBudde/gll-wordpress-plugin/issues"
+	},
 	"main": "build/index.js",
+	"//files": "wp-scripts plugin-zip only reads this field; it does NOT read .distignore or .gitattributes. Without it the packer falls back to a hardcoded glob that omits assets/**, which would ship a plugin with no gll.wasm and therefore no parser at all. npm-packlist additionally always includes package.json, LICENSE* and CHANGELOG*.",
+	"files": [
+		"gll-info.php",
+		"includes",
+		"build",
+		"assets",
+		"languages",
+		"readme.txt"
+	],
 	"scripts": {
 		"build": "wp-scripts build --blocks-manifest",
-		"format": "wp-scripts format",
+		"format": "wp-scripts format && prettier --write \"scripts/**/*.mjs\"",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
+		"plugin-zip:verify": "npm run plugin-zip && ./scripts/verify-plugin-zip.sh",
+		"check-version": "node scripts/check-version.mjs",
 		"start": "wp-scripts start --blocks-manifest",
 		"test": "wp-scripts test-unit-js",
 		"test:watch": "wp-scripts test-unit-js --watch",

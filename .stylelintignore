@@ -1,0 +1,11 @@
+# Defining this file replaces the defaults bundled with @wordpress/scripts,
+# so their entries are repeated here.
+build
+node_modules
+vendor
+
+# Istanbul's HTML coverage report, written by `npm run test:coverage`. It is
+# generated third-party markup, and without this entry a developer who has run
+# coverage locally gets several hundred style errors from files they did not
+# write — and CI does the same as soon as it collects coverage.
+coverage

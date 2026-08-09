@@ -1,0 +1,26 @@
+name: Version consistency
+
+on:
+    workflow_call:
+
+permissions:
+    contents: read
+
+jobs:
+    version:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            # No npm ci: the script reads three files and has no dependencies.
+            # The version is bumped by hand in five places, and missing one is
+            # silent — the plugin installs and works, and only the asset
+            # cache-buster or the changelog heading is wrong.
+            - name: Check the version agrees everywhere
+              run: node scripts/check-version.mjs

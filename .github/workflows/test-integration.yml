@@ -1,0 +1,33 @@
+name: Integration tests
+
+on:
+    workflow_call:
+
+permissions:
+    contents: read
+
+jobs:
+    integration:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # The reference corpus is third-party manufacturer data and is not
+            # vendored, so every corpus-gated suite skips here. What still runs
+            # for real is everything backed by the committed fixture and the
+            # committed gll.wasm — enough to catch a broken WASM rebuild or a
+            # normalizer regression. wasm-parser.integration.test.ts asserts
+            # both are present when CI is set, so the gating can never quietly
+            # turn this job into a no-op.
+            - name: Run integration tests
+              run: npm run test:integration -- --ci
