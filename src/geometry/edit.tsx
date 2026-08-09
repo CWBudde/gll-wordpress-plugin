@@ -32,6 +32,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import {
 	useGLLLoader,
+	useCachePublisher,
 	GeometryViewer,
 	isWebGLSupported,
 	buildCaseGeometryData,
@@ -143,6 +144,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		className: appearanceClass( appearance ),
 	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
+
+	// This block renders from a full parse and never from the cache, but the
+	// file it just parsed is very likely the one a `gll-info` or `config` block
+	// elsewhere on the site uses — so warm it while the data is free.
+	useCachePublisher( fileId, data );
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const viewerRef = useRef< GeometryViewerRef >( null );
 	const canvasWrapperRef = useRef< HTMLDivElement >( null );

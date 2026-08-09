@@ -33,6 +33,11 @@ const mockLoaderState: {
 
 jest.mock( '../shared', () => ( {
 	useGLLLoader: () => mockLoaderState,
+	// Publishing the display subset is a network side effect with no rendered
+	// output, and the rebuild control has its own test; stubbing both keeps this
+	// suite about the block's own markup.
+	useCachePublisher: () => jest.fn(),
+	CacheRebuildControl: () => null,
 	appearanceClass: ( appearance: string ) =>
 		`gll-block gll-appearance--${ appearance ?? 'auto' }`,
 	AppearanceControl: ( { appearance, onChange }: any ) => (

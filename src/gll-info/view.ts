@@ -8,6 +8,8 @@
 
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { normalizeGllData } from '../shared/gll-normalize';
+import { sourceResponseCount } from '../shared/gll-subset';
+import { fetchCachedSubset } from '../shared/gll-cache';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 // Replaces a local copy that assigned `textContent` directly. Behaviour differs
 // for one input: the local version rendered a missing field as the literal text
@@ -491,7 +493,9 @@ import { escapeHtml } from '../shared/escape-html';
 			return '';
 		}
 
-		const responseCount = source.Responses?.length || 0;
+		// Reads the array from a full parse and the count from a cached subset,
+		// so the same renderer serves both paths.
+		const responseCount = sourceResponseCount( source );
 		let html = `<span class="gll-source-responses">${ escapeHtml(
 			sprintf(
 				/* translators: %d: number of measured responses for one acoustic source. */
@@ -591,7 +595,16 @@ import { escapeHtml } from '../shared/escape-html';
 		const loadingText = block.querySelector( '.gll-loading-text' );
 
 		try {
-			const data = await parseGLLFromUrl( fileUrl );
+			// The cache first, and WASM only if it misses. `parseGLLFromUrl()`
+			// is what boots the 4.2 MB runtime, and it is called lazily here, so
+			// a page whose blocks all hit the cache never requests it at all.
+			//
+			// A miss is not an error: it is the normal state for a file nobody
+			// has opened in the editor on a host with no server-side parser, and
+			// it simply means this block parses the way it always did.
+			const data =
+				( await fetchCachedSubset( block.dataset.fileId ) ) ||
+				( await parseGLLFromUrl( fileUrl ) );
 
 			// Update header with actual label.
 			if ( loadingText && data.GenSystem?.Label ) {

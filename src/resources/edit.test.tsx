@@ -30,6 +30,9 @@ const mockLoaderState: {
 
 jest.mock( '../shared', () => ( {
 	useGLLLoader: () => mockLoaderState,
+	// Publishing the display subset is a network side effect with no rendered
+	// output; `src/shared/use-cache-publisher.test.ts` covers it directly.
+	useCachePublisher: () => jest.fn(),
 	appearanceClass: ( appearance: string ) =>
 		`gll-block gll-appearance--${ appearance ?? 'auto' }`,
 	AppearanceControl: ( { appearance, onChange }: any ) => (

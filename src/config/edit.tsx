@@ -20,7 +20,13 @@ import { useEffect, useState, useMemo } from '@wordpress/element';
 /**
  * Internal dependencies
  */
-import { useGLLLoader, AppearanceControl, appearanceClass } from '../shared';
+import {
+	useGLLLoader,
+	useCachePublisher,
+	CacheRebuildControl,
+	AppearanceControl,
+	appearanceClass,
+} from '../shared';
 import { collectConfig } from './config-model';
 import type { ConfigEntry, ConfigSection } from './config-model';
 import './editor.scss';
@@ -184,6 +190,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		className: appearanceClass( appearance ),
 	} );
 	const { data, isLoading, error, load, clear } = useGLLLoader();
+
+	// This block is one of the two served from the cache on the frontend, so
+	// keeping it warm here is what stops visitors downloading the parser.
+	const rebuildCache = useCachePublisher( fileId, data );
+
 	const [ loadAttempted, setLoadAttempted ] = useState( false );
 
 	// Load file when URL is set
@@ -316,6 +327,10 @@ export default function Edit( { attributes, setAttributes } ) {
 					>
 						{ __( 'Remove File', 'gll-info' ) }
 					</Button>
+					<CacheRebuildControl
+						rebuild={ rebuildCache }
+						enabled={ Boolean( data ) }
+					/>
 				</PanelBody>
 
 				{ data && (

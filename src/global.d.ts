@@ -2,10 +2,18 @@
  * Global type declarations for GLL Info plugin
  */
 
-// GLL Info plugin settings injected by WordPress
+// GLL Info plugin settings injected by WordPress.
+//
+// PHP localizes this onto every block's editor and view script. The two payloads
+// differ: `restUrl` reaches both, but `nonce` is editor-only, because the write
+// routes need one and the public read route does not. Everything past the two
+// WASM URLs is therefore optional here rather than required.
 interface GllInfoSettings {
 	wasmUrl: string;
 	wasmExecUrl: string;
+	pluginUrl?: string;
+	restUrl?: string;
+	nonce?: string;
 }
 
 // Go WASM runtime
