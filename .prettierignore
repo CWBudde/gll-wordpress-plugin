@@ -7,3 +7,10 @@ vendor
 # gll-tools. Reformatting it would rewrite ~700 lines of upstream code and make
 # every future refresh a conflict.
 assets/wasm/wasm_exec.js
+
+# Golden fixtures for the two display-subset implementations. `make-goldens.mjs`
+# writes these, and both the Jest and PHPUnit suites parse rather than diff them,
+# so their formatting is the generator's business. Letting Prettier own it would
+# mean every regeneration also had to be re-formatted, and a mismatch would look
+# like a shape change in review when it is only whitespace.
+tests/fixtures/*.json

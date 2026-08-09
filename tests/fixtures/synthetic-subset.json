@@ -1,0 +1,321 @@
+{
+	"Version": 1,
+	"Header": {
+		"Magic": "EGLL",
+		"FormatId": "EASE_GLL",
+		"FormatVersion": 4,
+		"SubVersion": 1
+	},
+	"GenSystem": {
+		"Label": "Synthetic Rig",
+		"Key": "sysSynthetic",
+		"Version": 3,
+		"SystemType": 0,
+		"Manufacturer": "SynthCo",
+		"InfoText": "info",
+		"CopyrightText": "(c) SynthCo",
+		"WebsiteText": "https://example.invalid",
+		"EmailText": "nobody@example.invalid"
+	},
+	"Metadata": {
+		"ProductName": "Synthetic Rig",
+		"DisplayName": "Synth Rig",
+		"Manufacturer": "SynthCo",
+		"Description": "Covers the branches the 3 KB sample fixture does not reach.",
+		"Copyright": "(c) SynthCo",
+		"Website": "https://example.invalid",
+		"Email": "nobody@example.invalid"
+	},
+	"Description": "Covers the branches the 3 KB sample fixture does not reach.",
+	"Database": {
+		"SourceDefinitions": [
+			{
+				"Key": "sdLF",
+				"Label": "LF Driver",
+				"Definition": {
+					"Label": "LF Driver",
+					"CompanyLabel": "SynthCo",
+					"DataType": 1,
+					"NominalBandwidthFrom": 40,
+					"NominalBandwidthTo": 1200,
+					"OnAxisLevel": 96.5,
+					"RatedHorizontalAngle": 90,
+					"RatedVerticalAngle": 60,
+					"BalloonData": {
+						"ResponseCount": 2,
+						"AngularResolution": {
+							"MeridianStep": 10,
+							"ParallelStep": 5,
+							"Symmetry": 2,
+							"FrontHalfOnly": true
+						}
+					}
+				},
+				"ResponseCount": 2
+			},
+			{
+				"Key": "sdHF",
+				"Label": "HF Driver",
+				"Definition": {
+					"Label": "HF Driver",
+					"DataType": 1,
+					"NominalBandwidthFrom": 1200,
+					"NominalBandwidthTo": 18000,
+					"BalloonData": null
+				},
+				"ResponseCount": 0
+			}
+		],
+		"BoxTypes": [
+			{
+				"Label": "Box With Geometry",
+				"Key": "bxGeo",
+				"Weight": 24.75,
+				"Sources": [
+					"srcLF",
+					"srcHF"
+				],
+				"ReferencePoint": {
+					"x": 0.1,
+					"y": 0.2,
+					"z": 0.3
+				},
+				"CenterOfMass": {
+					"x": 0,
+					"y": 0,
+					"z": 0.15
+				},
+				"NextPivot": {
+					"x": 0,
+					"y": 0.4,
+					"z": 0
+				},
+				"SourcePlacements": [
+					{
+						"Label": "LF Placement",
+						"Key": "srcLF",
+						"SourceDefinitionKey": "sdLF",
+						"Position": {
+							"x": 0,
+							"y": 0,
+							"z": 0
+						},
+						"Rotation": {
+							"Heading": 0,
+							"Vertical": -5,
+							"Roll": 0
+						}
+					},
+					{
+						"Label": "HF Placement",
+						"Key": "srcHF",
+						"SourceDefinitionKey": "sdHF",
+						"Position": {
+							"x": 0,
+							"y": 0,
+							"z": 0.25
+						},
+						"Rotation": null
+					}
+				],
+				"HorizontalOpeningAngle": 90,
+				"VerticalOpeningAngle": 15
+			},
+			{
+				"Label": "Box Without Geometry",
+				"Key": "bxPlain",
+				"Weight": 3.5,
+				"Sources": [],
+				"ReferencePoint": null,
+				"CenterOfMass": null,
+				"NextPivot": null,
+				"SourcePlacements": []
+			}
+		],
+		"Frames": [
+			{
+				"Label": "Flown Frame",
+				"Key": "frFlown",
+				"IsFlown": true,
+				"Weight": 8.25,
+				"CenterOfMass": {
+					"x": 0,
+					"y": 0,
+					"z": 0.05
+				},
+				"NextPivot": {
+					"x": 0,
+					"y": 0.2,
+					"z": 0
+				},
+				"PinPoints": [
+					{
+						"Label": "Front Pin",
+						"Vector": {
+							"x": 0,
+							"y": 0.1,
+							"z": 0
+						}
+					},
+					{
+						"Label": "Rear Pin",
+						"Vector": {
+							"x": 0,
+							"y": -0.1,
+							"z": 0
+						}
+					}
+				],
+				"CaseGeometryIndex": 1
+			},
+			{
+				"Label": "Ground Frame",
+				"Key": "frGround",
+				"IsFlown": false,
+				"Weight": 2,
+				"CenterOfMass": null,
+				"NextPivot": null,
+				"PinPoints": [],
+				"CaseGeometryIndex": -1
+			}
+		],
+		"Limits": [
+			{
+				"Frame": 0,
+				"BoxType": 0,
+				"Type": 2,
+				"Value": 1000
+			},
+			{
+				"Frame": 0,
+				"BoxType": 1,
+				"Type": 4,
+				"Value": 12.5
+			},
+			{
+				"Frame": 1,
+				"BoxType": 0,
+				"Type": 9,
+				"Value": 1
+			}
+		],
+		"Warnings": [
+			{
+				"Frame": 0,
+				"Type": 1,
+				"Text": "Minimum count not reached",
+				"Value": 2
+			},
+			{
+				"Frame": 1,
+				"Type": 7,
+				"Text": "Unknown warning kind",
+				"Value": 0
+			}
+		],
+		"FilterGroups": [
+			{
+				"Label": "Presets",
+				"Key": "fgPresets",
+				"IsOverridable": true,
+				"Filters": [
+					{
+						"Label": "Default",
+						"Key": "fDefault",
+						"Bank": {
+							"Bypass": false,
+							"InvertPolarity": true,
+							"MuteInput": false,
+							"Gain": -3,
+							"Delay": 0.002,
+							"Filters": [
+								{
+									"Kind": 1,
+									"Label": "High Pass",
+									"Key": "flHp",
+									"Bypass": false,
+									"InvertPolarity": false,
+									"Gain": 0,
+									"Delay": 0,
+									"IIR": {
+										"FilterType": 2,
+										"FilterShape": 1,
+										"Order": 4,
+										"FreqCritHz": 80,
+										"Alignment": 2,
+										"QFactor": 0.707
+									},
+									"FIR": null,
+									"LogSpectrum": null
+								},
+								{
+									"Kind": 2,
+									"Label": "FIR Correction",
+									"Key": "flFir",
+									"IIR": null,
+									"FIR": {
+										"IsTimeResponse": true,
+										"IsComplex": false,
+										"IsEven": true,
+										"SampleRate": 48000,
+										"CoefficientCount": 4
+									},
+									"LogSpectrum": null
+								},
+								{
+									"Kind": 0,
+									"Label": "Log Spectrum",
+									"Key": "flLog",
+									"IIR": null,
+									"FIR": null,
+									"LogSpectrum": {
+										"BandsPerOctave": 6,
+										"LowestFrequency": 20,
+										"NumberOfBands": 60,
+										"Delay": 0,
+										"HasLevel": true,
+										"HasPhase": false
+									}
+								},
+								{
+									"Kind": 5,
+									"Label": "Unknown Kind",
+									"Key": "flUnknown",
+									"IIR": null,
+									"FIR": null,
+									"LogSpectrum": null
+								}
+							]
+						}
+					}
+				]
+			}
+		],
+		"CaseGeometries": [
+			{
+				"OwnerKind": "box",
+				"OwnerIndex": 0,
+				"OwnerKey": "bxGeo",
+				"OwnerLabel": "Box With Geometry",
+				"BoxIndex": 0,
+				"BoxKey": "bxGeo",
+				"BoxLabel": "Box With Geometry",
+				"IsSymmetric": true,
+				"SymmetryAxis": 0.125,
+				"VertexCount": 4,
+				"EdgeCount": 2,
+				"FaceCount": 2
+			},
+			{
+				"OwnerKind": "frame",
+				"OwnerIndex": 0,
+				"OwnerKey": "frFlown",
+				"OwnerLabel": "Flown Frame",
+				"IsSymmetric": false,
+				"VertexCount": 2,
+				"EdgeCount": 1,
+				"FaceCount": 0
+			}
+		]
+	}
+}

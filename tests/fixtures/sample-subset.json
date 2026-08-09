@@ -1,0 +1,83 @@
+{
+	"Version": 1,
+	"Header": {
+		"Magic": "EGLL",
+		"FormatId": "EASE_GLL",
+		"FormatVersion": 4,
+		"SubVersion": 0
+	},
+	"GenSystem": {
+		"Label": "Example Visualisation",
+		"Key": "sysExampleVis",
+		"Version": 0,
+		"SystemType": 2,
+		"Manufacturer": "ExampleCo",
+		"InfoText": "Synthetic test fixture for web-demo smoke tests."
+	},
+	"Metadata": {
+		"ProductName": "Example Visualisation",
+		"DisplayName": "Example Visualisation",
+		"Manufacturer": "ExampleCo",
+		"Description": "Synthetic test fixture for web-demo smoke tests."
+	},
+	"Description": "Synthetic test fixture for web-demo smoke tests.",
+	"Database": {
+		"SourceDefinitions": [
+			{
+				"Key": "sdFullRange",
+				"Label": "Full Range",
+				"Definition": {
+					"Label": "Full Range",
+					"DataType": 1,
+					"NominalBandwidthFrom": 50,
+					"NominalBandwidthTo": 5000,
+					"OnAxisLevel": 90,
+					"BalloonData": {
+						"ResponseCount": 19,
+						"AngularResolution": {
+							"MeridianStep": 360,
+							"ParallelStep": 10,
+							"Symmetry": 4,
+							"FrontHalfOnly": false
+						}
+					}
+				},
+				"ResponseCount": 19
+			}
+		],
+		"BoxTypes": [
+			{
+				"Label": "Test Cabinet",
+				"Key": "bxTest",
+				"Sources": [
+					"srcMain"
+				],
+				"ReferencePoint": null,
+				"CenterOfMass": null,
+				"NextPivot": null,
+				"SourcePlacements": [
+					{
+						"Label": "Main Source",
+						"Key": "srcMain",
+						"SourceDefinitionKey": "sdFullRange",
+						"Position": {
+							"x": 0,
+							"y": 0,
+							"z": 0
+						},
+						"Rotation": {
+							"Heading": 0,
+							"Vertical": 0,
+							"Roll": 0
+						}
+					}
+				]
+			}
+		],
+		"Frames": [],
+		"Limits": [],
+		"Warnings": [],
+		"FilterGroups": [],
+		"CaseGeometries": []
+	}
+}
