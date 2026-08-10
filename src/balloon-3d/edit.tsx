@@ -5,19 +5,12 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import {
-	InspectorControls,
-	useBlockProps,
-	MediaUpload,
-	MediaUploadCheck,
-} from '@wordpress/block-editor';
+import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import {
 	PanelBody,
-	Button,
 	SelectControl,
 	ToggleControl,
 	RangeControl,
-	Placeholder,
 	Spinner,
 } from '@wordpress/components';
 import {
@@ -30,7 +23,8 @@ import {
 import * as THREE from 'three';
 
 import {
-	useGLLLoader,
+	useFileSource,
+	FileSourceControl,
 	useCachePublisher,
 	ThreeWrapper,
 	isWebGLSupported,
@@ -78,13 +72,24 @@ export default function Edit( { attributes, setAttributes } ) {
 	const blockProps = useBlockProps( {
 		className: appearanceClass( appearance ),
 	} );
-	const { data, parsedFrom, isLoading, error, load, clear } = useGLLLoader();
+	const {
+		data,
+		parsedFrom,
+		isLoading,
+		error,
+		source: fileSource,
+		setSource,
+		clearSource,
+		reload,
+	} = useFileSource( {
+		attributes: { fileId, fileUrl, fileName },
+		setAttributes,
+	} );
 
 	// This block renders from a full parse and never from the cache, but the
 	// file it just parsed is very likely the one a `gll-info` or `config` block
 	// elsewhere on the site uses — so warm it while the data is free.
 	useCachePublisher( { fileId, fileUrl, data, parsedFrom } );
-	const [ loadAttempted, setLoadAttempted ] = useState( false );
 	const threeRef = useRef< ThreeWrapperRef >( null );
 	const balloonMeshRef = useRef< THREE.Mesh | null >( null );
 	const visibilityRef = useRef< HTMLDivElement | null >( null );
@@ -124,28 +129,6 @@ export default function Edit( { attributes, setAttributes } ) {
 				};
 		}
 	}, [ qualityPreset ] );
-
-	useEffect( () => {
-		if ( fileUrl && ! loadAttempted ) {
-			setLoadAttempted( true );
-			load( fileUrl, true );
-		}
-	}, [ fileUrl, load, loadAttempted ] );
-
-	const onSelectFile = ( media ) => {
-		setAttributes( {
-			fileId: media.id,
-			fileUrl: media.url,
-			fileName: media.filename,
-		} );
-		setLoadAttempted( false );
-	};
-
-	const onRemoveFile = () => {
-		setAttributes( { fileId: 0, fileUrl: '', fileName: '' } );
-		clear();
-		setLoadAttempted( false );
-	};
 
 	// Build source options
 	const sourceOptions = useMemo(
@@ -382,29 +365,18 @@ export default function Edit( { attributes, setAttributes } ) {
 	if ( ! fileUrl ) {
 		return (
 			<div { ...blockProps }>
-				<Placeholder
+				<FileSourceControl
+					variant="placeholder"
 					icon="admin-site-alt3"
 					label={ __( 'GLL 3D Balloon', 'gll-info' ) }
 					instructions={ __(
 						'Select a GLL file to display 3D directivity balloon.',
 						'gll-info'
 					) }
-				>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={ onSelectFile }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							render={ ( { open } ) => (
-								<Button variant="primary" onClick={ open }>
-									{ __( 'Select GLL File', 'gll-info' ) }
-								</Button>
-							) }
-						/>
-					</MediaUploadCheck>
-				</Placeholder>
+					value={ fileSource }
+					onChange={ setSource }
+					onRemove={ clearSource }
+				/>
 			</div>
 		);
 	}
@@ -412,42 +384,18 @@ export default function Edit( { attributes, setAttributes } ) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={ __( 'File Settings', 'gll-info' ) }>
-					<div className="gll-file-info">
-						<strong>{ __( 'Selected File:', 'gll-info' ) }</strong>
-						<br />
-						{ fileName }
-					</div>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={ onSelectFile }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							value={ fileId }
-							render={ ( { open } ) => (
-								<Button
-									variant="secondary"
-									onClick={ open }
-									style={ {
-										marginTop: '10px',
-										marginRight: '10px',
-									} }
-								>
-									{ __( 'Replace File', 'gll-info' ) }
-								</Button>
-							) }
-						/>
-					</MediaUploadCheck>
-					<Button
-						variant="tertiary"
-						isDestructive
-						onClick={ onRemoveFile }
-						style={ { marginTop: '10px' } }
-					>
-						{ __( 'Remove File', 'gll-info' ) }
-					</Button>
+				<PanelBody
+					title={ __( 'File', 'gll-info' ) }
+					initialOpen={ true }
+				>
+					<FileSourceControl
+						variant="inspector"
+						value={ fileSource }
+						onChange={ setSource }
+						onRemove={ clearSource }
+						onRetry={ reload }
+						status={ { isLoading, error, via: parsedFrom?.via } }
+					/>
 				</PanelBody>
 
 				{ data && (

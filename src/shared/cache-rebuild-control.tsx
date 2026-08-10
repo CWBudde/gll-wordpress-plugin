@@ -21,12 +21,17 @@ import { useState } from '@wordpress/element';
 /**
  * A button that re-derives and re-stores the display subset.
  *
- * @param {Object}   props         Component props.
- * @param {Function} props.rebuild Rebuild callback from `useCachePublisher()`.
- * @param {boolean}  props.enabled Whether a parse is available to rebuild from.
+ * @param {Object}   props            Component props.
+ * @param {Function} props.rebuild    Rebuild callback from `useCachePublisher()`.
+ * @param {boolean}  props.enabled    Whether a parse is available to rebuild from.
+ * @param {boolean}  props.isExternal Whether the file lives on another server.
  * @return {JSX.Element} Control markup.
  */
-export default function CacheRebuildControl( { rebuild, enabled } ) {
+export default function CacheRebuildControl( {
+	rebuild,
+	enabled,
+	isExternal = false,
+} ) {
 	// 'idle' | 'working' | 'done' | 'failed'. A string rather than two booleans
 	// because the states are exclusive and the combinations are not meaningful.
 	const [ state, setState ] = useState( 'idle' );
@@ -39,10 +44,15 @@ export default function CacheRebuildControl( { rebuild, enabled } ) {
 	return (
 		<div className="gll-cache-rebuild">
 			<p className="gll-cache-rebuild__hint">
-				{ __(
-					'Visitors are served a small summary of this file instead of downloading and parsing it. It is stored when the file is uploaded or first placed in a block.',
-					'gll-info'
-				) }
+				{ isExternal
+					? __(
+							'Visitors are served a small summary of this file instead of downloading it. This file is not in your media library, so nothing here can tell when it changes where it is hosted — press this after it has been updated.',
+							'gll-info'
+					  )
+					: __(
+							'Visitors are served a small summary of this file instead of downloading and parsing it. It is stored when the file is uploaded or first placed in a block.',
+							'gll-info'
+					  ) }
 			</p>
 			<Button
 				variant="secondary"

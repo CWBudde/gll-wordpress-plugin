@@ -26,6 +26,7 @@ import {
 	initBlockLiveRegions,
 	renderErrorPanel,
 } from '../shared/a11y';
+import { describeFetchFailure, isSafeFileUrl } from '../shared/file-source';
 import { applySceneTheme } from './theme-three';
 import {
 	buildCanvasLabel,
@@ -141,6 +142,16 @@ async function initializeBlock( block: HTMLElement ) {
 		return;
 	}
 
+	// Saved markup, but nothing had ever checked it. A scheme test is cheap and
+	// is the whole of what a view script can usefully say about an address.
+	if ( ! isSafeFileUrl( fileUrl ) ) {
+		showError(
+			block,
+			__( 'This block has an address it cannot load.', 'gll-info' )
+		);
+		return;
+	}
+
 	// Before the fetch, not after it: this block's save() carries a
 	// `.gll-loading-text` paragraph, which the helper turns into the live
 	// region and which `setBlockHeaderLabel` later rewrites from
@@ -175,7 +186,7 @@ async function initializeBlock( block: HTMLElement ) {
 		render3DBalloon( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
-		showError( block, ( error as Error ).message );
+		showError( block, describeFetchFailure( error, fileUrl ) );
 	}
 }
 

@@ -16,7 +16,8 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
-import { fetchCachedSubset } from '../shared/gll-cache';
+import { fetchCachedSubsetFor } from '../shared/gll-cache';
+import { describeFetchFailure, isSafeFileUrl } from '../shared/file-source';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 import { renderConfig } from './config-render';
@@ -68,8 +69,20 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 				return;
 			}
 
+			// Saved markup, but still the only check this value has ever had.
+			if ( ! isSafeFileUrl( block.dataset.fileUrl ) ) {
+				showError(
+					block,
+					__(
+						'This block has an address it cannot load.',
+						'gll-info'
+					)
+				);
+				return;
+			}
+
 			const options = readBlockOptions( block );
-			const cached = await fetchCachedSubset( block.dataset.fileId );
+			const cached = await fetchCachedSubsetFor( block.dataset );
 
 			if ( cached ) {
 				renderBlock( block, cached, options );
@@ -179,7 +192,10 @@ async function parseAndRender( block, options ) {
 		renderBlock( block, await parseGLL( arrayBuffer ), options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
-		showError( block, error.message );
+		showError(
+			block,
+			describeFetchFailure( error, block.dataset.fileUrl )
+		);
 	}
 }
 

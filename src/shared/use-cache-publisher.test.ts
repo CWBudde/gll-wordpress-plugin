@@ -14,14 +14,20 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useCachePublisher } from './use-cache-publisher';
 import {
 	deleteCachedSubset,
+	deleteCachedSubsetForUrl,
 	fetchCachedSubset,
+	fetchCachedSubsetForUrl,
 	publishSubset,
+	publishSubsetForUrl,
 } from './gll-cache';
 
 jest.mock( './gll-cache', () => ( {
 	fetchCachedSubset: jest.fn(),
 	publishSubset: jest.fn(),
 	deleteCachedSubset: jest.fn(),
+	fetchCachedSubsetForUrl: jest.fn(),
+	publishSubsetForUrl: jest.fn(),
+	deleteCachedSubsetForUrl: jest.fn(),
 } ) );
 
 const parsed = {
@@ -54,11 +60,34 @@ function published( fileId ) {
 	};
 }
 
+const EXTERNAL_URL = 'https://cdn.example/speaker.gll';
+
+/**
+ * Hook arguments for a block pointed at a file on another server.
+ *
+ * @return {Object} Hook options.
+ */
+function external() {
+	return {
+		fileId: 0,
+		fileUrl: EXTERNAL_URL,
+		data: parsed,
+		parsedFrom: {
+			url: EXTERNAL_URL,
+			hash: 'hash-external',
+			length: 4096,
+		},
+	};
+}
+
 beforeEach( () => {
 	jest.clearAllMocks();
 	( fetchCachedSubset as jest.Mock ).mockResolvedValue( null );
 	( publishSubset as jest.Mock ).mockResolvedValue( true );
 	( deleteCachedSubset as jest.Mock ).mockResolvedValue( true );
+	( fetchCachedSubsetForUrl as jest.Mock ).mockResolvedValue( null );
+	( publishSubsetForUrl as jest.Mock ).mockResolvedValue( true );
+	( deleteCachedSubsetForUrl as jest.Mock ).mockResolvedValue( true );
 } );
 
 describe( 'useCachePublisher', () => {
@@ -103,7 +132,12 @@ describe( 'useCachePublisher', () => {
 
 	it( 'does nothing without a file or without a parse', async () => {
 		renderHook( () =>
-			useCachePublisher( { ...published( 42 ), fileId: 0 } )
+			useCachePublisher( {
+				...published( 42 ),
+				fileId: 0,
+				fileUrl: '',
+				parsedFrom: null,
+			} )
 		);
 		renderHook( () =>
 			useCachePublisher( { ...published( 42 ), data: null } )
@@ -113,6 +147,76 @@ describe( 'useCachePublisher', () => {
 
 		expect( fetchCachedSubset ).not.toHaveBeenCalled();
 		expect( publishSubset ).not.toHaveBeenCalled();
+		expect( fetchCachedSubsetForUrl ).not.toHaveBeenCalled();
+		expect( publishSubsetForUrl ).not.toHaveBeenCalled();
+	} );
+
+	// A file with an address but no attachment ID is one on somebody else's
+	// server. It goes to the other tier, and — since nothing on this server can
+	// ever notice that such a file changed — the editor's write is the only
+	// thing that will ever refresh it.
+	it( 'publishes an external file against its address, not an ID', async () => {
+		renderHook( () => useCachePublisher( external() ) );
+
+		await waitFor( () => expect( publishSubsetForUrl ).toHaveBeenCalled() );
+
+		const [ url, subset, hash, length ] = (
+			publishSubsetForUrl as jest.Mock
+		 ).mock.calls[ 0 ];
+		expect( url ).toBe( EXTERNAL_URL );
+		expect( subset.Database.SourceDefinitions ).toEqual( [] );
+		expect( hash ).toBe( 'hash-external' );
+		expect( length ).toBe( 4096 );
+		expect( publishSubset ).not.toHaveBeenCalled();
+	} );
+
+	it( 'leaves a warm external entry alone', async () => {
+		( fetchCachedSubsetForUrl as jest.Mock ).mockResolvedValue( {
+			Version: 1,
+			Database: {},
+		} );
+
+		renderHook( () => useCachePublisher( external() ) );
+
+		await waitFor( () =>
+			expect( fetchCachedSubsetForUrl ).toHaveBeenCalled()
+		);
+		expect( publishSubsetForUrl ).not.toHaveBeenCalled();
+	} );
+
+	it( 'does not treat two addresses as one settled file', async () => {
+		const { rerender } = renderHook(
+			( props: any ) => useCachePublisher( props ),
+			{ initialProps: external() }
+		);
+
+		await waitFor( () =>
+			expect( publishSubsetForUrl ).toHaveBeenCalledTimes( 1 )
+		);
+
+		const other = 'https://cdn.example/other.gll';
+		rerender( {
+			...external(),
+			fileUrl: other,
+			parsedFrom: { url: other, hash: 'hash-other', length: 1 },
+		} );
+
+		await waitFor( () =>
+			expect( publishSubsetForUrl ).toHaveBeenCalledTimes( 2 )
+		);
+	} );
+
+	it( 'refuses to store one address’s parse under another address', async () => {
+		renderHook( () =>
+			useCachePublisher( {
+				...external(),
+				fileUrl: 'https://cdn.example/selected.gll',
+			} )
+		);
+
+		await Promise.resolve();
+
+		expect( publishSubsetForUrl ).not.toHaveBeenCalled();
 	} );
 
 	it( 'does not publish one file’s parse under another file’s ID', async () => {

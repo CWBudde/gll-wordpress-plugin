@@ -96,4 +96,34 @@ describe( 'CacheRebuildControl', () => {
 
 		await waitFor( () => expect( rebuild ).toHaveBeenCalledTimes( 1 ) );
 	} );
+
+	// The two file kinds differ in a way the author has to know about: an
+	// attachment's stored summary is discarded automatically as soon as the
+	// file's bytes change, and a file on another server has nothing here that
+	// could notice. Pressing this button is the only refresh it will ever get.
+	describe( 'the hint', () => {
+		it( 'describes automatic storage for a file in the media library', () => {
+			render(
+				<CacheRebuildControl rebuild={ jest.fn() } enabled={ true } />
+			);
+
+			expect(
+				screen.getByText( /stored when the file is uploaded/ )
+			).toBeInTheDocument();
+		} );
+
+		it( 'warns that nothing tracks a file hosted elsewhere', () => {
+			render(
+				<CacheRebuildControl
+					rebuild={ jest.fn() }
+					enabled={ true }
+					isExternal
+				/>
+			);
+
+			expect(
+				screen.getByText( /nothing here can tell when it changes/ )
+			).toBeInTheDocument();
+		} );
+	} );
 } );
