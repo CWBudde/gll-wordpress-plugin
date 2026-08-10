@@ -213,7 +213,11 @@ describe( 'describeFetchFailure', () => {
 
 	it( 'says something usable even for an error with nothing in it', () => {
 		expect(
-			describeFetchFailure( null, 'https://cdn.example/a.gll', HTTPS_PAGE )
+			describeFetchFailure(
+				null,
+				'https://cdn.example/a.gll',
+				HTTPS_PAGE
+			)
 		).toMatch( /could not be read/ );
 	} );
 } );
