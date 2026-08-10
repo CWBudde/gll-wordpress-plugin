@@ -4,10 +4,11 @@ A WordPress Gutenberg plugin that displays GLL (Generic Loudspeaker Library)
 file data, built on the `gll-tools` Go/WASM parser with the web demo at
 <https://meko-christian.github.io/gll-tools/> as the visual reference.
 
-**Status: Phases 1–12 complete, plus 13.4.1, the server-side parse cache.** What
-is left is collected in [Phase 13 — Remaining work](#phase-13--remaining-work) at
-the end of this document: screen-reader testing, tagging the release, one defect
-found while building 13.4.1 (13.4.7), and the features deliberately never built.
+**Status: Phases 1–12 complete, plus 13.4.1 (the server-side parse cache) and
+13.4.2 (files hosted on other servers).** What is left is collected in
+[Phase 13 — Remaining work](#phase-13--remaining-work) at the end of this
+document: screen-reader testing, tagging the release, one defect found while
+building 13.4.1 (13.4.7), and the features deliberately never built.
 
 ---
 
@@ -27,7 +28,10 @@ failure. See [Phase 13.4.1](#1341-server-side-parse-cache-done).
 
 **Files live in the media library** with `.gll` registered as
 `application/x-gll` (`includes/class-gll-media.php`). A `gll_file` custom post
-type is registered but the blocks reference attachments directly.
+type is registered but the blocks reference attachments directly. Since 13.4.2 a
+block may instead point at an address on another server — `fileUrl` set with
+`fileId` left at 0 — which visitors' browsers fetch directly, so that server has
+to allow it.
 
 **Blocks share data through React Context** (`GLLProvider` / `useGLL` /
 `useGLLLoader`). The WASM loader is a singleton; initialization is lazy and
@@ -787,17 +791,90 @@ completely, because file writes are synchronous. The exit now waits on the write
 callback, and `tests/parser-runner.integration.test.ts` pins it against a real
 corpus file.
 
-#### 13.4.2 URL input for external GLL files
+#### 13.4.2 URL input for external GLL files [DONE]
 
-- [ ] Add a URL text control beside the MediaUpload in every block that selects a
-      file
-- [ ] Resolve the CORS question that shelved this: an arbitrary origin will not
-      send `Access-Control-Allow-Origin`, so either document the requirement
-      plainly or proxy the fetch through a REST endpoint
-- [ ] If proxying, treat it as SSRF-sensitive — validate the scheme, block
-      private address ranges, cap the response size against the memory ceiling
-      in 13.5.1, and require an authenticated capability to configure the URL
-- [ ] Add the attribute to all seven blocks consistently, or to none
+- [x] **No new attribute, and no `save()` change.** An external file is
+      `fileUrl` set with `fileId` left at 0 — an invariant the saved markup
+      already expressed, since `data-file-url` carries any address and
+      `data-file-id` already collapses 0 to `''`. A `sourceMode` or a cache key
+      in the markup would have cost seven frozen `deprecated` copies and an edit
+      to the geometry markup duplicated in `class-gll-patterns.php`, to record
+      something the existing attributes say. An E2E test asserts the absence of
+      the "unexpected or invalid content" notice, which is that decision in one
+      assertion
+- [x] **The control is shared, not copied.** `FileSourceControl`,
+      `useFileSource` and `file-source.ts` replace fourteen `MediaUpload` copies
+      and seven sets of loader wiring. "All seven blocks or none" stopped being a
+      thing to remember. Four drifts the copies had accumulated are settled with
+      it: `allowedTypes` takes the **union** (three blocks used to hide a `.gll`
+      stored as `application/octet-stream` from their own picker), `clear()` on
+      reselect happens **everywhere** (which demotes the `matches` guard in
+      `use-cache-publisher.ts` from load-bearing to belt-and-braces), the file
+      name falls back to the title and then to `''` rather than `undefined`, and
+      the load guard is the simpler `fileUrl && ! loadAttempted`
+- [x] **The address commits on Apply, Enter or blur — never on a keystroke, and
+      with no debounce.** A commit starts a download that can run to tens of
+      megabytes, and no interval is both quick enough to feel alive and long
+      enough that a half-typed address is never requested. Validation runs per
+      keystroke instead, and costs nothing because it touches no network
+- [x] **CORS: direct on the frontend, proxied only in the editor.** Visitors
+      fetch the address themselves, so the remote host must send
+      `Access-Control-Allow-Origin` — documented in `docs/blocks.md`,
+      `getting-started.md` and the readme FAQ, in words a non-developer can act
+      on. `GET gll-info/v1/remote` (`upload_files`, nonce, **off by default**)
+      lets an author preview and warm the cache when it is missing. **No
+      anonymous visitor ever pulls remote bytes through PHP**, which is what
+      keeps a published page from becoming a bandwidth relay
+- [x] The editor tries direct **first**, always. That request is the one every
+      visitor's browser will make, so its outcome is the honest answer to "will
+      the published page work?". Only on failure does it retry through the site,
+      and `parsedFrom.via` carries which one won, so the UI says so rather than
+      showing a clean preview of something visitors will never see. A silent
+      fallback would have been the worst outcome this feature could produce
+- [x] SSRF: `wp_safe_remote_get`, streamed to a temp file so nothing is buffered,
+      three independent size checks (`limit_response_size` **truncates** rather
+      than erroring, so only the file on disk is authoritative), a flat 502 for
+      every upstream failure so the route is not an existence oracle, a per-user
+      rate limit, and an opaque `application/octet-stream` response — the
+      remote's own content type is never reflected, or the proxy would be a
+      same-origin mirror for arbitrary markup
+- [x] **Current core is better at this than the usual write-up suggests**, and
+      the code says so: `wp_http_validate_url()` already covers the IPv4
+      special-purpose ranges including `169.254.0.0/16`, and every redirect hop
+      is revalidated. What it does not do is evaluate IPv6 at all —
+      `gethostbyname()` is v4-only — so a host with a public A record and a
+      loopback AAAA record passes. That gap, plus WordPress 6.7 having a shorter
+      list, is what `GLL_Remote::validate_url()` is actually for. DNS rebinding
+      remains unclosable in userland, which is the honest reason for the host
+      allowlist and for shipping switched off
+- [x] **URL-keyed cache tier** (`GLL_URL_Cache`), so `gll-info` and `config` stay
+      parser-free for external files too. Transients plus a bounded index; a
+      salted HMAC of the normalised address as the key, derived server-side on
+      both the read and the write path so reader and writer cannot disagree
+
+**The thing this tier gives up, stated plainly.** 13.4.1's best property was that
+a replaced file stops matching its own cache with no hook involved, because the
+fingerprint comes from bytes on disk. A remote file has no bytes here, and
+establishing a fingerprint would mean fetching it — which is exactly what the
+public read route must never do. So `hash`, `length` and `etag` are recorded for
+diagnostics and **never** decide whether to serve, and freshness is a 12-hour
+timer. A vendor who re-publishes a file at the same address is described by the
+old summary until it expires.
+
+**Cross-author overwriting is intrinsic and is bounded, not fixed.** Any address
+in a published page is readable by every other author on the site, so without a
+guard an Author could replace the manufacturer and labels anonymous visitors see
+on a colleague's post. First-writer-wins holds the entry for its lifetime; anyone
+who could edit that post anyway may still overwrite. It is not XSS — every view
+escapes these values and the structural validator bounds them — but it is
+defacement, and 409 is a speed bump rather than a wall.
+
+One bug found on the way, worth remembering: `restUrl` is
+`…/index.php?rest_route=/gll-info/v1/` on a site without pretty permalinks, so
+appending `url-cache?url=…` produced a second `?` and dropped the address
+silently. The attachment route never noticed because its identifier is a path
+segment. `routeWithArg()` joins with `&` when the base is already a query, and a
+unit test pins it.
 
 #### 13.4.3 Per-filter-group frequency response chart
 

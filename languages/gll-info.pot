@@ -9,16 +9,16 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-09T20:34:48+00:00\n"
+"POT-Creation-Date: 2026-08-10T00:57:12+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: gll-info\n"
 
 #. Plugin Name of the plugin
 #: gll-info.php
-#: includes/class-gll-settings.php:51
 #: includes/class-gll-settings.php:52
-#: includes/class-gll-settings.php:120
+#: includes/class-gll-settings.php:53
+#: includes/class-gll-settings.php:235
 msgid "GLL Info"
 msgstr ""
 
@@ -272,83 +272,207 @@ msgstr ""
 msgid "balloon"
 msgstr ""
 
-#: includes/class-gll-rest.php:91
+#: includes/class-gll-remote.php:173
+msgid "This site is not set up to load GLL files from other websites. An administrator can turn that on under Settings → GLL Info."
+msgstr ""
+
+#: includes/class-gll-remote.php:181
+msgid "You are not allowed to load files from other websites."
+msgstr ""
+
+#: includes/class-gll-remote.php:205
+msgid "Too many external files have been loaded recently. Try again in a few minutes."
+msgstr ""
+
+#: includes/class-gll-remote.php:702
+msgid "That address cannot be loaded by this site. Use a public https address for the file."
+msgstr ""
+
+#: includes/class-gll-remote.php:720
+msgid "The file could not be downloaded from that address."
+msgstr ""
+
+#: includes/class-gll-remote.php:733
+msgid "That file is too large for this site to download."
+msgstr ""
+
+#: includes/class-gll-rest.php:137
 msgid "Attachment ID of the GLL file."
 msgstr ""
 
-#: includes/class-gll-rest.php:116
+#: includes/class-gll-rest.php:157
+msgid "Address of an external GLL file."
+msgstr ""
+
+#: includes/class-gll-rest.php:183
 msgid "You are not allowed to edit this file."
 msgstr ""
 
-#: includes/class-gll-rest.php:160
+#: includes/class-gll-rest.php:227
+#: includes/class-gll-rest.php:362
 msgid "The submitted GLL data could not be stored."
 msgstr ""
 
-#: includes/class-gll-rest.php:178
+#: includes/class-gll-rest.php:245
 msgid "The file changed while it was being read. Nothing was stored."
 msgstr ""
 
-#: includes/class-gll-rest.php:185
+#: includes/class-gll-rest.php:252
+#: includes/class-gll-rest.php:409
 msgid "The GLL data could not be saved."
 msgstr ""
 
-#: includes/class-gll-rest.php:227
+#: includes/class-gll-rest.php:300
+msgid "You are not allowed to store data for external files."
+msgstr ""
+
+#: includes/class-gll-rest.php:352
+msgid "That address cannot be used for a GLL file."
+msgstr ""
+
+#: includes/class-gll-rest.php:381
+msgid "Another user has already stored a summary for that file."
+msgstr ""
+
+#: includes/class-gll-rest.php:389
+msgid "Too many external files have been stored recently. Try again later."
+msgstr ""
+
+#: includes/class-gll-rest.php:438
+msgid "Another user stored the summary for that file."
+msgstr ""
+
+#: includes/class-gll-rest.php:459
 msgid "No cached data is available for this file."
 msgstr ""
 
-#: includes/class-gll-rest.php:240
+#: includes/class-gll-rest.php:472
 msgid "That attachment is not a GLL file."
 msgstr ""
 
-#: includes/class-gll-settings.php:89
+#: includes/class-gll-settings.php:180
+#: includes/class-gll-settings.php:204
 msgid "You are not allowed to do that."
 msgstr ""
 
-#: includes/class-gll-settings.php:124
+#: includes/class-gll-settings.php:239
 msgid "Parser detection has been run again."
 msgstr ""
 
-#: includes/class-gll-settings.php:128
+#: includes/class-gll-settings.php:245
+msgid "Stored summaries of external files have been cleared."
+msgstr ""
+
+#: includes/class-gll-settings.php:249
 msgid "Server-side parsing"
 msgstr ""
 
-#: includes/class-gll-settings.php:132
+#: includes/class-gll-settings.php:253
 msgid "GLL files are normally parsed in the visitor’s browser, which means downloading a 4 MB parser and doing the work again on every page view. When this site can parse them on the server instead, each file is parsed once at upload time and pages load without the parser at all. Blocks that need the full measurement data — frequency response, polar plot, 3D balloon, geometry and resources — always parse in the browser."
 msgstr ""
 
-#: includes/class-gll-settings.php:143
+#: includes/class-gll-settings.php:264
 msgid "Parse on the server"
 msgstr ""
 
-#: includes/class-gll-settings.php:152
+#: includes/class-gll-settings.php:273
 msgid "Parse GLL files on the server when a parser is available"
 msgstr ""
 
-#: includes/class-gll-settings.php:156
+#: includes/class-gll-settings.php:277
 msgid "Turning this off does not break anything: files are then parsed in the block editor and in visitors’ browsers, as they were before."
 msgstr ""
 
-#: includes/class-gll-settings.php:165
+#: includes/class-gll-settings.php:286
 msgid "Detected parser"
 msgstr ""
 
-#: includes/class-gll-settings.php:177
+#: includes/class-gll-settings.php:291
+msgid "Files on other websites"
+msgstr ""
+
+#: includes/class-gll-settings.php:295
+msgid "A block can point at a GLL file hosted somewhere else instead of one in your media library. Visitors’ browsers download such a file directly, which only works if the website hosting it allows other sites to read it. When it does not, this site can fetch the file for you while you are editing, so that you still get a preview and a stored summary."
+msgstr ""
+
+#: includes/class-gll-settings.php:304
+msgid "Fetch external files"
+msgstr ""
+
+#: includes/class-gll-settings.php:313
+msgid "Let authors have this site download GLL files from other websites"
+msgstr ""
+
+#: includes/class-gll-settings.php:317
+msgid "Off by default. When it is on, anyone who can upload files can make this server request an address of their choosing. Private and internal addresses are refused, but a hostile address that changes what it points at between the check and the request cannot be caught. Leave this off unless authors need files from sites that block direct downloads."
+msgstr ""
+
+#: includes/class-gll-settings.php:327
+msgid "Allowed websites"
+msgstr ""
+
+#: includes/class-gll-settings.php:339
+msgid "One hostname per line, for example files.example.com or *.example.com. Leave empty to allow any public website. Filling this in is the only complete answer to the risk described above."
+msgstr ""
+
+#: includes/class-gll-settings.php:349
+msgid "Largest file to fetch"
+msgstr ""
+
+#: includes/class-gll-settings.php:361
+msgid "MB"
+msgstr ""
+
+#: includes/class-gll-settings.php:365
+msgid "Stored summaries"
+msgstr ""
+
+#: includes/class-gll-settings.php:377
+msgid "Clear stored summaries of external files"
+msgstr ""
+
+#: includes/class-gll-settings.php:390
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
 msgid "Check again"
 msgstr ""
 
-#: includes/class-gll-settings.php:206
+#: includes/class-gll-settings.php:417
+msgid "No external files are cached."
+msgstr ""
+
+#. translators: 1: number of cached files. 2: total size, already formatted.
+#: includes/class-gll-settings.php:424
+#, php-format
+msgid "%1$d external file cached, %2$s in total."
+msgid_plural "%1$d external files cached, %2$s in total."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: a duration such as "12 hours".
+#: includes/class-gll-settings.php:442
+#, php-format
+msgid "A summary of a file on another website is kept for %s. Nothing here can tell when such a file changes at its source, so that time limit is the only thing that refreshes it."
+msgstr ""
+
+#: includes/class-gll-settings.php:467
 msgid "in use"
 msgstr ""
 
-#: includes/class-gll-settings.php:210
+#: includes/class-gll-settings.php:471
 msgid "available"
 msgstr ""
 
-#: includes/class-gll-settings.php:212
+#: includes/class-gll-settings.php:473
 msgid "not available on this host"
 msgstr ""
 
-#: includes/class-gll-settings.php:227
+#: includes/class-gll-settings.php:488
 msgid "No server-side parser is available, so files are parsed in the browser. This is a supported configuration and nothing is broken."
 msgstr ""
 
@@ -409,19 +533,19 @@ msgstr ""
 msgid "No in-process WebAssembly parser handled the file."
 msgstr ""
 
-#: includes/parser/class-gll-parser.php:232
+#: includes/parser/class-gll-parser.php:251
 msgid "No server-side GLL parser is available."
 msgstr ""
 
-#: includes/parser/class-gll-parser.php:241
+#: includes/parser/class-gll-parser.php:258
 msgid "The GLL file could not be read."
 msgstr ""
 
-#: includes/parser/class-gll-parser.php:262
+#: includes/parser/class-gll-parser.php:279
 msgid "The GLL file is too large to parse on the server."
 msgstr ""
 
-#: includes/parser/class-gll-parser.php:277
+#: includes/parser/class-gll-parser.php:294
 msgid "The parsed GLL data could not be reduced."
 msgstr ""
 
@@ -828,7 +952,7 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
-msgid "Appearance"
+msgid "Only web addresses starting with http:// or https:// can be used."
 msgstr ""
 
 #: build/balloon-3d/index.js:4
@@ -838,7 +962,7 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
-msgid "Frame"
+msgid "Remove the user name and password from the address — they would be visible in the page."
 msgstr ""
 
 #: build/balloon-3d/index.js:4
@@ -848,7 +972,7 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
-msgid "Colors always follow the site theme. This controls the frame around the block."
+msgid "Your site is served over https, so browsers will block a file at an http address. Use an https address."
 msgstr ""
 
 #: build/balloon-3d/index.js:4
@@ -858,7 +982,7 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
-msgid "Card"
+msgid "This address does not end in .gll. That is allowed — some servers hide the file name — but check that it points at a GLL file."
 msgstr ""
 
 #: build/balloon-3d/index.js:4
@@ -868,7 +992,7 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
-msgid "Plain"
+msgid "Enter a full web address, starting with https://."
 msgstr ""
 
 #: build/balloon-3d/index.js:4
@@ -878,316 +1002,449 @@ msgstr ""
 #: build/gll-info/index.js:4
 #: build/polar-plot/index.js:4
 #: build/resources/index.js:4
+msgid "Address of a GLL file"
+msgstr ""
+
+#: build/balloon-3d/index.js:4
+#: build/config/index.js:4
+#: build/frequency-response/index.js:4
+#: build/geometry/index.js:4
+#: build/gll-info/index.js:4
+#: build/polar-plot/index.js:4
+#: build/resources/index.js:4
+msgid "Preview loaded through your site, not directly."
+msgstr ""
+
+#. translators: %s: host name of the site the file is on.
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+#, js-format
+msgid "Your browser could not fetch this file from %s, because that website does not allow other websites to read it."
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Visitors will be served the stored summary of this file, so this page will still work. Nobody will see a change made to the file where it is hosted until you open this post again."
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Visitors’ browsers will be blocked in the same way, and this block will show an error on the published page. Ask whoever hosts the file to allow your site to read it, or add the file to your media library instead."
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Selected file:"
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:5
+#: build/config/index.js:6
+#: build/frequency-response/index.js:5
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:5
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:5
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:5
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:5
+#: build/resources/index.js:6
 msgid "None"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Replace"
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Choose from media library"
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Update address"
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Use an address instead"
+msgstr ""
+
+#: build/balloon-3d/index.js:5
+#: build/config/index.js:5
+#: build/frequency-response/index.js:5
+#: build/geometry/index.js:5
+#: build/gll-info/index.js:5
+#: build/polar-plot/index.js:5
+#: build/resources/index.js:5
+msgid "Remove"
+msgstr ""
+
+#. translators: 1: HTTP status code, e.g. 404. 2: HTTP status text.
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+#, js-format
+msgid "This site could not fetch the file: %1$d %2$s"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+msgid "Appearance"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+msgid "Frame"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+msgid "Colors always follow the site theme. This controls the frame around the block."
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+msgid "Card"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
+#: build/config/index.js:6
+#: build/frequency-response/index.js:6
+#: build/geometry/index.js:6
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
+#: build/resources/index.js:6
+msgid "Plain"
+msgstr ""
+
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "None"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "Vertical"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "Horizontal"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "Quarter"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "Axial"
 msgstr ""
 
-#: build/balloon-3d/index.js:4
+#: build/balloon-3d/index.js:6
 #: build/balloon-3d/view.js:4
-#: build/gll-info/index.js:4
-#: build/polar-plot/index.js:4
+#: build/gll-info/index.js:6
+#: build/polar-plot/index.js:6
 #: build/polar-plot/view.js:4
 msgctxt "symmetry"
 msgid "Unknown"
 msgstr ""
 
-#. translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found".
-#: build/balloon-3d/index.js:5
-#: build/config/index.js:49
-#: build/frequency-response/index.js:5
-#: build/geometry/index.js:5
-#: build/gll-info/index.js:14
-#: build/polar-plot/index.js:5
-#: build/resources/index.js:7
-#, js-format
-msgid "Failed to fetch GLL file: %1$d %2$s"
-msgstr ""
-
 #. translators: %d: source number.
-#: build/balloon-3d/index.js:6
-#: build/frequency-response/index.js:6
-#: build/polar-plot/index.js:6
+#: build/balloon-3d/index.js:7
+#: build/frequency-response/index.js:7
+#: build/polar-plot/index.js:7
 #, js-format
 msgid "Source %d"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
-msgid "File Settings"
+#: build/balloon-3d/index.js:7
+#: build/config/index.js:50
+#: build/frequency-response/index.js:9
+#: build/geometry/index.js:7
+#: build/gll-info/index.js:15
+#: build/polar-plot/index.js:14
+#: build/resources/index.js:8
+msgid "File"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
-msgid "Selected File:"
-msgstr ""
-
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
-msgid "Replace File"
-msgstr ""
-
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
-msgid "Remove File"
-msgstr ""
-
-#: build/balloon-3d/index.js:6
-#: build/polar-plot/index.js:13
+#: build/balloon-3d/index.js:7
+#: build/polar-plot/index.js:14
 msgid "Source & Frequency"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/frequency-response/index.js:8
-#: build/polar-plot/index.js:13
+#: build/balloon-3d/index.js:7
+#: build/frequency-response/index.js:9
+#: build/polar-plot/index.js:14
 msgid "Acoustic Source"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/frequency-response/index.js:6
+#: build/balloon-3d/index.js:7
+#: build/frequency-response/index.js:7
 #: build/frequency-response/view.js:11
-#: build/gll-info/index.js:7
-#: build/polar-plot/index.js:13
+#: build/gll-info/index.js:9
+#: build/polar-plot/index.js:14
 msgid "Frequency"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Frequency Index"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/gll-info/index.js:14
-#: build/polar-plot/index.js:13
+#: build/balloon-3d/index.js:7
+#: build/gll-info/index.js:15
+#: build/polar-plot/index.js:14
 msgid "Display Options"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "dB Range"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Dynamic range for level display (dB)"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Scale"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Size multiplier for the balloon"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
 msgid "Wireframe"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Show mesh as wireframe"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Auto-Rotate"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Automatically rotate the balloon"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Show Reference Sphere"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Show wireframe unit sphere for reference"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Show Axes"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Show X/Y/Z axes helper"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/geometry/index.js:6
+#: build/balloon-3d/index.js:7
+#: build/geometry/index.js:7
 msgid "Canvas Height (px)"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Quality Preset"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Low (faster)"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Medium (default)"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "High (best lighting)"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Low subsamples the angular grid and disables antialiasing. High adds a fill light."
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:19
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Source:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
+#: build/balloon-3d/index.js:7
+#: build/config/index.js:50
+#: build/frequency-response/index.js:9
+#: build/geometry/index.js:7
+#: build/polar-plot/index.js:14
+#: build/resources/index.js:8
 msgid "Loading GLL data…"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/gll-info/index.js:14
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
+#: build/balloon-3d/index.js:7
+#: build/config/index.js:50
+#: build/frequency-response/index.js:9
+#: build/geometry/index.js:7
+#: build/gll-info/index.js:15
+#: build/polar-plot/index.js:14
+#: build/resources/index.js:8
 msgid "Error loading GLL file:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:4
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:4
 msgid "WebGL is not supported in your browser. Please use a modern browser to view 3D content."
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Frequency:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
 msgid "Display Range:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
 msgid "Grid:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
-#: build/gll-info/index.js:11
-#: build/polar-plot/index.js:13
+#: build/gll-info/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Resolution:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 #: build/balloon-3d/view.js:7
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Symmetry:"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
-#: build/polar-plot/index.js:13
+#: build/balloon-3d/index.js:7
+#: build/polar-plot/index.js:14
 msgid "No directivity data available for this source."
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "GLL 3D Balloon"
 msgstr ""
 
-#: build/balloon-3d/index.js:6
+#: build/balloon-3d/index.js:7
 msgid "Select a GLL file to display 3D directivity balloon."
-msgstr ""
-
-#: build/balloon-3d/index.js:6
-#: build/config/index.js:49
-#: build/frequency-response/index.js:8
-#: build/geometry/index.js:6
-#: build/gll-info/index.js:14
-#: build/polar-plot/index.js:13
-#: build/resources/index.js:7
-msgid "Select GLL File"
 msgstr ""
 
 #: build/balloon-3d/view.js:4
@@ -1214,8 +1471,17 @@ msgstr ""
 #: build/frequency-response/view.js:4
 #: build/geometry/view.js:4
 #: build/polar-plot/view.js:4
-#: build/resources/view.js:9
+#: build/resources/view.js:11
 msgid "No file URL specified"
+msgstr ""
+
+#: build/balloon-3d/view.js:4
+#: build/config/view.js:48
+#: build/frequency-response/view.js:4
+#: build/geometry/view.js:4
+#: build/polar-plot/view.js:4
+#: build/resources/view.js:11
+msgid "This block has an address it cannot load."
 msgstr ""
 
 #: build/balloon-3d/view.js:4
@@ -1259,7 +1525,7 @@ msgstr ""
 #. translators: %s: sound pressure level, already rounded.
 #. translators: %s: signed gain, already formatted to one decimal.
 #: build/balloon-3d/view.js:10
-#: build/config/index.js:15
+#: build/config/index.js:17
 #: build/config/view.js:15
 #, js-format
 msgid "%s dB"
@@ -1273,6 +1539,45 @@ msgstr ""
 
 #: build/balloon-3d/view.js:11
 msgid "Use the arrow keys to rotate and the plus and minus keys to zoom."
+msgstr ""
+
+#. translators: 1: HTTP status code, e.g. 404. 2: HTTP status text.
+#: build/balloon-3d/view.js:12
+#: build/config/view.js:50
+#: build/frequency-response/view.js:13
+#: build/geometry/view.js:8
+#: build/gll-info/view.js:32
+#: build/polar-plot/view.js:17
+#: build/resources/view.js:10
+#, js-format
+msgid "The GLL file could not be loaded. %1$d %2$s"
+msgstr ""
+
+#. translators: %s: host name of the site the file is on.
+#: build/balloon-3d/view.js:13
+#: build/config/view.js:51
+#: build/frequency-response/view.js:14
+#: build/geometry/view.js:9
+#: build/gll-info/view.js:33
+#: build/polar-plot/view.js:18
+#: build/resources/view.js:11
+#, js-format
+msgid "This file could not be loaded from %s. The website hosting it does not allow other websites to read it."
+msgstr ""
+
+#: build/balloon-3d/view.js:13
+#: build/config/view.js:51
+#: build/frequency-response/view.js:14
+#: build/geometry/view.js:9
+#: build/gll-info/view.js:33
+#: build/polar-plot/view.js:18
+#: build/resources/view.js:11
+msgid "This file could not be downloaded. It may have been moved or deleted."
+msgstr ""
+
+#: build/config/index.js:4
+#: build/gll-info/index.js:4
+msgid "Visitors are served a small summary of this file instead of downloading it. This file is not in your media library, so nothing here can tell when it changes where it is hosted — press this after it has been updated."
 msgstr ""
 
 #: build/config/index.js:4
@@ -1301,79 +1606,79 @@ msgid "The summary could not be stored. Visitors will parse the file in their br
 msgstr ""
 
 #. translators: %s: mass, already formatted to two decimals.
-#: build/config/index.js:5
+#: build/config/index.js:7
 #: build/config/view.js:5
 #, js-format
 msgid "%s kg"
 msgstr ""
 
 #. translators: %s: angle, already formatted to one decimal.
-#: build/config/index.js:6
+#: build/config/index.js:8
 #: build/config/view.js:6
 #, js-format
 msgid "%s°"
 msgstr ""
 
 #. translators: %s: delay in milliseconds, already formatted.
-#: build/config/index.js:7
+#: build/config/index.js:9
 #: build/config/view.js:7
 #, js-format
 msgid "%s ms"
 msgstr ""
 
 #. translators: %s: delay in microseconds, already formatted.
-#: build/config/index.js:8
+#: build/config/index.js:10
 #: build/config/view.js:8
 #, js-format
 msgid "%s µs"
 msgstr ""
 
 #. translators: %d: number of mesh vertices.
-#: build/config/index.js:9
+#: build/config/index.js:11
 #: build/config/view.js:9
 #, js-format
 msgid "%d vertices"
 msgstr ""
 
 #. translators: %d: number of mesh edges.
-#: build/config/index.js:10
+#: build/config/index.js:12
 #: build/config/view.js:10
 #, js-format
 msgid "%d edges"
 msgstr ""
 
 #. translators: %d: number of mesh faces.
-#: build/config/index.js:11
+#: build/config/index.js:13
 #: build/config/view.js:11
 #, js-format
 msgid "%d faces"
 msgstr ""
 
-#: build/config/index.js:11
+#: build/config/index.js:13
 #: build/config/view.js:11
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Symmetric"
 msgstr ""
 
 #. translators: %s: symmetry axis position on X, in metres.
-#: build/config/index.js:12
+#: build/config/index.js:14
 #: build/config/view.js:12
 #, js-format
 msgid "Symmetric @ X=%s"
 msgstr ""
 
-#: build/config/index.js:12
+#: build/config/index.js:14
 #: build/config/view.js:12
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Asymmetric"
 msgstr ""
 
 #. translators: %s: record key from the GLL file.
-#: build/config/index.js:13
-#: build/config/index.js:29
-#: build/config/index.js:37
+#: build/config/index.js:15
+#: build/config/index.js:31
+#: build/config/index.js:39
 #: build/config/view.js:13
 #: build/config/view.js:29
 #: build/config/view.js:37
@@ -1382,42 +1687,42 @@ msgid "Key: %s"
 msgstr ""
 
 #. translators: %d: position of the filter in its group.
-#: build/config/index.js:14
+#: build/config/index.js:16
 #: build/config/view.js:14
 #, js-format
 msgid "Filter %d"
 msgstr ""
 
-#: build/config/index.js:14
+#: build/config/index.js:16
 #: build/config/view.js:14
 msgid "Bypassed"
 msgstr ""
 
-#: build/config/index.js:14
+#: build/config/index.js:16
 #: build/config/view.js:14
 msgid "Inverted"
 msgstr ""
 
-#: build/config/index.js:14
+#: build/config/index.js:16
 #: build/config/view.js:14
 msgid "Muted"
 msgstr ""
 
-#: build/config/index.js:14
+#: build/config/index.js:16
 #: build/config/view.js:14
 msgid "0 dB"
 msgstr ""
 
 #. translators: %s: formatted gain, including its unit.
-#: build/config/index.js:16
+#: build/config/index.js:18
 #: build/config/view.js:16
 #, js-format
 msgid "Gain: %s"
 msgstr ""
 
 #. translators: %s: formatted delay, including its unit.
-#: build/config/index.js:17
-#: build/config/index.js:27
+#: build/config/index.js:19
+#: build/config/index.js:29
 #: build/config/view.js:17
 #: build/config/view.js:27
 #, js-format
@@ -1425,98 +1730,98 @@ msgid "Delay: %s"
 msgstr ""
 
 #. translators: %s: IIR filter order.
-#: build/config/index.js:18
+#: build/config/index.js:20
 #: build/config/view.js:18
 #, js-format
 msgid "Order: %s"
 msgstr ""
 
 #. translators: %s: formatted critical frequency, including its unit.
-#: build/config/index.js:19
+#: build/config/index.js:21
 #: build/config/view.js:19
 #, js-format
 msgid "Freq: %s"
 msgstr ""
 
 #. translators: %s: filter quality factor.
-#: build/config/index.js:20
+#: build/config/index.js:22
 #: build/config/view.js:20
 #, js-format
 msgid "Q: %s"
 msgstr ""
 
 #. translators: %s: crossover alignment name.
-#: build/config/index.js:21
+#: build/config/index.js:23
 #: build/config/view.js:21
 #, js-format
 msgid "Align: %s"
 msgstr ""
 
 #. translators: %s: sample rate in kilohertz, already formatted.
-#: build/config/index.js:22
+#: build/config/index.js:24
 #: build/config/view.js:22
 #, js-format
 msgid "%s kHz"
 msgstr ""
 
-#: build/config/index.js:22
+#: build/config/index.js:24
 #: build/config/view.js:22
 msgid "Time Domain"
 msgstr ""
 
-#: build/config/index.js:22
+#: build/config/index.js:24
 #: build/config/view.js:22
 msgid "Freq Domain"
 msgstr ""
 
-#: build/config/index.js:22
+#: build/config/index.js:24
 #: build/config/view.js:22
 msgid "Complex"
 msgstr ""
 
 #. translators: %s: formatted sample rate, including its unit.
-#: build/config/index.js:23
+#: build/config/index.js:25
 #: build/config/view.js:23
 #, js-format
 msgid "SR: %s"
 msgstr ""
 
 #. translators: %d: number of FIR filter coefficients.
-#: build/config/index.js:24
+#: build/config/index.js:26
 #: build/config/view.js:24
 #, js-format
 msgid "%d coefficients"
 msgstr ""
 
 #. translators: %s: number of spectrum bands.
-#: build/config/index.js:25
+#: build/config/index.js:27
 #: build/config/view.js:25
 #, js-format
 msgid "%s bands"
 msgstr ""
 
 #. translators: %s: number of bands per octave.
-#: build/config/index.js:26
+#: build/config/index.js:28
 #: build/config/view.js:26
 #, js-format
 msgid "%s/oct"
 msgstr ""
 
-#: build/config/index.js:27
+#: build/config/index.js:29
 #: build/config/view.js:27
 msgid "Box Types"
 msgstr ""
 
 #. translators: %d: position of the box type in the file.
-#: build/config/index.js:28
+#: build/config/index.js:30
 #: build/config/view.js:28
 #, js-format
 msgid "Box Type %d"
 msgstr ""
 
 #. translators: %s: formatted mass, including its unit.
-#: build/config/index.js:30
-#: build/config/index.js:38
+#: build/config/index.js:32
+#: build/config/index.js:40
 #: build/config/view.js:30
 #: build/config/view.js:38
 #, js-format
@@ -1524,21 +1829,21 @@ msgid "Weight: %s"
 msgstr ""
 
 #. translators: %s: formatted angle, including its unit.
-#: build/config/index.js:31
+#: build/config/index.js:33
 #: build/config/view.js:31
 #, js-format
 msgid "Vertical Opening Angle: %s"
 msgstr ""
 
 #. translators: %s: formatted angle, including its unit.
-#: build/config/index.js:32
+#: build/config/index.js:34
 #: build/config/view.js:32
 #, js-format
 msgid "Horizontal Opening Angle: %s"
 msgstr ""
 
 #. translators: 1: source placement label, 2: key of the source definition it references.
-#: build/config/index.js:33
+#: build/config/index.js:35
 #: build/config/view.js:33
 #, js-format
 msgctxt "source placement"
@@ -1546,33 +1851,33 @@ msgid "%1$s (%2$s)"
 msgstr ""
 
 #. translators: %s: comma-separated list of acoustic source names.
-#: build/config/index.js:34
+#: build/config/index.js:36
 #: build/config/view.js:34
 #, js-format
 msgid "Sources: %s"
 msgstr ""
 
 #. translators: %s: comma-separated list of source placements.
-#: build/config/index.js:35
+#: build/config/index.js:37
 #: build/config/view.js:35
 #, js-format
 msgid "Source Placements: %s"
 msgstr ""
 
-#: build/config/index.js:35
+#: build/config/index.js:37
 #: build/config/view.js:35
 msgid "Frames"
 msgstr ""
 
 #. translators: %d: position of the frame in the file.
-#: build/config/index.js:36
+#: build/config/index.js:38
 #: build/config/view.js:36
 #, js-format
 msgid "Frame %d"
 msgstr ""
 
 #. translators: 1: pin point label, 2: coordinate triple.
-#: build/config/index.js:39
+#: build/config/index.js:41
 #: build/config/view.js:39
 #, js-format
 msgctxt "pin point"
@@ -1580,53 +1885,53 @@ msgid "%1$s (%2$s)"
 msgstr ""
 
 #. translators: %s: comma-separated list of rigging pin points.
-#: build/config/index.js:40
+#: build/config/index.js:42
 #: build/config/view.js:40
 #, js-format
 msgid "Pin Points: %s"
 msgstr ""
 
-#: build/config/index.js:40
+#: build/config/index.js:42
 #: build/config/view.js:40
 msgid "Flown"
 msgstr ""
 
-#: build/config/index.js:40
+#: build/config/index.js:42
 #: build/config/view.js:40
 msgid "Ground-stacked"
 msgstr ""
 
-#: build/config/index.js:40
+#: build/config/index.js:42
 #: build/config/view.js:40
 msgid "Filter Groups"
 msgstr ""
 
 #. translators: %d: position of the filter group in the file.
-#: build/config/index.js:41
+#: build/config/index.js:43
 #: build/config/view.js:41
 #, js-format
 msgid "Filter Group %d"
 msgstr ""
 
-#: build/config/index.js:41
+#: build/config/index.js:43
 #: build/config/view.js:41
 msgid "Overridable"
 msgstr ""
 
 #. translators: %d: number of filters in the group.
-#: build/config/index.js:42
+#: build/config/index.js:44
 #: build/config/view.js:42
 #, js-format
 msgid "%d filters"
 msgstr ""
 
-#: build/config/index.js:42
+#: build/config/index.js:44
 #: build/config/view.js:42
 msgid "Limits"
 msgstr ""
 
 #. translators: %d: position of the rigging limit in the file.
-#: build/config/index.js:43
+#: build/config/index.js:45
 #: build/config/view.js:43
 #, js-format
 msgid "Limit %d"
@@ -1634,8 +1939,8 @@ msgstr ""
 
 #. translators: %s: formatted limit value, including its unit.
 #. translators: %s: formatted warning threshold, including its unit.
-#: build/config/index.js:44
-#: build/config/index.js:48
+#: build/config/index.js:46
+#: build/config/index.js:50
 #: build/config/view.js:44
 #: build/config/view.js:48
 #, js-format
@@ -1643,293 +1948,293 @@ msgid "Value: %s"
 msgstr ""
 
 #. translators: %s: key of the box type the limit applies to.
-#: build/config/index.js:45
+#: build/config/index.js:47
 #: build/config/view.js:45
 #, js-format
 msgid "Box: %s"
 msgstr ""
 
 #. translators: %s: key of the frame the limit applies to.
-#: build/config/index.js:46
+#: build/config/index.js:48
 #: build/config/view.js:46
 #, js-format
 msgid "Frame: %s"
 msgstr ""
 
-#: build/config/index.js:46
+#: build/config/index.js:48
 #: build/config/view.js:46
 msgid "Warnings"
 msgstr ""
 
 #. translators: %d: position of the rigging warning in the file.
-#: build/config/index.js:47
+#: build/config/index.js:49
 #: build/config/view.js:47
 #, js-format
 msgid "Warning %d"
 msgstr ""
 
-#: build/config/index.js:48
+#: build/config/index.js:50
 msgid "No box types defined."
 msgstr ""
 
-#: build/config/index.js:48
+#: build/config/index.js:50
 msgid "No frames defined."
 msgstr ""
 
-#: build/config/index.js:48
+#: build/config/index.js:50
 msgid "No filter groups defined."
 msgstr ""
 
-#: build/config/index.js:48
+#: build/config/index.js:50
 msgid "No rigging limits defined."
 msgstr ""
 
-#: build/config/index.js:48
+#: build/config/index.js:50
 msgid "No rigging warnings defined."
 msgstr ""
 
-#: build/config/index.js:49
-#: build/resources/index.js:7
+#: build/config/index.js:50
+#: build/resources/index.js:8
 msgid "Display Settings"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Box Types"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "This file contains no box types."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Frames"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "This file contains no frames."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Filter Groups"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "This file contains no filter groups."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Rigging Limits"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "This file contains no rigging limits."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Rigging Warnings"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "This file contains no rigging warnings."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Geometry Summary"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Add vertex and face counts to box types and frames."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Filter Details"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "List the individual filters inside each filter group."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Show Pin Points"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "List the rigging pin points of each frame. Off by default — a frame can carry dozens."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Start Collapsed"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Every card summary carries its entry count, so a collapsed card still tells the reader what is inside."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Remember Open Cards"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Store which cards a site visitor opened and restore them on the next visit. Affects the front end only — the editor preview always follows the setting above."
 msgstr ""
 
-#: build/config/index.js:49
-#: build/resources/index.js:7
+#: build/config/index.js:50
+#: build/resources/index.js:8
 msgid "Hide When Empty"
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Hide the block on the front end when the file has no configuration to show."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "Nothing defined."
 msgstr ""
 
-#: build/config/index.js:49
-#: build/resources/index.js:7
+#: build/config/index.js:50
+#: build/resources/index.js:8
 msgid "Empty — this block will be hidden on the front end."
 msgstr ""
 
-#: build/config/index.js:49
+#: build/config/index.js:50
 msgid "GLL Configuration"
 msgstr ""
 
-#: build/config/index.js:49
-msgid "Select a GLL file to show its box types, frames, filter groups, limits and warnings."
+#: build/config/index.js:50
+msgid "Select a GLL file from your media library, or paste the address of one hosted elsewhere, to show its box types, frames, filter groups, limits and warnings."
 msgstr ""
 
 #: build/config/view.js:48
 msgid "This GLL file contains no configuration data."
 msgstr ""
 
-#: build/frequency-response/index.js:4
+#: build/frequency-response/index.js:6
 #: build/frequency-response/view.js:4
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 msgid "Phase (rad)"
 msgstr ""
 
-#: build/frequency-response/index.js:4
+#: build/frequency-response/index.js:6
 #: build/frequency-response/view.js:4
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 msgid "Group Delay (ms)"
 msgstr ""
 
-#: build/frequency-response/index.js:6
-#: build/gll-info/index.js:8
+#: build/frequency-response/index.js:7
+#: build/gll-info/index.js:10
 msgid "Unwrapped"
 msgstr ""
 
-#: build/frequency-response/index.js:6
-#: build/gll-info/index.js:8
+#: build/frequency-response/index.js:7
+#: build/gll-info/index.js:10
 msgid "Wrapped"
 msgstr ""
 
-#: build/frequency-response/index.js:6
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:7
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
 msgid "Group Delay"
 msgstr ""
 
 #. translators: %s: phase series label, already translated, e.g. "Phase (rad)".
-#: build/frequency-response/index.js:7
-#: build/gll-info/index.js:8
+#: build/frequency-response/index.js:8
+#: build/gll-info/index.js:10
 #, js-format
 msgid "%s (on-axis + directivity)"
 msgstr ""
 
-#: build/frequency-response/index.js:7
-#: build/gll-info/index.js:8
+#: build/frequency-response/index.js:8
+#: build/gll-info/index.js:10
 msgid "Level (dB, on-axis + directivity)"
 msgstr ""
 
-#: build/frequency-response/index.js:7
+#: build/frequency-response/index.js:8
 #: build/frequency-response/view.js:11
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Level (dB)"
 msgstr ""
 
 #. translators: 1: lowest frequency in the response, 2: highest frequency.
 #. translators: 1: GLL file name, 2: source label.
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:12
 #, js-format
 msgid "%1$s - %2$s"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Source Settings"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Response Index"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Chart Settings"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Show Magnitude"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Show Phase"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Phase Mode"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "Normalize (On-Axis)"
 msgstr ""
 
-#: build/frequency-response/index.js:8
-#: build/polar-plot/index.js:13
+#: build/frequency-response/index.js:9
+#: build/polar-plot/index.js:14
 msgid "Chart Height (px)"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
 msgid "Range:"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Phase:"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
 msgid "Wrapped Phase"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
 msgid "Unwrapped Phase"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 #: build/frequency-response/view.js:5
-#: build/gll-info/index.js:8
-#: build/gll-info/index.js:9
-#: build/polar-plot/index.js:13
+#: build/gll-info/index.js:10
+#: build/gll-info/index.js:11
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Normalized"
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "No frequency response data available for this source."
 msgstr ""
 
-#: build/frequency-response/index.js:8
+#: build/frequency-response/index.js:9
 msgid "GLL Frequency Response"
 msgstr ""
 
-#: build/frequency-response/index.js:8
-msgid "Select a GLL file to display frequency response chart."
+#: build/frequency-response/index.js:9
+msgid "Select a GLL file from your media library, or paste the address of one hosted elsewhere, to display a frequency response chart."
 msgstr ""
 
 #: build/frequency-response/view.js:5
@@ -1980,108 +2285,108 @@ msgstr ""
 msgid "Frequency response level at one-third-octave band centres"
 msgstr ""
 
-#: build/geometry/index.js:4
 #: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Reference Point"
 msgstr ""
 
-#: build/geometry/index.js:4
 #: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Center of Mass"
 msgstr ""
 
-#: build/geometry/index.js:4
 #: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Next Pivot"
 msgstr ""
 
 #. translators: %d: geometry number.
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #, js-format
 msgid "Geometry %d"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Geometry Options"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Geometry"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Select which case geometry to display."
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Show Faces"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Show Edges"
 msgstr ""
 
-#: build/geometry/index.js:6
-#: build/gll-info/index.js:14
+#: build/geometry/index.js:7
+#: build/gll-info/index.js:15
 msgid "Show Sources"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Center on Reference"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Markers"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Vertices:"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Edges:"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Faces:"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Largest Dimension:"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Bounds (W × H × D):"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Reference Point (mm):"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Center of Mass (mm):"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 #: build/geometry/view.js:5
 msgid "Sources:"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "GLL Geometry Viewer"
 msgstr ""
 
-#: build/geometry/index.js:6
+#: build/geometry/index.js:7
 msgid "Select a GLL file to display case geometry."
 msgstr ""
 
@@ -2101,268 +2406,256 @@ msgstr ""
 msgid "Geometry loaded: %1$d vertices, %2$d faces."
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "System Information"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Label"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Version"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Type"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Line Array"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Cluster"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Loudspeaker"
 msgstr ""
 
-#: build/gll-info/index.js:4
-#: build/gll-info/index.js:5
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:6
+#: build/gll-info/index.js:7
+#: build/gll-info/index.js:13
 #: build/gll-info/view.js:6
 #: build/gll-info/view.js:27
 msgid "Unknown"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Manufacturer"
 msgstr ""
 
-#: build/gll-info/index.js:4
+#: build/gll-info/index.js:6
 #: build/gll-info/view.js:27
 msgid "Description"
 msgstr ""
 
 #. translators: 1: GLL format version, 2: checksum validity, "Yes" or "No".
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 #, js-format
 msgid "Format Version: %1$s | Valid: %2$s"
 msgstr ""
 
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 msgid "Yes"
 msgstr ""
 
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 msgid "No"
 msgstr ""
 
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 msgid "Pressure"
 msgstr ""
 
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 msgid "Velocity"
 msgstr ""
 
-#: build/gll-info/index.js:5
+#: build/gll-info/index.js:7
 msgid "Intensity"
 msgstr ""
 
 #. translators: 1: response number, 2: azimuth angle, 3: elevation angle.
-#: build/gll-info/index.js:6
+#: build/gll-info/index.js:8
 #, js-format
 msgid "Response %1$d • Az %2$s / El %3$s"
 msgstr ""
 
 #. translators: %d: response number.
-#: build/gll-info/index.js:7
+#: build/gll-info/index.js:9
 #, js-format
 msgid "Response %d"
 msgstr ""
 
-#: build/gll-info/index.js:8
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:10
+#: build/gll-info/index.js:13
 msgid "No frequency response data available"
 msgstr ""
 
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Response:"
 msgstr ""
 
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Group delay"
 msgstr ""
 
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Azimuth:"
 msgstr ""
 
-#: build/gll-info/index.js:8
+#: build/gll-info/index.js:10
 msgid "Elevation:"
 msgstr ""
 
 #. translators: 1: current response number, 2: total number of responses.
-#: build/gll-info/index.js:9
+#: build/gll-info/index.js:11
 #, js-format
 msgid "Response %1$d of %2$d"
 msgstr ""
 
-#: build/gll-info/index.js:9
+#: build/gll-info/index.js:11
 msgid "Azimuth"
 msgstr ""
 
-#: build/gll-info/index.js:9
+#: build/gll-info/index.js:11
 msgid "Off-axis"
 msgstr ""
 
-#: build/gll-info/index.js:9
+#: build/gll-info/index.js:11
 msgid "Unable to render response chart for this selection."
 msgstr ""
 
 #. translators: %d: number of placements.
 #. translators: %d: number of placements of this source.
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:6
 #, js-format
 msgid "Placements (%d)"
 msgstr ""
 
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:6
 msgid "No placements found"
 msgstr ""
 
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:19
 msgid "Box:"
 msgstr ""
 
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:19
 msgid "Position:"
 msgstr ""
 
-#: build/gll-info/index.js:10
+#: build/gll-info/index.js:12
 #: build/gll-info/view.js:19
 msgid "Rotation:"
 msgstr ""
 
 #. translators: 1: heading angle, 2: vertical angle, 3: roll angle.
 #. translators: 1: heading angle. 2: vertical angle. 3: roll angle. All already carry the degree sign.
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:13
 #: build/gll-info/view.js:19
 #, js-format
 msgid "H: %1$s, V: %2$s, R: %3$s"
 msgstr ""
 
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:13
 msgid "Bandwidth:"
 msgstr ""
 
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:13
 msgid "Data Type:"
 msgstr ""
 
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:13
 msgid "Responses:"
 msgstr ""
 
-#: build/gll-info/index.js:11
+#: build/gll-info/index.js:13
 msgid "No source definitions found"
 msgstr ""
 
 #. translators: %d: number of acoustic sources.
 #. translators: %d: number of acoustic sources in the file.
-#: build/gll-info/index.js:12
+#: build/gll-info/index.js:14
 #: build/gll-info/view.js:30
 #, js-format
 msgid "Acoustic Sources (%d)"
 msgstr ""
 
-#: build/gll-info/index.js:12
+#: build/gll-info/index.js:14
 msgid "Loading more sources…"
 msgstr ""
 
 #. translators: 1: number of sources rendered so far, 2: total number of sources.
-#: build/gll-info/index.js:13
+#: build/gll-info/index.js:15
 #, js-format
 msgid "(%1$d / %2$d)"
 msgstr ""
 
-#: build/gll-info/index.js:14
-msgid "File"
-msgstr ""
-
-#: build/gll-info/index.js:14
-msgid "Replace"
-msgstr ""
-
-#: build/gll-info/index.js:14
-msgid "Remove"
-msgstr ""
-
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Show Overview"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Sources Display Mode"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Compact"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Detailed"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Expandable"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Choose how source information is displayed"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Show Responses"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Display the response count and angular resolution for each source. Applies to the editor and the published page."
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Show Response Charts"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Display frequency response controls and chart for each source. Editor preview only."
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "Parsing GLL file…"
 msgstr ""
 
-#: build/gll-info/index.js:14
+#: build/gll-info/index.js:15
 msgid "GLL File Viewer"
 msgstr ""
 
-#: build/gll-info/index.js:14
-msgid "Select a GLL file from your media library to display loudspeaker data."
+#: build/gll-info/index.js:15
+msgid "Select a GLL file from your media library, or paste the address of one hosted elsewhere, to display loudspeaker data."
 msgstr ""
 
 #. translators: %s: a length, already rounded.
@@ -2425,110 +2718,104 @@ msgstr ""
 msgid "%1$d - %2$d Hz"
 msgstr ""
 
-#. translators: %s: the underlying failure description.
-#: build/gll-info/view.js:34
-#, js-format
-msgid "Could not load the GLL file. %s"
-msgstr ""
-
 #. translators: %s: frequency label, for example "1 kHz".
-#: build/polar-plot/index.js:7
+#: build/polar-plot/index.js:8
 #: build/polar-plot/view.js:6
 #, js-format
 msgid "Horizontal @ %s (normalized)"
 msgstr ""
 
 #. translators: %s: frequency label, for example "1 kHz".
-#: build/polar-plot/index.js:8
+#: build/polar-plot/index.js:9
 #: build/polar-plot/view.js:7
 #, js-format
 msgid "Horizontal @ %s"
 msgstr ""
 
 #. translators: %s: frequency label, for example "1 kHz".
-#: build/polar-plot/index.js:9
+#: build/polar-plot/index.js:10
 #: build/polar-plot/view.js:8
 #, js-format
 msgid "Vertical @ %s (normalized)"
 msgstr ""
 
 #. translators: %s: frequency label, for example "1 kHz".
-#: build/polar-plot/index.js:10
+#: build/polar-plot/index.js:11
 #: build/polar-plot/view.js:9
 #, js-format
 msgid "Vertical @ %s"
 msgstr ""
 
 #. translators: %s: angle label of the hovered point, for example "45°".
-#: build/polar-plot/index.js:11
+#: build/polar-plot/index.js:12
 #: build/polar-plot/view.js:14
 #, js-format
 msgid "Angle %s"
 msgstr ""
 
-#: build/polar-plot/index.js:11
+#: build/polar-plot/index.js:12
 #: build/polar-plot/view.js:14
 msgctxt "chart series"
 msgid "Level"
 msgstr ""
 
 #. translators: %s: chart series name.
-#: build/polar-plot/index.js:12
+#: build/polar-plot/index.js:13
 #: build/polar-plot/view.js:15
 #, js-format
 msgid "%s: -"
 msgstr ""
 
 #. translators: 1: chart series name, 2: level in dB.
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:16
 #, js-format
 msgid "%1$s: %2$s dB"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Frequency Slider"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Show Horizontal Slice"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Front-Right-Back-Left plane (blue)"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Show Vertical Slice"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Front-Top-Back-Bottom plane (red)"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Normalize"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Normalize each slice to its maximum level"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Uses on-axis"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 #: build/polar-plot/view.js:9
 msgid "Front-half only"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "GLL Polar Plot"
 msgstr ""
 
-#: build/polar-plot/index.js:13
+#: build/polar-plot/index.js:14
 msgid "Select a GLL file to display polar directivity plot."
 msgstr ""
 
@@ -2571,85 +2858,85 @@ msgid "levels normalized to the on-axis maximum"
 msgstr ""
 
 #. translators: 1: formatted number of bytes, 2: unit symbol such as KB or MB.
-#: build/resources/index.js:5
+#: build/resources/index.js:7
 #: build/resources/view.js:5
 #, js-format
 msgid "%1$s %2$s"
 msgstr ""
 
 #. translators: %s: name of the embedded file to download.
-#: build/resources/index.js:6
+#: build/resources/index.js:8
 #: build/resources/view.js:6
 #, js-format
 msgid "Download %s"
 msgstr ""
 
-#: build/resources/index.js:6
+#: build/resources/index.js:8
 #: build/resources/view.js:6
 msgid "Download"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Show Documentation"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "This file contains no documentation."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Show Data Files"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "This file contains no data files."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Show Image Previews"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Preview Height (px)"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Hide the block on the front end when the file has no resources."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 #: build/resources/view.js:9
 msgid "Documentation"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 #: build/resources/view.js:9
 msgid "Technical drawings, spec sheets, and manuals embedded in the GLL file."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "No documentation files in this GLL."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 #: build/resources/view.js:9
 msgid "Data Files"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 #: build/resources/view.js:9
 msgid "Embedded images, geometry, and configuration files."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "No data files in this GLL."
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "GLL Resources"
 msgstr ""
 
-#: build/resources/index.js:7
+#: build/resources/index.js:8
 msgid "Select a GLL file to list its embedded documents and data files."
 msgstr ""
 

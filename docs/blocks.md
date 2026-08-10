@@ -8,12 +8,67 @@ Settings below are named exactly as they appear in the block sidebar.
 
 ---
 
+## Choosing a file
+
+Every block asks for a GLL file the same way, in the **File** panel of its
+sidebar:
+
+- **Choose from media library** / **Replace** — pick a file you have uploaded.
+- **Address of a GLL file** — paste the address of a file hosted somewhere else,
+  then press *Update address* or Enter. The address is only used once you commit
+  it, not while you type, because loading a GLL file can mean downloading tens of
+  megabytes.
+- **Remove** — clears the file. Emptying the address field does the same thing.
+
+The address has to start with `https://` (or `http://` on a site that is itself
+served over plain http — a browser blocks an http file on an https page). An
+address that does not end in `.gll` is accepted with a warning, because download
+links and signed CDN addresses often hide the file name.
+
+### Files hosted somewhere else
+
+**The website hosting the file has to allow your site to read it.** Browsers
+refuse to let one website read a file from another unless the second one says it
+is allowed, by sending the header
+
+```
+Access-Control-Allow-Origin: https://your-site.example
+```
+
+(or `*`, for "any site"). Most file hosts and CDNs have a setting for this;
+ordinary web servers do not send it by default. If you host the file yourself
+somewhere, ask whoever administers that server.
+
+If the header is missing, what happens depends on the block:
+
+- **GLL File Viewer** and **GLL Configuration** keep working. They are served
+  from a small stored summary of the file rather than from the file itself, so
+  visitors never need to download it.
+- The other five blocks — Frequency Response, Polar Plot, 3D Balloon, Geometry
+  Viewer and Resources — render measurement data that is not in the summary, so
+  they need the file itself. Their visitors will see an error naming the site
+  that refused.
+
+While you are editing, your site can fetch the file for you even when the header
+is missing, so you still get a preview and a stored summary. The editor tells you
+when it has done that, because it means the published page and your preview may
+not agree. An administrator switches that on under **Settings → GLL Info**; it is
+off until they do.
+
+**A file on another server is not watched.** Nothing on your site can tell when
+such a file changes where it is hosted, so its stored summary is kept for twelve
+hours and then rebuilt. To pick up a change sooner, open the post and press
+*Refresh stored summary*, or clear all of them under Settings → GLL Info.
+
+---
+
 ## GLL File Viewer
 
 `gll-info/gll-info` — the overview block. Shows what the file *is* and which
 acoustic sources it contains.
 
-Sidebar panel **File**: *Replace*, *Remove*, *Refresh stored summary*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file), plus
+*Refresh stored summary*.
 
 This block is served from a stored summary of the file rather than parsing it in
 every visitor's browser, so a published page carrying only this block never
@@ -41,7 +96,7 @@ so a file with dozens of sources does not stall the editor.
 `gll-info/frequency-response` — magnitude and phase against frequency, for one
 response of one acoustic source.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file).
 
 Sidebar panel **Source Settings**:
 
@@ -67,7 +122,7 @@ Sidebar panel **Chart Settings**:
 `gll-info/polar-plot` — directivity at a single frequency, drawn as polar
 slices.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file).
 
 Sidebar panel **Source & Frequency**:
 
@@ -98,7 +153,7 @@ on-axis reference, or only covers the front half.
 frequency, rendered with Three.js. Drag to orbit, right-drag to pan, scroll to
 zoom. Requires WebGL; without it the block says so instead of rendering.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file).
 
 Sidebar panel **Source & Frequency**:
 
@@ -131,7 +186,7 @@ pauses again when it leaves.
 `gll-info/geometry` — the loudspeaker enclosure as modelled in the file. Same
 mouse controls as the balloon, and it likewise requires WebGL.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file).
 
 Sidebar panel **Geometry Options**:
 
@@ -163,7 +218,7 @@ geometry is symmetric, and the number of sources.
 `gll-info/resources` — the documents and data files packed inside the GLL file
 itself: data sheets, images, and whatever else the manufacturer embedded.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file).
 
 Sidebar panel **Display Settings**:
 
@@ -185,9 +240,9 @@ Every listed resource gets a **Download** link.
 frames, DSP filter groups, and the manufacturer's limits and warnings. Each
 section is a collapsible card whose summary carries the number of entries in it.
 
-Sidebar panel **File Settings**: *Replace File*, *Remove File*, *Refresh stored
-summary*. Like the file viewer, this block is served from a stored summary of the
-file rather than parsing it in every visitor's browser.
+Sidebar panel **File**: see [Choosing a file](#choosing-a-file), plus *Refresh
+stored summary*. Like the file viewer, this block is served from a stored summary
+of the file rather than parsing it in every visitor's browser.
 
 Sidebar panel **Display Settings**:
 

@@ -40,7 +40,10 @@ The plugin uses a hybrid approach for GLL file parsing:
 
 - **Editor (Gutenberg):** WASM-based parsing in real-time for preview
 - **Frontend, `gll-info` and `config`:** the cached display subset, fetched from
-  `gll-info/v1/cache/<id>`, falling back to WASM when the cache is cold
+  `gll-info/v1/cache/<id>` for a media library file or
+  `gll-info/v1/url-cache?url=` for one hosted elsewhere, falling back to WASM
+  when the cache is cold. `fetchCachedSubsetFor()` is the single place that
+  choice is made
 - **Frontend, the other five blocks:** WASM, always. They render measurement
   data — response spectra, meshes, embedded files — which the subset drops
 - **Server:** optional. Where the host allows a subprocess, `GLL_Parser` runs the
@@ -53,6 +56,15 @@ The plugin uses a hybrid approach for GLL file parsing:
   reduces it, because the other two backends hand PHP raw output too
 
 The WASM parser is loaded on-demand and shared across all blocks through React Context.
+
+**A block's file may live on another server**, expressed as `fileUrl` with
+`fileId` left at 0 — an invariant `src/shared/file-source.ts` documents and
+`FileSourceControl` is the only writer of. Visitors fetch such a file directly,
+so the remote host must send `Access-Control-Allow-Origin`; the editor may retry
+through `gll-info/v1/remote` (authenticated, off by default) and then says so,
+because a preview that succeeds where the published page fails is worse than no
+preview. Entries in the URL-keyed tier carry no fingerprint — there are no bytes
+on this server to hash — so their freshness is a 12-hour timer and nothing else.
 
 **The cache is a fast path, never a requirement.** Every consumer falls back to
 parsing, and a cold cache — an attachment nobody has opened in the editor on a
@@ -163,6 +175,8 @@ See [PLAN.md](PLAN.md) for the complete implementation roadmap. Current status:
   testing remains open and no release has been tagged)
 - ✅ Phase 13.4.1: Server-side parse cache (display subset in attachment meta,
   `gll-info/v1/cache/<id>`, three parser backends, settings screen)
+- ✅ Phase 13.4.2: Files hosted on other servers (shared `FileSourceControl`
+  across all seven blocks, URL-keyed cache tier, editor-only download proxy)
 - 🔶 Phase 13: Remaining work — screen-reader testing and the release tag still
   block a release, and 13.4.7 records one defect found while building 13.4.1
 
@@ -176,10 +190,10 @@ is the block for that.
 
 ## Testing
 
-Four suites, all green. `npm test` runs the two Jest projects (752 tests): a
+Four suites, all green. `npm test` runs the two Jest projects (842 tests): a
 jsdom `unit` project and a node `integration` project that drives the real
-`gll.wasm`. `npm run test:php` runs 99 PHPUnit tests against real WordPress
-inside wp-env. `npm run test:e2e` runs 33 Playwright specs against a real
+`gll.wasm`. `npm run test:php` runs 189 PHPUnit tests against real WordPress
+inside wp-env. `npm run test:e2e` runs 37 Playwright specs against a real
 browser. `npm run typecheck` exists because `wp-scripts` compiles through babel,
 which strips types without checking them.
 
