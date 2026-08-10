@@ -193,6 +193,27 @@ Yes. Each block stores its own `fileId`, `fileUrl` and `fileName`, and each one
 parses the file independently. The bundled patterns insert several blocks at
 once, but you still choose the file in each of them.
 
+= Can I use a GLL file that is not in my media library? =
+
+Yes. Every block's File panel has an address field: paste the address of a GLL
+file hosted elsewhere and press Enter.
+
+One condition, and it is not up to you: the website hosting the file has to tell
+browsers that your site may read it, by sending the header
+`Access-Control-Allow-Origin` naming your site (or `*`). File hosts and CDNs
+usually have a setting for this; ordinary web servers do not send it by default.
+
+If it is missing, the GLL File Viewer and GLL Configuration blocks still work —
+they are served from a small stored summary rather than from the file — and the
+five blocks that draw measurement data will show an error on the published page.
+Under Settings > GLL Info an administrator can let the site fetch such files
+while you are editing, so you at least get a preview and a stored summary. That
+is off by default.
+
+Bear in mind that nothing on your site can notice when a file changes where it is
+hosted. Its stored summary is refreshed twelve hours after it was made, or when
+you press "Refresh stored summary".
+
 = The block shows nothing on the front end. =
 
 Three common causes: the block has no file selected; the browser has no

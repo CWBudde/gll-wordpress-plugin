@@ -359,6 +359,56 @@ class GLL_Parser_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Parsing a path that is not an attachment.
+	 *
+	 * Split out of `subset_for_attachment()` so the download proxy can build a
+	 * summary from a temp file it has already paid for, instead of the file
+	 * having to be in the media library first. The path never comes from request
+	 * input on either caller.
+	 */
+	public function test_a_bare_path_can_be_parsed() {
+		$backend = new GLL_Fake_Parser_Backend( $this->raw_fixture() );
+		$this->use_backend( $backend );
+
+		$path = wp_tempnam( 'gll-path-test' );
+		file_put_contents( $path, 'GLL BYTES' );
+
+		$subset = GLL_Parser::subset_for_path( $path );
+
+		unlink( $path );
+
+		$this->assertIsArray( $subset );
+		$this->assertSame( GLL_Subset::VERSION, $subset['Version'] );
+		$this->assertSame( 1, $backend->calls );
+	}
+
+	/**
+	 * The extraction left the attachment path intact.
+	 */
+	public function test_an_attachment_still_resolves_to_its_file() {
+		$backend = new GLL_Fake_Parser_Backend( $this->raw_fixture() );
+		$this->use_backend( $backend );
+
+		// Creating the attachment already parses it once, through the upload
+		// hook, so the count is not the interesting part here — the path
+		// resolution is.
+		$this->assertIsArray( GLL_Parser::subset_for_attachment( $this->create_attachment() ) );
+	}
+
+	/**
+	 * A path that does not exist is reported the same way a missing attachment
+	 * file is.
+	 */
+	public function test_a_missing_path_is_reported() {
+		$this->use_backend( new GLL_Fake_Parser_Backend( $this->raw_fixture() ) );
+
+		$result = GLL_Parser::subset_for_path( '/nonexistent/nothing.gll' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'gll_info_unreadable', $result->get_error_code() );
+	}
+
+	/**
 	 * An attachment whose file is missing.
 	 */
 	public function test_an_unreadable_file_is_reported() {

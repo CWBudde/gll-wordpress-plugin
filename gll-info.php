@@ -240,10 +240,14 @@ require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-patterns.php';
 // through `GLL_Media`, and the REST routes use both.
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-subset.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-cache.php';
+// The external-file tier sits on top of both: `GLL_URL_Cache` reuses
+// `GLL_Cache::validate()`, and `GLL_Remote` warms it through `GLL_Parser`.
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-url-cache.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-backend.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-node.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-cli.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser-phpwasm.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/parser/class-gll-parser.php';
+require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-remote.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-rest.php';
 require_once GLL_INFO_PLUGIN_DIR . 'includes/class-gll-settings.php';

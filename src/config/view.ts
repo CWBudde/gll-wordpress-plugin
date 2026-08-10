@@ -13,10 +13,15 @@
  * @package
  */
 
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
-import { fetchCachedSubset } from '../shared/gll-cache';
+import { fetchCachedSubsetFor } from '../shared/gll-cache';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 import { renderConfig } from './config-render';
@@ -68,8 +73,20 @@ document.addEventListener( 'DOMContentLoaded', async () => {
 				return;
 			}
 
+			// Saved markup, but still the only check this value has ever had.
+			if ( ! isSafeFileUrl( block.dataset.fileUrl ) ) {
+				showError(
+					block,
+					__(
+						'This block has an address it cannot load.',
+						'gll-info'
+					)
+				);
+				return;
+			}
+
 			const options = readBlockOptions( block );
-			const cached = await fetchCachedSubset( block.dataset.fileId );
+			const cached = await fetchCachedSubsetFor( block.dataset );
 
 			if ( cached ) {
 				renderBlock( block, cached, options );
@@ -165,13 +182,10 @@ async function parseAndRender( block, options ) {
 	try {
 		const response = await fetch( block.dataset.fileUrl );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					/* translators: %s: HTTP status text, e.g. "Not Found". */
-					__( 'Failed to fetch file: %s', 'gll-info' ),
-					response.statusText
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -179,7 +193,10 @@ async function parseAndRender( block, options ) {
 		renderBlock( block, await parseGLL( arrayBuffer ), options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
-		showError( block, error.message );
+		showError(
+			block,
+			describeFetchFailure( error, block.dataset.fileUrl )
+		);
 	}
 }
 

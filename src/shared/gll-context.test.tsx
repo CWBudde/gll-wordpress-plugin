@@ -7,6 +7,17 @@
 import { render, act, waitFor } from '@testing-library/react';
 import { useGLL, useGLLLoader, GLLProvider } from './gll-context';
 
+const mockFetchRemoteFile = jest.fn();
+const mockCanUseProxy = jest.fn();
+
+jest.mock( './gll-proxy', () => ( {
+	// Re-exported rather than stubbed: the loader throws this type on a non-OK
+	// direct response, and the fallback logic branches on nothing else.
+	HttpError: jest.requireActual( './gll-proxy' ).HttpError,
+	fetchRemoteFile: ( ...args: unknown[] ) => mockFetchRemoteFile( ...args ),
+	canUseProxy: () => mockCanUseProxy(),
+} ) );
+
 const mockInitWasm = jest.fn();
 const mockParseGLL = jest.fn();
 const mockParseGLLFromUrl = jest.fn();
@@ -29,6 +40,8 @@ beforeEach( () => {
 		.mockResolvedValue( { GenSystem: { Label: 'FromUrl' } } );
 	mockIsWasmReady.mockReset().mockReturnValue( false );
 	mockGetWasmError.mockReset().mockReturnValue( null );
+	mockFetchRemoteFile.mockReset();
+	mockCanUseProxy.mockReset().mockReturnValue( true );
 } );
 
 /**
@@ -266,6 +279,110 @@ describe( 'useGLLLoader (standalone)', () => {
 		expect( captured.value?.data ).toEqual( { GenSystem: { Label: 'X' } } );
 
 		delete ( global as any ).fetch;
+	} );
+
+	// The editor's answer to a file whose host will not let another site read
+	// it. The direct attempt always comes first — it is the exact request every
+	// visitor's browser will make, so its outcome is the honest answer to "will
+	// the published page work?" — and `via` is what tells the UI which of the
+	// two won, so it can say so instead of showing a clean preview of something
+	// visitors will never see.
+	describe( 'the proxy fallback', () => {
+		const ADDRESS = 'https://cdn.example/speaker.gll';
+
+		/**
+		 * Load an address through a loader probe.
+		 *
+		 * @param {Object} options Load options.
+		 * @return {Object} The captured hook value.
+		 */
+		async function loadAddress( options ) {
+			const captured: {
+				value: ReturnType< typeof useGLLLoader > | null;
+			} = { value: null };
+			render( <ProbeLoader captured={ captured } /> );
+
+			await act( async () => {
+				await captured.value!.load( ADDRESS, true, options );
+			} );
+
+			return captured;
+		}
+
+		it( 'does not reach for the proxy when the direct fetch works', async () => {
+			( global as any ).fetch = jest.fn().mockResolvedValue( {
+				ok: true,
+				arrayBuffer: async () => new Uint8Array( [ 1 ] ).buffer,
+			} );
+
+			const captured = await loadAddress( { proxy: 'fallback' } );
+
+			expect( mockFetchRemoteFile ).not.toHaveBeenCalled();
+			expect( captured.value?.parsedFrom?.via ).toBe( 'direct' );
+
+			delete ( global as any ).fetch;
+		} );
+
+		it( 'retries through the site when the browser is refused', async () => {
+			( global as any ).fetch = jest
+				.fn()
+				.mockRejectedValue( new TypeError( 'Failed to fetch' ) );
+			mockFetchRemoteFile.mockResolvedValue(
+				new Uint8Array( [ 1, 2 ] ).buffer
+			);
+
+			const captured = await loadAddress( { proxy: 'fallback' } );
+
+			expect( mockFetchRemoteFile ).toHaveBeenCalledWith( ADDRESS );
+			expect( captured.value?.error ).toBeNull();
+			expect( captured.value?.parsedFrom?.via ).toBe( 'proxy' );
+
+			delete ( global as any ).fetch;
+		} );
+
+		it( 'stays with the direct failure when no fallback was asked for', async () => {
+			( global as any ).fetch = jest
+				.fn()
+				.mockRejectedValue( new TypeError( 'Failed to fetch' ) );
+
+			const captured = await loadAddress( {} );
+
+			expect( mockFetchRemoteFile ).not.toHaveBeenCalled();
+			expect( captured.value?.error ).toBeTruthy();
+
+			delete ( global as any ).fetch;
+		} );
+
+		it( 'does not try a proxy it cannot authenticate to', async () => {
+			mockCanUseProxy.mockReturnValue( false );
+			( global as any ).fetch = jest
+				.fn()
+				.mockRejectedValue( new TypeError( 'Failed to fetch' ) );
+
+			const captured = await loadAddress( { proxy: 'fallback' } );
+
+			expect( mockFetchRemoteFile ).not.toHaveBeenCalled();
+			expect( captured.value?.error ).toBeTruthy();
+
+			delete ( global as any ).fetch;
+		} );
+
+		it( 'reports the site’s own refusal when both attempts fail', async () => {
+			( global as any ).fetch = jest
+				.fn()
+				.mockRejectedValue( new TypeError( 'Failed to fetch' ) );
+			mockFetchRemoteFile.mockRejectedValue(
+				new Error( 'That address cannot be loaded by this site.' )
+			);
+
+			const captured = await loadAddress( { proxy: 'fallback' } );
+
+			expect( captured.value?.error?.message ).toBe(
+				'That address cannot be loaded by this site.'
+			);
+
+			delete ( global as any ).fetch;
+		} );
 	} );
 
 	it( 'reports a fetch failure as an error rather than a parse', async () => {

@@ -14,7 +14,7 @@ import {
 	useMemo,
 	useRef,
 } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import {
 	initWasm,
@@ -22,6 +22,7 @@ import {
 	parseGLLFromUrl,
 	isWasmReady,
 } from './wasm-loader';
+import { HttpError, canUseProxy, fetchRemoteFile } from './gll-proxy';
 
 /**
  * GLL Context value shape.
@@ -248,70 +249,102 @@ export function useGLLLoader() {
 	// win just because it finished last.
 	const generation = useRef( 0 );
 
-	const load = useCallback( async ( fileOrUrl, isUrl = false ) => {
-		const mine = ++generation.current;
+	const load = useCallback(
+		async (
+			fileOrUrl,
+			isUrl = false,
+			options: { proxy?: 'never' | 'fallback' } = {}
+		) => {
+			const mine = ++generation.current;
 
-		setIsLoading( true );
-		setError( null );
+			setIsLoading( true );
+			setError( null );
 
-		try {
-			await initWasm();
+			try {
+				await initWasm();
 
-			let parsedData;
-			let digest = null;
+				let parsedData;
+				let digest = null;
+				let via = null;
+				let length = null;
 
-			if ( isUrl ) {
-				// Fetched here rather than through `parseGLLFromUrl()` so the
-				// bytes can be fingerprinted on the way past. Re-fetching to
-				// hash would double the download of a file that can run to
-				// tens of megabytes.
-				const response = await fetch( fileOrUrl );
-				if ( ! response.ok ) {
-					throw new Error(
-						sprintf(
-							/* translators: 1: HTTP status code, e.g. 404. 2: HTTP status text, e.g. "Not Found". */
-							__(
-								'Failed to fetch GLL file: %1$d %2$s',
-								'gll-info'
-							),
-							response.status,
-							response.statusText
-						)
-					);
+				if ( isUrl ) {
+					// Fetched here rather than through `parseGLLFromUrl()` so the
+					// bytes can be fingerprinted on the way past. Re-fetching to
+					// hash would double the download of a file that can run to
+					// tens of megabytes.
+					let arrayBuffer;
+					via = 'direct';
+
+					try {
+						// THE DIRECT ATTEMPT COMES FIRST, ALWAYS, and not only to
+						// save the server a download: it is the exact request every
+						// visitor's browser will make, so its outcome is the honest
+						// answer to "will the published page work?".
+						const response = await fetch( fileOrUrl );
+						if ( ! response.ok ) {
+							throw new HttpError(
+								response.status,
+								response.statusText
+							);
+						}
+
+						arrayBuffer = await response.arrayBuffer();
+					} catch ( directError ) {
+						if (
+							'fallback' !== options?.proxy ||
+							! canUseProxy()
+						) {
+							throw directError;
+						}
+
+						// Only the editor ever gets here, and what it learns is
+						// precise: the file exists and this server can reach it, so
+						// the browser's failure was the remote host refusing to let
+						// another site read it. `parsedFrom.via` carries that to the
+						// UI, which must say so rather than show a clean preview of
+						// something visitors will not see.
+						arrayBuffer = await fetchRemoteFile( fileOrUrl );
+						via = 'proxy';
+					}
+
+					length = arrayBuffer.byteLength;
+					digest = await sha256Hex( arrayBuffer );
+					parsedData = await parseGLL( arrayBuffer );
+				} else {
+					const arrayBuffer = await fileOrUrl.arrayBuffer();
+					length = arrayBuffer.byteLength;
+					digest = await sha256Hex( arrayBuffer );
+					parsedData = await parseGLL( arrayBuffer );
 				}
 
-				const arrayBuffer = await response.arrayBuffer();
-				digest = await sha256Hex( arrayBuffer );
-				parsedData = await parseGLL( arrayBuffer );
-			} else {
-				const arrayBuffer = await fileOrUrl.arrayBuffer();
-				digest = await sha256Hex( arrayBuffer );
-				parsedData = await parseGLL( arrayBuffer );
-			}
+				if ( mine !== generation.current ) {
+					return null;
+				}
 
-			if ( mine !== generation.current ) {
+				// Set together, and never separately: everything downstream relies
+				// on `parsedFrom` describing the file `data` came from.
+				setParsedFrom( {
+					url: isUrl ? fileOrUrl : null,
+					hash: digest,
+					length,
+					via,
+				} );
+				setData( parsedData );
+				setIsLoading( false );
+				return parsedData;
+			} catch ( err ) {
+				if ( mine !== generation.current ) {
+					return null;
+				}
+
+				setError( err );
+				setIsLoading( false );
 				return null;
 			}
-
-			// Set together, and never separately: everything downstream relies
-			// on `parsedFrom` describing the file `data` came from.
-			setParsedFrom( {
-				url: isUrl ? fileOrUrl : null,
-				hash: digest,
-			} );
-			setData( parsedData );
-			setIsLoading( false );
-			return parsedData;
-		} catch ( err ) {
-			if ( mine !== generation.current ) {
-				return null;
-			}
-
-			setError( err );
-			setIsLoading( false );
-			return null;
-		}
-	}, [] );
+		},
+		[]
+	);
 
 	const clear = useCallback( () => {
 		++generation.current;

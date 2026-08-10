@@ -41,17 +41,19 @@ see [patterns-and-variations.md](patterns-and-variations.md).
 
 ## 3. Choose the file
 
-A freshly inserted block shows a placeholder with a **Select GLL File** button.
-Click it, pick your uploaded file, and the block parses it and renders a preview
-straight away.
+A freshly inserted block shows a placeholder with a media button and an
+**Insert from URL** option. Pick your uploaded file and the block parses it and
+renders a preview straight away — or paste the address of a GLL file hosted
+somewhere else, which works if that website allows your site to read it. See
+[Choosing a file](blocks.md#choosing-a-file) for what that means in practice.
 
 Every block does this separately. There is no "site-wide GLL file" setting: if a
 page has five GLL blocks on it, you select the file five times, and the visitor's
 browser parses it once per block.
 
 To swap or clear the file later, open the block sidebar. The first panel is
-**File** (on the GLL File Viewer) or **File Settings** (on every other block),
-and holds **Replace** / **Replace File** and **Remove** / **Remove File**.
+**File**, on every block, and holds the media button, the address field and
+**Remove**.
 
 ## 4. Adjust the settings
 
@@ -72,6 +74,10 @@ Two panels are shared by all seven blocks:
   browsers that do not.
 - **GLL 3D Balloon** and **GLL Geometry Viewer** also need WebGL. Without it the
   block reports that WebGL is unavailable instead of rendering.
+- A file hosted on another website has to be readable by yours: that site must
+  send an `Access-Control-Allow-Origin` header naming your site. Under
+  **Settings > GLL Info** an administrator can also let this site fetch such
+  files while you are editing; that is off by default.
 - The plugin registers a **GLL Files** entry in the admin menu (a custom post
   type). No block reads from it — blocks always take their file from the media
   library — so you can ignore it.

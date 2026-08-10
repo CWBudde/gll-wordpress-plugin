@@ -30,11 +30,32 @@ export {
 // Cached-subset REST client, and the editor hook that keeps it warm
 export {
 	deleteCachedSubset,
+	deleteCachedSubsetForUrl,
 	fetchCachedSubset,
+	fetchCachedSubsetFor,
+	fetchCachedSubsetForUrl,
 	publishSubset,
+	publishSubsetForUrl,
 } from './gll-cache';
 export { useCachePublisher } from './use-cache-publisher';
 export { default as CacheRebuildControl } from './cache-rebuild-control';
+
+// Choosing a file: the media library, or an address on another website
+export {
+	GLL_ALLOWED_TYPES,
+	describeFetchFailure,
+	fileNameFromUrl,
+	isExternalUrl,
+	isSafeFileUrl,
+	validateGllUrl,
+} from './file-source';
+export type { GllFileSource, UrlCheck } from './file-source';
+export {
+	default as FileSourceControl,
+	fromMedia,
+	fromUrl,
+} from './file-source-control';
+export { useFileSource } from './use-file-source';
 
 // GLL Context
 export { GLLContext, GLLProvider, useGLL, useGLLLoader } from './gll-context';

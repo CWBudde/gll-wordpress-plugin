@@ -22,6 +22,11 @@ import {
 	renderErrorPanel,
 } from '../shared/a11y';
 import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
+import {
 	buildCanvasLabel,
 	buildMetadataHtml,
 	buildPolarDatasets,
@@ -74,18 +79,25 @@ async function initializeBlock( block ) {
 		return;
 	}
 
+	// Saved markup, but nothing had ever checked it. A scheme test is cheap and
+	// is the whole of what a view script can usefully say about an address.
+	if ( ! isSafeFileUrl( fileUrl ) ) {
+		showError(
+			block,
+			__( 'This block has an address it cannot load.', 'gll-info' )
+		);
+		return;
+	}
+
 	const options = readBlockOptions( block.dataset );
 
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					/* translators: %s: HTTP status text, e.g. "Not Found". */
-					__( 'Failed to fetch file: %s', 'gll-info' ),
-					response.statusText
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -100,7 +112,7 @@ async function initializeBlock( block ) {
 		renderChart( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
-		showError( block, error.message );
+		showError( block, describeFetchFailure( error, fileUrl ) );
 	}
 }
 

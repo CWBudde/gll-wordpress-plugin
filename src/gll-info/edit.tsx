@@ -5,19 +5,12 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import {
-	useBlockProps,
-	InspectorControls,
-	MediaUpload,
-	MediaUploadCheck,
-} from '@wordpress/block-editor';
+import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
-	Button,
 	Spinner,
 	ToggleControl,
 	SelectControl,
-	Placeholder,
 } from '@wordpress/components';
 import {
 	useState,
@@ -27,7 +20,8 @@ import {
 	useCallback,
 } from '@wordpress/element';
 import {
-	useGLLLoader,
+	useFileSource,
+	FileSourceControl,
 	useCachePublisher,
 	CacheRebuildControl,
 	computeResponseAngles,
@@ -1134,7 +1128,19 @@ export default function Edit( { attributes, setAttributes } ) {
 		showResponses,
 		appearance,
 	} = attributes;
-	const { data, parsedFrom, isLoading, error, load, clear } = useGLLLoader();
+	const {
+		data,
+		parsedFrom,
+		isLoading,
+		error,
+		source: fileSource,
+		setSource,
+		clearSource,
+		reload,
+	} = useFileSource( {
+		attributes: { fileId, fileUrl, fileName },
+		setAttributes,
+	} );
 
 	// This block is one of the two served from the cache on the frontend, so
 	// keeping it warm here is what stops visitors downloading the parser.
@@ -1145,75 +1151,26 @@ export default function Edit( { attributes, setAttributes } ) {
 		parsedFrom,
 	} );
 
-	const [ loadAttempted, setLoadAttempted ] = useState( false );
-
 	const blockProps = useBlockProps( {
 		className: `gll-info-block ${ appearanceClass( appearance ) }`,
 	} );
-
-	// Load file when URL changes.
-	useEffect( () => {
-		if ( fileUrl && ! data && ! isLoading && ! loadAttempted ) {
-			setLoadAttempted( true );
-			load( fileUrl, true );
-		}
-	}, [ fileUrl, data, isLoading, load, loadAttempted ] );
-
-	/**
-	 * Handle file selection from media library.
-	 *
-	 * @param {Object} media Selected media object.
-	 */
-	const onSelectMedia = ( media ) => {
-		setAttributes( {
-			fileId: media.id,
-			fileUrl: media.url,
-			fileName: media.filename || media.title,
-		} );
-		setLoadAttempted( false );
-		clear();
-	};
-
-	/**
-	 * Handle file removal.
-	 */
-	const onRemoveMedia = () => {
-		setAttributes( {
-			fileId: 0,
-			fileUrl: '',
-			fileName: '',
-		} );
-		clear();
-		setLoadAttempted( false );
-	};
 
 	// Render placeholder if no file selected.
 	if ( ! fileUrl ) {
 		return (
 			<div { ...blockProps }>
-				<Placeholder
+				<FileSourceControl
+					variant="placeholder"
 					icon={ <GLLIcon /> }
 					label={ __( 'GLL File Viewer', 'gll-info' ) }
 					instructions={ __(
-						'Select a GLL file from your media library to display loudspeaker data.',
+						'Select a GLL file from your media library, or paste the address of one hosted elsewhere, to display loudspeaker data.',
 						'gll-info'
 					) }
-				>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={ onSelectMedia }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							render={ ( { open } ) => (
-								<Button variant="primary" onClick={ open }>
-									{ __( 'Select GLL File', 'gll-info' ) }
-								</Button>
-							) }
-						/>
-					</MediaUploadCheck>
-				</Placeholder>
+					value={ fileSource }
+					onChange={ setSource }
+					onRemove={ clearSource }
+				/>
 			</div>
 		);
 	}
@@ -1222,38 +1179,21 @@ export default function Edit( { attributes, setAttributes } ) {
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'File', 'gll-info' ) }>
-					<p>
-						<strong>{ fileName }</strong>
-					</p>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={ onSelectMedia }
-							allowedTypes={ [
-								'application/x-gll',
-								'application/octet-stream',
-							] }
-							render={ ( { open } ) => (
-								<Button
-									variant="secondary"
-									onClick={ open }
-									style={ { marginRight: '8px' } }
-								>
-									{ __( 'Replace', 'gll-info' ) }
-								</Button>
-							) }
-						/>
-					</MediaUploadCheck>
-					<Button
-						variant="link"
-						isDestructive
-						onClick={ onRemoveMedia }
+					<FileSourceControl
+						variant="inspector"
+						value={ fileSource }
+						onChange={ setSource }
+						onRemove={ clearSource }
+						onRetry={ reload }
+						status={ { isLoading, error, via: parsedFrom?.via } }
+						servedFromCache
 					>
-						{ __( 'Remove', 'gll-info' ) }
-					</Button>
-					<CacheRebuildControl
-						rebuild={ rebuildCache }
-						enabled={ Boolean( data ) }
-					/>
+						<CacheRebuildControl
+							rebuild={ rebuildCache }
+							enabled={ Boolean( data ) }
+							isExternal={ ! fileId }
+						/>
+					</FileSourceControl>
 				</PanelBody>
 
 				<PanelBody title={ __( 'Display Options', 'gll-info' ) }>

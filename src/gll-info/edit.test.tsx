@@ -27,6 +27,63 @@ const mockLoaderState: {
 };
 
 jest.mock( '../shared', () => ( {
+	useFileSource: ( { attributes, setAttributes }: any ) => ( {
+		...mockLoaderState,
+		source: attributes,
+		// Mirrors the real hook: writing the triple and dropping the previous
+		// parse are one action, which is what stops a new file being described
+		// by the old file's data.
+		setSource: ( next: any ) => {
+			setAttributes( next );
+			mockLoaderState.clear();
+		},
+		clearSource: () => {
+			setAttributes( { fileId: 0, fileUrl: '', fileName: '' } );
+			mockLoaderState.clear();
+		},
+		reload: jest.fn(),
+	} ),
+	// The control has its own suite; here it only needs to be operable, so the
+	// two things a block can ask it to do are one button each.
+	FileSourceControl: ( {
+		variant,
+		label,
+		instructions,
+		onChange,
+		onRemove,
+		children,
+	}: any ) => (
+		<div
+			data-testid={
+				'placeholder' === variant ? 'placeholder' : 'file-source'
+			}
+			data-allowed-types="application/x-gll,application/octet-stream"
+		>
+			<span>{ label }</span>
+			<span>{ instructions }</span>
+			<button
+				type="button"
+				data-testid="trigger-media-select"
+				onClick={ () =>
+					onChange( {
+						fileId: 42,
+						fileUrl: 'https://example.com/sample.gll',
+						fileName: 'sample.gll',
+					} )
+				}
+			>
+				Select GLL File
+			</button>
+			<button
+				type="button"
+				data-testid="trigger-remove"
+				onClick={ onRemove }
+			>
+				Remove
+			</button>
+			{ children }
+		</div>
+	),
 	useGLLLoader: () => mockLoaderState,
 	// Publishing the display subset is a network side effect with no rendered
 	// output, and the rebuild control has its own test; stubbing both keeps this

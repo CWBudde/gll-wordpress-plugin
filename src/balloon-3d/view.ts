@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { formatFrequency } from '../shared/charting-utils';
@@ -26,6 +26,11 @@ import {
 	initBlockLiveRegions,
 	renderErrorPanel,
 } from '../shared/a11y';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import { applySceneTheme } from './theme-three';
 import {
 	buildCanvasLabel,
@@ -141,6 +146,16 @@ async function initializeBlock( block: HTMLElement ) {
 		return;
 	}
 
+	// Saved markup, but nothing had ever checked it. A scheme test is cheap and
+	// is the whole of what a view script can usefully say about an address.
+	if ( ! isSafeFileUrl( fileUrl ) ) {
+		showError(
+			block,
+			__( 'This block has an address it cannot load.', 'gll-info' )
+		);
+		return;
+	}
+
 	// Before the fetch, not after it: this block's save() carries a
 	// `.gll-loading-text` paragraph, which the helper turns into the live
 	// region and which `setBlockHeaderLabel` later rewrites from
@@ -154,13 +169,10 @@ async function initializeBlock( block: HTMLElement ) {
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					// translators: %s: HTTP status text returned by the server.
-					__( 'Failed to fetch file: %s', 'gll-info' ),
-					response.statusText
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -175,7 +187,7 @@ async function initializeBlock( block: HTMLElement ) {
 		render3DBalloon( block, data, options );
 	} catch ( error ) {
 		console.error( 'Error loading GLL file:', error );
-		showError( block, ( error as Error ).message );
+		showError( block, describeFetchFailure( error, fileUrl ) );
 	}
 }
 

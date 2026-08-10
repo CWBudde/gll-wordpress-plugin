@@ -12,8 +12,12 @@
 
 import {
 	deleteCachedSubset,
+	deleteCachedSubsetForUrl,
 	fetchCachedSubset,
+	fetchCachedSubsetFor,
+	fetchCachedSubsetForUrl,
 	publishSubset,
+	publishSubsetForUrl,
 } from './gll-cache';
 import { SUBSET_VERSION } from './gll-subset';
 
@@ -242,5 +246,158 @@ describe( 'deleteCachedSubset', () => {
 			.mockRejectedValue( new Error( 'offline' ) );
 
 		await expect( deleteCachedSubset( 42 ) ).resolves.toBe( false );
+	} );
+} );
+
+describe( 'the external-file tier', () => {
+	const ADDRESS = 'https://cdn.example/speaker.gll';
+
+	beforeEach( () => {
+		window.gllInfoSettings = {
+			wasmUrl: '/w.wasm',
+			wasmExecUrl: '/w.js',
+			restUrl: 'https://example.test/wp-json/gll-info/v1/',
+			nonce: 'abc123',
+		};
+	} );
+
+	afterEach( () => {
+		delete ( global as any ).fetch;
+		delete window.gllInfoSettings;
+	} );
+
+	it( 'reads by address, escaped into a query argument', async () => {
+		const stub = mockFetch( {
+			ok: true,
+			json: async () => storedSubset(),
+		} );
+
+		expect( await fetchCachedSubsetForUrl( ADDRESS ) ).not.toBeNull();
+		expect( stub.mock.calls[ 0 ][ 0 ] ).toBe(
+			'https://example.test/wp-json/gll-info/v1/url-cache?url=' +
+				encodeURIComponent( ADDRESS )
+		);
+	} );
+
+	// A site without pretty permalinks gets a `restUrl` that is already a query
+	// string, so a second `?` would drop the address and every such site would
+	// silently lose this cache. The attachment route never had the problem,
+	// because its identifier is a path segment.
+	it( 'joins its argument correctly when the route is already a query', async () => {
+		window.gllInfoSettings.restUrl =
+			'https://example.test/index.php?rest_route=/gll-info/v1/';
+		const stub = mockFetch( {
+			ok: true,
+			json: async () => storedSubset(),
+		} );
+
+		await fetchCachedSubsetForUrl( ADDRESS );
+
+		expect( stub.mock.calls[ 0 ][ 0 ] ).toBe(
+			'https://example.test/index.php?rest_route=/gll-info/v1/url-cache&url=' +
+				encodeURIComponent( ADDRESS )
+		);
+	} );
+
+	it( 'treats a cold entry as no entry, exactly like the attachment tier', async () => {
+		mockFetch( { ok: false, status: 404 } );
+
+		expect( await fetchCachedSubsetForUrl( ADDRESS ) ).toBeNull();
+	} );
+
+	it( 'sends the address in the body of a write, with the advisory digest', async () => {
+		const stub = mockFetch( { ok: true } );
+
+		expect(
+			await publishSubsetForUrl(
+				ADDRESS,
+				storedSubset(),
+				'a'.repeat( 64 ),
+				512
+			)
+		).toBe( true );
+
+		const body = JSON.parse( stub.mock.calls[ 0 ][ 1 ].body );
+		expect( body.url ).toBe( ADDRESS );
+		expect( body.hash ).toBe( 'a'.repeat( 64 ) );
+		expect( body.length ).toBe( 512 );
+	} );
+
+	it( 'discards an entry by address', async () => {
+		const stub = mockFetch( { ok: true } );
+
+		expect( await deleteCachedSubsetForUrl( ADDRESS ) ).toBe( true );
+		expect( stub.mock.calls[ 0 ][ 1 ].method ).toBe( 'DELETE' );
+	} );
+
+	it( 'reports failure rather than throwing, like everything else here', async () => {
+		( global as any ).fetch = jest
+			.fn()
+			.mockRejectedValue( new Error( 'offline' ) );
+
+		await expect( fetchCachedSubsetForUrl( ADDRESS ) ).resolves.toBeNull();
+		await expect(
+			publishSubsetForUrl( ADDRESS, storedSubset() )
+		).resolves.toBe( false );
+		await expect( deleteCachedSubsetForUrl( ADDRESS ) ).resolves.toBe(
+			false
+		);
+	} );
+} );
+
+describe( 'fetchCachedSubsetFor', () => {
+	beforeEach( () => {
+		window.gllInfoSettings = {
+			wasmUrl: '/w.wasm',
+			wasmExecUrl: '/w.js',
+			restUrl: 'https://example.test/wp-json/gll-info/v1/',
+		};
+	} );
+
+	afterEach( () => {
+		delete ( global as any ).fetch;
+		delete window.gllInfoSettings;
+	} );
+
+	// The one place the "attachment or external" question is answered, so that
+	// the two view scripts and the editor's publisher cannot answer it
+	// differently. The argument is shaped like a `dataset` because that is what
+	// a view script is holding when it asks.
+	it( 'asks the attachment route when there is an attachment', async () => {
+		const stub = mockFetch( {
+			ok: true,
+			json: async () => storedSubset(),
+		} );
+
+		await fetchCachedSubsetFor( {
+			fileId: '42',
+			fileUrl: 'https://example.test/a.gll',
+		} );
+
+		expect( stub.mock.calls[ 0 ][ 0 ] ).toContain( '/cache/42' );
+	} );
+
+	it( 'asks the external route when there is not', async () => {
+		const stub = mockFetch( {
+			ok: true,
+			json: async () => storedSubset(),
+		} );
+
+		await fetchCachedSubsetFor( {
+			fileId: '',
+			fileUrl: 'https://cdn.example/a.gll',
+		} );
+
+		expect( stub.mock.calls[ 0 ][ 0 ] ).toContain( '/url-cache?url=' );
+	} );
+
+	it( 'asks nothing at all when there is neither', async () => {
+		const stub = mockFetch( {
+			ok: true,
+			json: async () => storedSubset(),
+		} );
+
+		expect( await fetchCachedSubsetFor( {} ) ).toBeNull();
+		expect( stub ).not.toHaveBeenCalled();
 	} );
 } );

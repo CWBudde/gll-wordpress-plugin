@@ -9,7 +9,12 @@
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { normalizeGllData } from '../shared/gll-normalize';
 import { sourceResponseCount } from '../shared/gll-subset';
-import { fetchCachedSubset } from '../shared/gll-cache';
+import { fetchCachedSubsetFor } from '../shared/gll-cache';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 // Replaces a local copy that assigned `textContent` directly. Behaviour differs
 // for one input: the local version rendered a missing field as the literal text
@@ -115,13 +120,10 @@ import { escapeHtml } from '../shared/escape-html';
 
 		const response = await fetch( url );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					// translators: %d: HTTP status code.
-					__( 'Failed to fetch GLL file: %d', 'gll-info' ),
-					response.status
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();
@@ -580,6 +582,14 @@ import { escapeHtml } from '../shared/escape-html';
 			return;
 		}
 
+		// The only check this value has ever had. It is saved markup, so it is
+		// as trustworthy as whoever could edit the post — but "as trustworthy as
+		// an editor" is not the same as "a URL this script should fetch", and a
+		// scheme test costs nothing.
+		if ( ! isSafeFileUrl( fileUrl ) ) {
+			return;
+		}
+
 		// Set up before the parse, not after it: the helper turns this block's
 		// `.gll-loading-text` paragraph into the live region, and the header
 		// rewrite below is what announces the loading-to-loaded transition. A
@@ -603,7 +613,7 @@ import { escapeHtml } from '../shared/escape-html';
 			// has opened in the editor on a host with no server-side parser, and
 			// it simply means this block parses the way it always did.
 			const data =
-				( await fetchCachedSubset( block.dataset.fileId ) ) ||
+				( await fetchCachedSubsetFor( block.dataset ) ) ||
 				( await parseGLLFromUrl( fileUrl ) );
 
 			// Update header with actual label.
@@ -643,13 +653,13 @@ import { escapeHtml } from '../shared/escape-html';
 			// stumble over. The shared panel also carries the `.gll-error`
 			// styling every other block uses.
 			if ( loadingEl ) {
+				// `describeFetchFailure()` turns the one failure a reader is
+				// most likely to hit — a file on another website that does not
+				// allow this one to read it — into a sentence that names the
+				// site rather than into a bare TypeError.
 				renderErrorPanel(
 					loadingEl,
-					sprintf(
-						// translators: %s: the underlying failure description.
-						__( 'Could not load the GLL file. %s', 'gll-info' ),
-						error.message
-					)
+					describeFetchFailure( error, fileUrl )
 				);
 				loadingEl.style.display = '';
 			}

@@ -224,6 +224,25 @@ class GLL_Parser {
 	 * @return array|WP_Error Display subset, or an error.
 	 */
 	public static function subset_for_attachment( $attachment_id ) {
+		return self::subset_for_path( get_attached_file( $attachment_id ) );
+	}
+
+	/**
+	 * Parse a file already on this server and return its display subset.
+	 *
+	 * Split out of `subset_for_attachment()` because path resolution and parsing
+	 * are separate concerns, and because the external-file proxy has a downloaded
+	 * temp file rather than an attachment: it can warm the URL cache from bytes it
+	 * has already paid for, on the minority of hosts that have a backend at all.
+	 *
+	 * The path never comes from request input. `GLL_Remote` passes a
+	 * `wp_tempnam()` file it created itself, and the attachment path comes from
+	 * `get_attached_file()`.
+	 *
+	 * @param string $path Absolute path to a readable GLL file.
+	 * @return array|WP_Error Display subset, or an error.
+	 */
+	public static function subset_for_path( $path ) {
 		$backend = self::backend();
 
 		if ( ! $backend ) {
@@ -232,8 +251,6 @@ class GLL_Parser {
 				__( 'No server-side GLL parser is available.', 'gll-info' )
 			);
 		}
-
-		$path = get_attached_file( $attachment_id );
 
 		if ( ! $path || ! is_file( $path ) || ! is_readable( $path ) ) {
 			return new WP_Error(

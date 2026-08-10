@@ -16,6 +16,11 @@
  * view scripts, which must not pull `@wordpress/element` into their bundles for
  * the sake of one hook.
  *
+ * It writes to whichever tier the block's file belongs to. For a file on another
+ * server the write is worth more than it is for an attachment, because it is the
+ * *only* thing that ever refreshes that entry: the server has no bytes to
+ * re-read, so opening the post is what makes a changed remote file visible.
+ *
  * @package
  */
 
@@ -23,8 +28,11 @@ import { useCallback, useEffect, useRef } from '@wordpress/element';
 
 import {
 	deleteCachedSubset,
+	deleteCachedSubsetForUrl,
 	fetchCachedSubset,
+	fetchCachedSubsetForUrl,
 	publishSubset,
+	publishSubsetForUrl,
 } from './gll-cache';
 import { buildDisplaySubset } from './gll-subset';
 
@@ -68,12 +76,21 @@ export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 		parsedFrom && fileUrl && parsedFrom.url === fileUrl
 	);
 
+	// One identity covering both tiers, so a block that is re-pointed from an
+	// attachment to an address — or between two addresses — is never mistaken for
+	// one that has already been settled.
+	let key = null;
+	if ( fileId ) {
+		key = `id:${ fileId }`;
+	} else if ( fileUrl ) {
+		key = `url:${ fileUrl }`;
+	}
+
 	useEffect( () => {
-		if ( ! fileId || ! data || ! matches ) {
+		if ( ! key || ! data || ! matches ) {
 			return undefined;
 		}
 
-		const key = String( fileId );
 		if ( settled.current === key ) {
 			return undefined;
 		}
@@ -81,7 +98,9 @@ export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 		let cancelled = false;
 
 		( async () => {
-			const existing = await fetchCachedSubset( fileId );
+			const existing = fileId
+				? await fetchCachedSubset( fileId )
+				: await fetchCachedSubsetForUrl( fileUrl );
 
 			if ( cancelled ) {
 				return;
@@ -97,7 +116,16 @@ export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 				return;
 			}
 
-			await publishSubset( fileId, subset, parsedFrom?.hash );
+			if ( fileId ) {
+				await publishSubset( fileId, subset, parsedFrom?.hash );
+			} else {
+				await publishSubsetForUrl(
+					fileUrl,
+					subset,
+					parsedFrom?.hash,
+					parsedFrom?.length
+				);
+			}
 
 			if ( ! cancelled ) {
 				settled.current = key;
@@ -107,10 +135,10 @@ export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 		return () => {
 			cancelled = true;
 		};
-	}, [ fileId, data, matches, parsedFrom ] );
+	}, [ key, fileId, fileUrl, data, matches, parsedFrom ] );
 
 	return useCallback( async () => {
-		if ( ! fileId || ! data || ! matches ) {
+		if ( ! key || ! data || ! matches ) {
 			return false;
 		}
 
@@ -122,16 +150,32 @@ export function useCachePublisher( { fileId, fileUrl, data, parsedFrom } ) {
 		// Delete first, so that a rebuild is a real rebuild: the POST alone
 		// would already overwrite, but an author who presses this is asking to
 		// be sure nothing of the old entry survived.
-		await deleteCachedSubset( fileId );
+		//
+		// For an external file this is the only way the stored summary is ever
+		// refreshed at all — nothing on the server can notice that a file changed
+		// somewhere else — so the delete matters more here than it does for an
+		// attachment.
+		let stored;
 
-		const stored = await publishSubset( fileId, subset, parsedFrom?.hash );
+		if ( fileId ) {
+			await deleteCachedSubset( fileId );
+			stored = await publishSubset( fileId, subset, parsedFrom?.hash );
+		} else {
+			await deleteCachedSubsetForUrl( fileUrl );
+			stored = await publishSubsetForUrl(
+				fileUrl,
+				subset,
+				parsedFrom?.hash,
+				parsedFrom?.length
+			);
+		}
 
-		// Whatever happened, this attachment is no longer settled from the
-		// effect's point of view unless the write actually landed.
-		settled.current = stored ? String( fileId ) : null;
+		// Whatever happened, this file is no longer settled from the effect's
+		// point of view unless the write actually landed.
+		settled.current = stored ? key : null;
 
 		return stored;
-	}, [ fileId, data, matches, parsedFrom ] );
+	}, [ key, fileId, fileUrl, data, matches, parsedFrom ] );
 }
 
 export default useCachePublisher;

@@ -23,26 +23,7 @@
  */
 
 import { hydrateSubsetLabels } from './gll-subset';
-
-/**
- * Base URL of the plugin's REST namespace.
- *
- * PHP localizes this onto every editor and view script. The fallback assumes
- * pretty permalinks and a site at the domain root, matching the assumption
- * `wasm-loader.ts` already makes about the plugin directory — a last resort for
- * a page where the settings object never arrived.
- *
- * @return {string} Base URL with a trailing slash.
- */
-function restBase(): string {
-	const configured = window.gllInfoSettings?.restUrl;
-
-	if ( configured ) {
-		return configured.endsWith( '/' ) ? configured : `${ configured }/`;
-	}
-
-	return '/wp-json/gll-info/v1/';
-}
+import { restBase, routeWithArg, writeHeaders } from './rest-base';
 
 /**
  * URL of one attachment's cache entry.
@@ -55,21 +36,19 @@ function cacheUrl( fileId ): string {
 }
 
 /**
- * Headers that authenticate a write.
+ * URL of one external file's cache entry.
  *
- * @return {Object} Request headers.
+ * The address goes in a query argument and the server derives the storage key
+ * from it. The browser never computes that key: reader and writer both go
+ * through one function in PHP, which is what makes a normalisation disagreement
+ * between them — the usual way a URL-keyed cache is poisoned — impossible rather
+ * than merely unlikely.
+ *
+ * @param {string} fileUrl External file address.
+ * @return {string} Endpoint URL.
  */
-function writeHeaders(): Record< string, string > {
-	const headers: Record< string, string > = {
-		'Content-Type': 'application/json',
-	};
-
-	const nonce = window.gllInfoSettings?.nonce;
-	if ( nonce ) {
-		headers[ 'X-WP-Nonce' ] = nonce;
-	}
-
-	return headers;
+function urlCacheUrl( fileUrl ): string {
+	return routeWithArg( 'url-cache', 'url', String( fileUrl ) );
 }
 
 /**
@@ -152,6 +131,134 @@ export async function publishSubset( fileId, subset, hash = null ) {
 			credentials: 'same-origin',
 			headers: writeHeaders(),
 			body: JSON.stringify( body ),
+		} );
+
+		return response.ok;
+	} catch ( error ) {
+		return false;
+	}
+}
+
+/**
+ * Fetch the cached subset for a file on another server.
+ *
+ * Same contract as `fetchCachedSubset()` in every respect a caller can observe.
+ * What differs is behind the endpoint: an entry here carries no fingerprint of
+ * the file it describes — there are no bytes on the server to fingerprint — so it
+ * is served until its time limit expires and no sooner. A file that changes
+ * silently at its source is described by a stale summary until then.
+ *
+ * @param {string} fileUrl External file address.
+ * @return {Promise<Object|null>} The subset, or null when there is no usable cache.
+ */
+export async function fetchCachedSubsetForUrl( fileUrl ) {
+	if ( ! fileUrl ) {
+		return null;
+	}
+
+	try {
+		const response = await fetch( urlCacheUrl( fileUrl ), {
+			credentials: 'same-origin',
+		} );
+
+		if ( ! response.ok ) {
+			return null;
+		}
+
+		const subset = await response.json();
+
+		return looksLikeSubset( subset ) ? hydrateSubsetLabels( subset ) : null;
+	} catch ( error ) {
+		return null;
+	}
+}
+
+/**
+ * Fetch whichever cache entry a block's source calls for.
+ *
+ * The single place the "attachment or external" question is answered, so the two
+ * view scripts and the editor's publisher cannot answer it differently. The
+ * argument is deliberately the shape of a `dataset`, which is what a view script
+ * already holds.
+ *
+ * @param {Object}        source           Block source.
+ * @param {number|string} [source.fileId]  Attachment ID, absent or 0 for external files.
+ * @param {string}        [source.fileUrl] File address.
+ * @return {Promise<Object|null>} The subset, or null.
+ */
+export async function fetchCachedSubsetFor( source ) {
+	const fileId = Number( source?.fileId || 0 );
+
+	if ( fileId > 0 ) {
+		return fetchCachedSubset( fileId );
+	}
+
+	return fetchCachedSubsetForUrl( source?.fileUrl || '' );
+}
+
+/**
+ * Store a subset for a file on another server.
+ *
+ * `hash` is sent for the same reason as on the attachment route, but the server
+ * can only record it, not check it — it never saw the bytes. It is stored for
+ * diagnostics and is never what decides whether an entry may be served.
+ *
+ * @param {string}      fileUrl External file address.
+ * @param {Object}      subset  Display subset.
+ * @param {string|null} hash    Digest of the parsed bytes, when known.
+ * @param {number|null} length  Byte length of what was parsed, when known.
+ * @return {Promise<boolean>} Whether it was stored.
+ */
+export async function publishSubsetForUrl(
+	fileUrl,
+	subset,
+	hash = null,
+	length = null
+) {
+	if ( ! fileUrl || ! subset ) {
+		return false;
+	}
+
+	const body: Record< string, unknown > = { url: fileUrl, data: subset };
+
+	if ( hash ) {
+		body.hash = hash;
+	}
+
+	if ( length ) {
+		body.length = length;
+	}
+
+	try {
+		const response = await fetch( `${ restBase() }url-cache`, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: writeHeaders(),
+			body: JSON.stringify( body ),
+		} );
+
+		return response.ok;
+	} catch ( error ) {
+		return false;
+	}
+}
+
+/**
+ * Discard the cached subset for a file on another server.
+ *
+ * @param {string} fileUrl External file address.
+ * @return {Promise<boolean>} Whether the request succeeded.
+ */
+export async function deleteCachedSubsetForUrl( fileUrl ) {
+	if ( ! fileUrl ) {
+		return false;
+	}
+
+	try {
+		const response = await fetch( urlCacheUrl( fileUrl ), {
+			method: 'DELETE',
+			credentials: 'same-origin',
+			headers: writeHeaders(),
 		} );
 
 		return response.ok;
