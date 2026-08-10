@@ -50,6 +50,13 @@ jest.mock( '@wordpress/block-editor', () => ( {
 			>
 				url
 			</button>
+			<button
+				type="button"
+				data-testid="trigger-select-bad-url"
+				onClick={ () => onSelectURL( 'javascript:alert(1)' ) }
+			>
+				bad url
+			</button>
 		</div>
 	),
 	MediaUpload: ( { render: renderProp }: any ) =>
@@ -157,6 +164,35 @@ describe( 'FileSourceControl (placeholder)', () => {
 
 		fireEvent.click( screen.getByTestId( 'trigger-select-url' ) );
 		expect( onChange ).toHaveBeenLastCalledWith( EXTERNAL );
+	} );
+
+	// The placeholder and the inspector have to agree about what an acceptable
+	// address is. They did not: core's "Insert from URL" popover handed its text
+	// straight through, so the empty-block picker would store an address the
+	// dedicated control refuses — and the author would find out after publishing.
+	it( 'holds an address the inspector would refuse, and says why', () => {
+		const onChange = jest.fn();
+		const { container } = render(
+			<FileSourceControl
+				variant="placeholder"
+				value={ EMPTY }
+				onChange={ onChange }
+				onRemove={ jest.fn() }
+			/>
+		);
+
+		// jsdom serves this suite over http:, so an http address is acceptable
+		// here; a scheme that can never work is the portable case.
+		fireEvent.click( screen.getByTestId( 'trigger-select-url' ) );
+		expect( onChange ).toHaveBeenCalledTimes( 1 );
+
+		onChange.mockClear();
+		fireEvent.click( screen.getByTestId( 'trigger-select-bad-url' ) );
+
+		expect( onChange ).not.toHaveBeenCalled();
+		expect(
+			within( container ).getByText( /Only web addresses/ )
+		).toBeInTheDocument();
 	} );
 
 	it( 'has no Remove button — there is nothing to remove yet', () => {

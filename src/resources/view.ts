@@ -8,12 +8,16 @@
  * @package
  */
 
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { ensureWasmReady, parseGLL } from '../shared/wasm-loader';
 import { setBlockHeaderLabel } from '../shared/gll-normalize';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
-import { describeFetchFailure, isSafeFileUrl } from '../shared/file-source';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import { renderResources } from './resource-render';
 
 /**
@@ -81,13 +85,10 @@ async function initializeBlock( block ) {
 	try {
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					/* translators: %s: HTTP status text, e.g. "Not Found". */
-					__( 'Failed to fetch file: %s', 'gll-info' ),
-					response.statusText
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

@@ -118,6 +118,13 @@ class GLL_Remote {
 	const RATE_LIMIT = 20;
 
 	/**
+	 * Redirect hops followed before giving up.
+	 *
+	 * @var int
+	 */
+	const MAX_REDIRECTS = 3;
+
+	/**
 	 * Ranges the PHP filter flags leave reachable.
 	 *
 	 * `FILTER_FLAG_NO_PRIV_RANGE|NO_RES_RANGE` covers 10/8, 172.16/12, 192.168/16,
@@ -566,13 +573,24 @@ class GLL_Remote {
 	private static function download( $url ) {
 		$cap = self::max_bytes();
 
-		$head = wp_safe_remote_head(
+		$head = self::request(
+			'HEAD',
 			$url,
 			array(
-				'timeout'     => 10,
-				'redirection' => 3,
+				'timeout' => 10,
 			)
 		);
+
+		// A refusal decided here — a redirect into a network or onto a host this
+		// site will not follow — is reported as itself rather than folded into
+		// the flat upstream error. It is our policy speaking, and an author whose
+		// CDN redirects to a delivery host that is not on the allowlist has no
+		// other way to find that out. The cost is that it says slightly more
+		// than "something went wrong" about an address the caller supplied and
+		// could follow in their own browser anyway.
+		if ( self::is_blocked( $head ) ) {
+			return $head;
+		}
 
 		if ( ! is_wp_error( $head ) ) {
 			$length = (int) wp_remote_retrieve_header( $head, 'content-length' );
@@ -588,11 +606,11 @@ class GLL_Remote {
 			return self::failed();
 		}
 
-		$response = wp_safe_remote_get(
+		$response = self::request(
+			'GET',
 			$url,
 			array(
 				'timeout'             => (int) apply_filters( 'gll_info_remote_timeout', self::TIMEOUT ),
-				'redirection'         => 3,
 				'stream'              => true,
 				'filename'            => $tmp,
 				'limit_response_size' => $cap + 1,
@@ -600,6 +618,12 @@ class GLL_Remote {
 				'headers'             => array( 'Accept' => 'application/octet-stream' ),
 			)
 		);
+
+		if ( self::is_blocked( $response ) ) {
+			wp_delete_file( $tmp );
+
+			return $response;
+		}
 
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
 			wp_delete_file( $tmp );
@@ -616,6 +640,65 @@ class GLL_Remote {
 		}
 
 		return $tmp;
+	}
+
+	/**
+	 * Make a request, following redirects ourselves.
+	 *
+	 * REDIRECTS ARE FOLLOWED BY HAND, and that is the whole point of this method.
+	 * Core does revalidate every hop — but through `wp_http_validate_url()`, which
+	 * knows nothing about this plugin's host allowlist and nothing about the IPv6
+	 * checks in `validate_url()`. Those are precisely the two protections that
+	 * exist here because core does not provide them, so letting the transport
+	 * follow a `Location` would hand an allowlisted host — or any open redirect on
+	 * one — a way to send this server somewhere the allowlist forbids, including a
+	 * name whose public A record hides a private AAAA record.
+	 *
+	 * So `redirection` is 0 on every request and each `Location` goes back through
+	 * the full `validate_url()` before it is followed.
+	 *
+	 * @param string $method HTTP method, 'GET' or 'HEAD'.
+	 * @param string $url    Already-validated URL.
+	 * @param array  $args   Request arguments; `redirection` is overridden.
+	 * @return array|WP_Error Response, or an error.
+	 */
+	private static function request( $method, $url, $args ) {
+		$args['redirection'] = 0;
+
+		for ( $hop = 0; $hop <= self::MAX_REDIRECTS; $hop++ ) {
+			$response = 'HEAD' === $method
+				? wp_safe_remote_head( $url, $args )
+				: wp_safe_remote_get( $url, $args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( ! in_array( $code, array( 301, 302, 303, 307, 308 ), true ) ) {
+				return $response;
+			}
+
+			$location = wp_remote_retrieve_header( $response, 'location' );
+
+			// A redirect with nowhere to go is just a response with an odd
+			// status; the size and code checks downstream will reject it.
+			if ( ! $location ) {
+				return $response;
+			}
+
+			$next = WP_Http::make_absolute_url( $location, $url );
+			$next = self::validate_url( $next );
+
+			if ( is_wp_error( $next ) ) {
+				return $next;
+			}
+
+			$url = $next;
+		}
+
+		return self::failed();
 	}
 
 	/**
@@ -686,6 +769,16 @@ class GLL_Remote {
 		set_transient( $name, $count + 1, 5 * MINUTE_IN_SECONDS );
 
 		return true;
+	}
+
+	/**
+	 * Whether a result is this site refusing an address.
+	 *
+	 * @param mixed $result Response or error.
+	 * @return bool True when it is a local refusal.
+	 */
+	private static function is_blocked( $result ) {
+		return is_wp_error( $result ) && 'gll_info_remote_blocked' === $result->get_error_code();
 	}
 
 	/**

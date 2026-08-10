@@ -23,7 +23,11 @@ import {
 	prefersReducedMotion,
 	renderErrorPanel,
 } from '../shared/a11y';
-import { describeFetchFailure, isSafeFileUrl } from '../shared/file-source';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import {
 	buildCanvasLabel,
 	buildDataTable,
@@ -97,13 +101,10 @@ async function initializeBlock( block ) {
 		// Fetch and parse the GLL file
 		const response = await fetch( fileUrl );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					/* translators: %s: HTTP status text, e.g. "Not Found". */
-					__( 'Failed to fetch file: %s', 'gll-info' ),
-					response.statusText
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

@@ -19,24 +19,13 @@
 
 import { __, sprintf } from '@wordpress/i18n';
 
+import { HttpError } from './file-source';
 import { routeWithArg } from './rest-base';
 
-/**
- * An HTTP failure that carries its status, so callers can tell it from a
- * network-level failure that carries nothing.
- */
-export class HttpError extends Error {
-	public status: number;
-
-	public statusText: string;
-
-	constructor( status: number, statusText: string, message?: string ) {
-		super( message || `${ status } ${ statusText }` );
-		this.name = 'HttpError';
-		this.status = status;
-		this.statusText = statusText;
-	}
-}
+// Re-exported for the callers that only deal with the proxy. It is defined in
+// `file-source.ts` because the view scripts need it and must not reach into
+// this module.
+export { HttpError };
 
 /**
  * Download an external GLL file through this site.

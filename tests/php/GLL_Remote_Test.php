@@ -479,6 +479,231 @@ class GLL_Remote_Test extends WP_UnitTestCase {
 		return 32;
 	}
 
+	/* ---------------------------------------------------------------------
+	 * Redirects. Core revalidates every hop too, but only through
+	 * `wp_http_validate_url()` — which knows nothing about this plugin's host
+	 * allowlist or its IPv6 checks, i.e. exactly the two things `validate_url()`
+	 * exists to add. So they are followed by hand.
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Install a stub that redirects once, then serves a body.
+	 *
+	 * @param string $location Where the first response points.
+	 * @param string $bytes    Body of the second response.
+	 */
+	private function stub_redirect( $location, $bytes = 'GLL BYTES' ) {
+		$calls = &$this->http_calls;
+
+		add_filter(
+			'pre_http_request',
+			static function ( $pre, $args, $url ) use ( $location, $bytes, &$calls ) {
+				$calls[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+
+				if ( $url !== $location ) {
+					return array(
+						'headers'  => array( 'location' => $location ),
+						'body'     => '',
+						'response' => array(
+							'code'    => 302,
+							'message' => 'Found',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				if ( ! empty( $args['filename'] ) ) {
+					file_put_contents( $args['filename'], $bytes ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				}
+
+				return array(
+					'headers'  => array( 'content-length' => (string) strlen( $bytes ) ),
+					'body'     => empty( $args['stream'] ) ? $bytes : '',
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => isset( $args['filename'] ) ? $args['filename'] : null,
+				);
+			},
+			10,
+			3
+		);
+	}
+
+	/**
+	 * The transport is never allowed to follow a redirect on its own.
+	 */
+	public function test_redirects_are_never_followed_by_the_transport() {
+		$this->become( 'author' );
+		$this->stub_redirect( 'https://93.184.216.35/moved.gll' );
+
+		$this->dispatch( self::PUBLIC_URL );
+
+		foreach ( $this->http_calls as $call ) {
+			$this->assertSame( 0, (int) $call['args']['redirection'] );
+		}
+	}
+
+	/**
+	 * A redirect to another public address is followed, once revalidated.
+	 */
+	public function test_a_redirect_to_a_public_address_is_followed() {
+		$this->become( 'author' );
+		$this->stub_redirect( 'https://93.184.216.35/moved.gll' );
+
+		$response = $this->dispatch( self::PUBLIC_URL );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		$urls = wp_list_pluck( $this->http_calls, 'url' );
+		$this->assertContains( 'https://93.184.216.35/moved.gll', $urls );
+	}
+
+	/**
+	 * A REDIRECT OFF THE ALLOWLIST IS REFUSED.
+	 *
+	 * Core would have followed this one: its own validation passes a public
+	 * address, and the allowlist is this plugin's alone. Without the manual hop
+	 * loop, an allowlisted host — or any open redirect on one — would be a way
+	 * around the setting entirely.
+	 */
+	public function test_a_redirect_off_the_allowlist_is_refused() {
+		update_option( GLL_Remote::HOSTS_OPTION, 'files.example' );
+		add_filter( 'gll_info_remote_resolve', array( $this, 'resolve_files_example' ), 10, 2 );
+
+		$this->become( 'author' );
+		$this->stub_redirect( 'https://93.184.216.35/elsewhere.gll' );
+
+		$response = $this->dispatch( 'https://files.example/speaker.gll' );
+
+		remove_filter( 'gll_info_remote_resolve', array( $this, 'resolve_files_example' ), 10 );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'gll_info_remote_blocked', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * A redirect into this network is refused.
+	 */
+	public function test_a_redirect_to_a_private_address_is_refused() {
+		$this->become( 'author' );
+		$this->stub_redirect( 'http://169.254.169.254/latest/meta-data/' );
+
+		$response = $this->dispatch( self::PUBLIC_URL );
+
+		$this->assertSame( 400, $response->get_status() );
+	}
+
+	/**
+	 * A relative `Location` is resolved before it is checked.
+	 */
+	public function test_a_relative_redirect_is_resolved_against_the_current_address() {
+		$this->become( 'author' );
+		$this->stub_redirect( 'https://93.184.216.34/moved/other.gll' );
+
+		$calls = &$this->http_calls;
+		remove_all_filters( 'pre_http_request' );
+
+		add_filter(
+			'pre_http_request',
+			static function ( $pre, $args, $url ) use ( &$calls ) {
+				$calls[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+
+				if ( false === strpos( $url, '/moved/' ) ) {
+					return array(
+						'headers'  => array( 'location' => '/moved/other.gll' ),
+						'body'     => '',
+						'response' => array(
+							'code'    => 302,
+							'message' => 'Found',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				if ( ! empty( $args['filename'] ) ) {
+					file_put_contents( $args['filename'], 'GLL BYTES' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				}
+
+				return array(
+					'headers'  => array( 'content-length' => '9' ),
+					'body'     => '',
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => isset( $args['filename'] ) ? $args['filename'] : null,
+				);
+			},
+			10,
+			3
+		);
+
+		$this->assertSame( 200, $this->dispatch( self::PUBLIC_URL )->get_status() );
+
+		$urls = wp_list_pluck( $this->http_calls, 'url' );
+		$this->assertContains( 'https://93.184.216.34/moved/other.gll', $urls );
+	}
+
+	/**
+	 * A redirect loop ends, and ends as an upstream failure.
+	 */
+	public function test_an_endless_redirect_gives_up() {
+		$this->become( 'author' );
+		$calls = &$this->http_calls;
+
+		add_filter(
+			'pre_http_request',
+			static function ( $pre, $args, $url ) use ( &$calls ) {
+				$calls[] = array( 'url' => $url );
+
+				return array(
+					'headers'  => array( 'location' => 'https://93.184.216.35/again.gll' ),
+					'body'     => '',
+					'response' => array(
+						'code'    => 302,
+						'message' => 'Found',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$response = $this->dispatch( self::PUBLIC_URL );
+
+		$this->assertSame( 502, $response->get_status() );
+		$this->assertLessThanOrEqual(
+			2 * ( GLL_Remote::MAX_REDIRECTS + 1 ),
+			count( $this->http_calls ),
+			'Both the HEAD and the GET are bounded by MAX_REDIRECTS.'
+		);
+	}
+
+	/**
+	 * Resolve the one host name these tests use.
+	 *
+	 * @param array|null $addresses Addresses, or null to resolve for real.
+	 * @param string     $host      Host being resolved.
+	 * @return array|null Addresses.
+	 */
+	public function resolve_files_example( $addresses, $host ) {
+		return 'files.example' === $host ? array( '93.184.216.34' ) : $addresses;
+	}
+
 	/**
 	 * An empty file is not a GLL file.
 	 */

@@ -56,6 +56,27 @@ export interface UrlCheck {
 	message: string;
 }
 
+/**
+ * A server that answered, and said no.
+ *
+ * Lives here rather than in `gll-proxy.ts` because the view scripts need it too
+ * and must not import that module. Carrying the status is what keeps a 404 from
+ * being described as a parse failure or as a blocked cross-origin read — see
+ * `describeFetchFailure()`, which branches on exactly this.
+ */
+export class HttpError extends Error {
+	public status: number;
+
+	public statusText: string;
+
+	constructor( status: number, statusText: string, message?: string ) {
+		super( message || `${ status } ${ statusText }` );
+		this.name = 'HttpError';
+		this.status = status;
+		this.statusText = statusText;
+	}
+}
+
 interface PageContext {
 	protocol: string;
 	origin: string;
@@ -299,11 +320,17 @@ export function fileNameFromUrl( raw ): string {
 /**
  * What to tell a visitor when a file could not be fetched.
  *
- * `fetch()` reports a blocked cross-origin request and a dead network the same
- * way — a bare `TypeError` with no detail — so the origin of the URL is the only
- * signal available. It is enough to be useful without being a guess: a
- * cross-origin failure with no status is overwhelmingly a missing
- * `Access-Control-Allow-Origin`, and a same-origin one is not.
+ * Three outcomes, and keeping them apart is the whole job:
+ *
+ * - **A status** — the server answered, and said no. Quote it.
+ * - **A `TypeError`** — `fetch` never completed. It reports a blocked
+ *   cross-origin read and a dead network identically, so the origin of the URL
+ *   is the only signal left, and it is enough to be useful without being a
+ *   guess: a cross-origin failure with no status is overwhelmingly a missing
+ *   `Access-Control-Allow-Origin`, and a same-origin one is not.
+ * - **Anything else** — the bytes arrived and the parser rejected them. Saying
+ *   the host refused access would be a false accusation about a website that did
+ *   nothing wrong, so this branch carries the parser's own words instead.
  *
  * The words "CORS" and "Access-Control-Allow-Origin" never appear here. A visitor
  * cannot act on either; the person who can is reading the documentation.
@@ -330,21 +357,42 @@ export function describeFetchFailure(
 		).trim();
 	}
 
-	if ( isExternalUrl( url, page ) ) {
-		const host = parse( String( url ) )?.host || '';
+	// ONLY A `TypeError` MEANS THE REQUEST NEVER COMPLETED. That is what `fetch`
+	// throws for a blocked cross-origin read, a dead network or a reset
+	// connection, and it is the only case where blaming the host is warranted. A
+	// file that downloaded perfectly and then failed to parse arrives here as an
+	// ordinary `Error`, and telling its reader that the website refused access
+	// would be plainly false.
+	if ( error instanceof TypeError ) {
+		if ( isExternalUrl( url, page ) ) {
+			const host = parse( String( url ) )?.host || '';
 
-		return sprintf(
-			/* translators: %s: host name of the site the file is on. */
-			__(
-				'This file could not be loaded from %s. The website hosting it does not allow other websites to read it.',
-				'gll-info'
-			),
-			host
+			return sprintf(
+				/* translators: %s: host name of the site the file is on. */
+				__(
+					'This file could not be loaded from %s. The website hosting it does not allow other websites to read it.',
+					'gll-info'
+				),
+				host
+			);
+		}
+
+		return __(
+			'This file could not be downloaded. It may have been moved or deleted.',
+			'gll-info'
 		);
 	}
 
-	return __(
-		'This file could not be downloaded. It may have been moved or deleted.',
-		'gll-info'
-	);
+	// Everything else is the parser talking. Its text is not translatable — it
+	// comes out of WASM already formatted — but it is the only thing that says
+	// what is actually wrong with the file.
+	const detail = error ? ( error as Error ).message : '';
+
+	return detail
+		? sprintf(
+				/* translators: %s: the parser's description of what went wrong. */
+				__( 'This GLL file could not be read. %s', 'gll-info' ),
+				detail
+		  )
+		: __( 'This GLL file could not be read.', 'gll-info' );
 }

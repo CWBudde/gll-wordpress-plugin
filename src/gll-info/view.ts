@@ -10,7 +10,11 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import { normalizeGllData } from '../shared/gll-normalize';
 import { sourceResponseCount } from '../shared/gll-subset';
 import { fetchCachedSubsetFor } from '../shared/gll-cache';
-import { describeFetchFailure, isSafeFileUrl } from '../shared/file-source';
+import {
+	describeFetchFailure,
+	HttpError,
+	isSafeFileUrl,
+} from '../shared/file-source';
 import { initBlockLiveRegions, renderErrorPanel } from '../shared/a11y';
 // Replaces a local copy that assigned `textContent` directly. Behaviour differs
 // for one input: the local version rendered a missing field as the literal text
@@ -116,13 +120,10 @@ import { escapeHtml } from '../shared/escape-html';
 
 		const response = await fetch( url );
 		if ( ! response.ok ) {
-			throw new Error(
-				sprintf(
-					// translators: %d: HTTP status code.
-					__( 'Failed to fetch GLL file: %d', 'gll-info' ),
-					response.status
-				)
-			);
+			// Typed, not a plain Error: `describeFetchFailure()` branches on the
+			// status, and without one a 404 would be reported either as a
+			// blocked cross-origin read or as a corrupt file.
+			throw new HttpError( response.status, response.statusText );
 		}
 
 		const arrayBuffer = await response.arrayBuffer();

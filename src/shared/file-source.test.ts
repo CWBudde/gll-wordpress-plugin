@@ -16,6 +16,7 @@
 import {
 	describeFetchFailure,
 	fileNameFromUrl,
+	HttpError,
 	isExternalUrl,
 	isSafeFileUrl,
 	validateGllUrl,
@@ -182,5 +183,37 @@ describe( 'describeFetchFailure', () => {
 
 		expect( message ).not.toContain( 'example.org' );
 		expect( message ).toMatch( /moved or deleted/ );
+	} );
+
+	// A server that answered is not a server that refused to be read. Both of
+	// these used to take the cross-origin branch and tell the reader that the
+	// hosting website disallows access, which is a false accusation about a
+	// website that did nothing wrong.
+	it( 'does not blame the host for a file that downloaded and would not parse', () => {
+		const message = describeFetchFailure(
+			new Error( 'unexpected end of GLL stream at offset 812' ),
+			'https://cdn.example/speaker.gll',
+			HTTPS_PAGE
+		);
+
+		expect( message ).not.toMatch( /does not allow/ );
+		expect( message ).toContain( 'unexpected end of GLL stream' );
+	} );
+
+	it( 'does not blame the host for a 404 it answered with', () => {
+		const message = describeFetchFailure(
+			new HttpError( 404, 'Not Found' ),
+			'https://cdn.example/speaker.gll',
+			HTTPS_PAGE
+		);
+
+		expect( message ).not.toMatch( /does not allow/ );
+		expect( message ).toContain( '404' );
+	} );
+
+	it( 'says something usable even for an error with nothing in it', () => {
+		expect(
+			describeFetchFailure( null, 'https://cdn.example/a.gll', HTTPS_PAGE )
+		).toMatch( /could not be read/ );
 	} );
 } );

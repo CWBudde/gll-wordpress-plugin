@@ -250,11 +250,36 @@ export default function FileSourceControl( {
 	const isExternal = ! fileId && Boolean( fileUrl );
 	const check = fileUrl ? validateGllUrl( fileUrl ) : null;
 
+	// Why the placeholder needs its own state where the inspector does not: the
+	// inspector's field holds the rejected text and can explain itself through
+	// `help`, but core's "Insert from URL" popover closes on submit and keeps
+	// nothing. Without somewhere to put the reason, refusing the address there
+	// would look like the button simply not working.
+	const [ rejected, setRejected ] = useState( '' );
+
 	const proxied = 'proxy' === status?.via && isExternal;
 	const warning =
 		isExternal && 'warning' === check?.level ? check.message : '';
 
 	if ( 'placeholder' === variant ) {
+		// Core's placeholder hands back whatever was typed into its "Insert from
+		// URL" popover, so it has to go through the same check as the inspector's
+		// field. Without this the two disagree: the empty-block picker would
+		// accept and store an `http://` address on an https site — one the
+		// dedicated control refuses because every browser will block it — and the
+		// author would only find out after publishing.
+		const commitPlaceholderUrl = ( url ) => {
+			const verdict = validateGllUrl( url );
+
+			if ( 'error' === verdict.level ) {
+				setRejected( verdict.message );
+				return;
+			}
+
+			setRejected( '' );
+			onChange( fromUrl( url ) );
+		};
+
 		return (
 			<>
 				<MediaPlaceholder
@@ -272,9 +297,14 @@ export default function FileSourceControl( {
 						} as never
 					}
 					onSelect={ ( media ) => onChange( fromMedia( media ) ) }
-					onSelectURL={ ( url ) => onChange( fromUrl( url ) ) }
+					onSelectURL={ commitPlaceholderUrl }
 					multiple={ false }
 				/>
+				{ rejected && (
+					<Notice status="error" isDismissible={ false }>
+						{ rejected }
+					</Notice>
+				) }
 				{ warning && (
 					<Notice status="warning" isDismissible={ false }>
 						{ warning }
